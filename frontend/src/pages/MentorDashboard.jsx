@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Users } from 'lucide-react';
+import { Plus, Users, LogIn } from 'lucide-react';
 import MentorCard from '../components/MentorCard.jsx';
 import { mentorApi } from '../api/client.js';
 
@@ -80,13 +80,22 @@ const MentorDashboard = () => {
                 Manage mentors and track their teaching performance
               </p>
             </div>
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              <Plus className="w-5 h-5 mr-2" />
-              Add Mentor
-            </button>
+            <div className="flex gap-3">
+              <button
+                onClick={() => navigate('/login')}
+                className="flex items-center px-4 py-2 bg-white border-2 border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors"
+              >
+                <LogIn className="w-5 h-5 mr-2" />
+                Login
+              </button>
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <Plus className="w-5 h-5 mr-2" />
+                Add Mentor
+              </button>
+            </div>
           </div>
         </div>
 
