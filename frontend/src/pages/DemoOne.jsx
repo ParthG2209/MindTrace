@@ -2,7 +2,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-import { Component } from "@/components/ui/animated-characters-login-page";
+import AnimatedCharactersLoginPage from "../components/ui/animated-characters-login-page";
 
 const DemoOne = () => {
   const navigate = useNavigate();
