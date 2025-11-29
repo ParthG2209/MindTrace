@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Eye, EyeOff } from "lucide-react";
-import { Button } from "/components/ui/button";
-import { Input } from "/components/ui/input";
-import { Label } from "/components/ui/label";
-import { Checkbox } from "/components/ui/checkbox";
+import { Button } from "./button";
+import { Input } from "./input";
+import { Label } from "./label";
+import { Checkbox } from "./checkbox";
 import { signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
-import { auth, googleProvider } from "@/lib/firebase";
+import { auth, googleProvider } from "../../lib/firebase";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
@@ -343,16 +343,20 @@ const LoginPage = () => {
                 Remember me
               </Label>
             </div>
-            <a
-              href="#"
+            <button
+              type="button"
+              onClick={() => alert('Forgot password functionality')}
               style={{
                 fontSize: "14px",
                 color: "#8b5cf6",
                 textDecoration: "none",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
               }}
             >
               Forgot password?
-            </a>
+            </button>
           </div>
 
           {error && (
@@ -436,14 +440,24 @@ const LoginPage = () => {
           }}
         >
           Don't have an account?{" "}
-          <a href="#" style={{ color: "#8b5cf6", textDecoration: "none", fontWeight: "500" }}>
+          <button
+            type="button"
+            onClick={() => alert('Sign up functionality')}
+            style={{
+              color: "#8b5cf6",
+              textDecoration: "none",
+              fontWeight: "500",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+            }}
+          >
             Sign up
-          </a>
+          </button>
         </p>
       </div>
     </div>
   );
 };
 
-export const Component = LoginPage;
 export default LoginPage;
