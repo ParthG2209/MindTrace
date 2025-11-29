@@ -146,9 +146,13 @@ const EyeBall = ({
 };
 
 function LoginPage() {
+  const [isSignUp, setIsSignUp] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [name, setName] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
@@ -268,15 +272,54 @@ function LoginPage() {
 
     await new Promise(resolve => setTimeout(resolve, 300));
 
-    if (email === "erik@gmail.com" && password === "1234") {
-      console.log("✅ Login successful!");
-      alert("Login successful! Welcome, Erik!");
-      window.location.href = "/";
+    if (isSignUp) {
+      // Sign Up Logic
+      if (password !== confirmPassword) {
+        setError("Passwords do not match!");
+        setIsLoading(false);
+        return;
+      }
+      if (password.length < 6) {
+        setError("Password must be at least 6 characters!");
+        setIsLoading(false);
+        return;
+      }
+      if (!name.trim()) {
+        setError("Name is required!");
+        setIsLoading(false);
+        return;
+      }
+      
+      // Simulate account creation
+      console.log("✅ Sign up successful!", { name, email });
+      alert(`Account created successfully! Welcome, ${name}!`);
+      // Reset form and switch to login
+      setIsSignUp(false);
+      setName("");
+      setPassword("");
+      setConfirmPassword("");
+      setEmail("");
     } else {
-      setError("Invalid email or password. Please try again.");
-      console.log("❌ Login failed");
+      // Login Logic
+      if (email === "erik@gmail.com" && password === "1234") {
+        console.log("✅ Login successful!");
+        alert("Login successful! Welcome, Erik!");
+        window.location.href = "/";
+      } else {
+        setError("Invalid email or password. Please try again.");
+        console.log("❌ Login failed");
+      }
     }
     setIsLoading(false);
+  };
+
+  const toggleAuthMode = () => {
+    setIsSignUp(!isSignUp);
+    setError("");
+    setEmail("");
+    setPassword("");
+    setConfirmPassword("");
+    setName("");
   };
 
   const toggleDarkMode = () => {
@@ -486,10 +529,31 @@ function LoginPage() {
             <span className={darkMode ? 'text-white' : ''}>MindTrace</span>
           </div>
           <div className="text-center mb-10">
-            <h1 className={`text-3xl font-bold tracking-tight mb-2 ${darkMode ? 'text-white' : ''}`}>Welcome back!</h1>
-            <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-muted-foreground'}`}>Please enter your details</p>
+            <h1 className={`text-3xl font-bold tracking-tight mb-2 ${darkMode ? 'text-white' : ''}`}>
+              {isSignUp ? 'Create an account' : 'Welcome back!'}
+            </h1>
+            <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-muted-foreground'}`}>
+              {isSignUp ? 'Sign up to get started' : 'Please enter your details'}
+            </p>
           </div>
           <form onSubmit={handleSubmit} className="space-y-5">
+            {isSignUp && (
+              <div className="space-y-2">
+                <Label htmlFor="name" className={`text-sm font-medium ${darkMode ? 'text-gray-300' : ''}`}>Full Name</Label>
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder="John Doe"
+                  value={name}
+                  autoComplete="off"
+                  onChange={(e) => setName(e.target.value)}
+                  onFocus={() => setIsTyping(true)}
+                  onBlur={() => setIsTyping(false)}
+                  required
+                  className={`h-12 focus:border-primary ${darkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-background border-border/60'}`}
+                />
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="email" className={`text-sm font-medium ${darkMode ? 'text-gray-300' : ''}`}>Email</Label>
               <Input
@@ -526,36 +590,61 @@ function LoginPage() {
                 </button>
               </div>
             </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Checkbox id="remember" />
-                <Label htmlFor="remember" className={`text-sm font-normal cursor-pointer ${darkMode ? 'text-gray-400' : ''}`}>
-                  Remember for 30 days
-                </Label>
+            {isSignUp && (
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword" className={`text-sm font-medium ${darkMode ? 'text-gray-300' : ''}`}>Confirm Password</Label>
+                <div className="relative">
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    className={`h-12 pr-10 focus:border-primary ${darkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-background border-border/60'}`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className={`absolute right-3 top-1/2 -translate-y-1/2 transition-colors ${darkMode ? 'text-gray-400 hover:text-white' : 'text-muted-foreground hover:text-foreground'}`}
+                  >
+                    {showConfirmPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
+                  </button>
+                </div>
               </div>
-              <button type="button" className="text-sm text-primary hover:underline font-medium">
-                Forgot password?
-              </button>
-            </div>
+            )}
+            {!isSignUp && (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Checkbox id="remember" />
+                  <Label htmlFor="remember" className={`text-sm font-normal cursor-pointer ${darkMode ? 'text-gray-400' : ''}`}>
+                    Remember for 30 days
+                  </Label>
+                </div>
+                <button type="button" className="text-sm text-primary hover:underline font-medium">
+                  Forgot password?
+                </button>
+              </div>
+            )}
             {error && (
               <div className={`p-3 text-sm border rounded-lg ${darkMode ? 'text-red-300 bg-red-950/30 border-red-900/50' : 'text-red-400 bg-red-950/20 border-red-900/30'}`}>
                 {error}
               </div>
             )}
             <Button type="submit" className="w-full h-12 text-base font-medium" size="lg" disabled={isLoading}>
-              {isLoading ? "Signing in..." : "Log in"}
+              {isLoading ? (isSignUp ? "Creating account..." : "Signing in...") : (isSignUp ? "Sign up" : "Log in")}
             </Button>
           </form>
           <div className="mt-6">
             <Button variant="outline" className={`w-full h-12 border-border/60 hover:bg-accent ${darkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-background'}`} type="button">
               <Mail className="mr-2 size-5" />
-              Log in with Google
+              {isSignUp ? 'Sign up' : 'Log in'} with Google
             </Button>
           </div>
           <div className={`text-center text-sm mt-8 ${darkMode ? 'text-gray-400' : 'text-muted-foreground'}`}>
-            Don't have an account?{" "}
-            <button type="button" className={`font-medium hover:underline ${darkMode ? 'text-white' : 'text-foreground'}`}>
-              Sign Up
+            {isSignUp ? 'Already have an account?' : "Don't have an account?"}{" "}
+            <button type="button" onClick={toggleAuthMode} className={`font-medium hover:underline ${darkMode ? 'text-white' : 'text-foreground'}`}>
+              {isSignUp ? 'Log in' : 'Sign Up'}
             </button>
           </div>
         </div>
