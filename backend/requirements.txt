@@ -1,7 +1,7 @@
 fastapi==0.104.1
 uvicorn==0.24.0
 motor==3.6.0
-pymongo==4.10.1
+pymongo==4.9.0
 pydantic==2.5.0
 python-multipart==0.0.6
 python-jose[cryptography]==3.3.0
