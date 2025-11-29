@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import MentorDashboard from './pages/MentorDashboard.jsx';
 import SessionsPage from './pages/SessionsPage.jsx';
 import SessionDetailPage from './pages/SessionDetailPage.jsx';
+import DemoOne from './pages/DemoOne.jsx';
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
           <Route path="/" element={<MentorDashboard />} />
           <Route path="/sessions" element={<SessionsPage />} />
           <Route path="/sessions/:sessionId" element={<SessionDetailPage />} />
+          <Route path="/demo-one" element={<DemoOne />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
