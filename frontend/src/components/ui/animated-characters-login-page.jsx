@@ -3,7 +3,7 @@ import { Button } from "./button";
 import { Input } from "./input";
 import { Label } from "./label";
 import { Checkbox } from "./checkbox";
-import { Eye, EyeOff, Mail, Sparkles } from "lucide-react";
+import { Eye, EyeOff, Mail, Sparkles, Sun, Moon } from "lucide-react";
 import { cn } from "../../lib/utils";
 
 const Pupil = ({ 
@@ -151,6 +151,7 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
   const [mouseX, setMouseX] = useState(0);
   const [mouseY, setMouseY] = useState(0);
   const [isPurpleBlinking, setIsPurpleBlinking] = useState(false);
@@ -270,6 +271,7 @@ function LoginPage() {
     if (email === "erik@gmail.com" && password === "1234") {
       console.log("✅ Login successful!");
       alert("Login successful! Welcome, Erik!");
+      window.location.href = "/";
     } else {
       setError("Invalid email or password. Please try again.");
       console.log("❌ Login failed");
@@ -277,8 +279,12 @@ function LoginPage() {
     setIsLoading(false);
   };
 
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
+  };
+
   return (
-    <div className="min-h-screen grid lg:grid-cols-2">
+    <div className={`min-h-screen grid lg:grid-cols-2 ${darkMode ? 'dark' : ''}`}>
       {/* Left Content Section */}
       <div className="relative hidden lg:flex flex-col justify-between bg-gradient-to-br from-primary/90 via-primary to-primary/80 p-12 text-primary-foreground">
         <div className="relative z-20">
@@ -286,7 +292,7 @@ function LoginPage() {
             <div className="size-8 rounded-lg bg-primary-foreground/10 backdrop-blur-sm flex items-center justify-center">
               <Sparkles className="size-4" />
             </div>
-            <span>YourBrand</span>
+            <span>MindTrace</span>
           </div>
         </div>
         <div className="relative z-20 flex items-end justify-center h-[500px]">
@@ -461,21 +467,31 @@ function LoginPage() {
         <div className="absolute bottom-1/4 left-1/4 size-96 bg-primary-foreground/5 rounded-full blur-3xl" />
       </div>
       {/* Right Login Section */}
-      <div className="flex items-center justify-center p-8 bg-background">
+      <div className={`flex items-center justify-center p-8 ${darkMode ? 'bg-gray-900' : 'bg-background'}`}>
         <div className="w-full max-w-[420px]">
+          {/* Dark Mode Toggle */}
+          <div className="flex justify-end mb-6">
+            <button
+              onClick={toggleDarkMode}
+              className={`p-2 rounded-lg transition-colors ${darkMode ? 'bg-gray-800 text-yellow-400' : 'bg-gray-100 text-gray-700'} hover:opacity-80`}
+            >
+              {darkMode ? <Sun className="size-5" /> : <Moon className="size-5" />}
+            </button>
+          </div>
+
           <div className="lg:hidden flex items-center justify-center gap-2 text-lg font-semibold mb-12">
-            <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Sparkles className="size-4 text-primary" />
+            <div className={`size-8 rounded-lg flex items-center justify-center ${darkMode ? 'bg-primary/20' : 'bg-primary/10'}`}>
+              <Sparkles className={`size-4 ${darkMode ? 'text-primary' : 'text-primary'}`} />
             </div>
-            <span>YourBrand</span>
+            <span className={darkMode ? 'text-white' : ''}>MindTrace</span>
           </div>
           <div className="text-center mb-10">
-            <h1 className="text-3xl font-bold tracking-tight mb-2">Welcome back!</h1>
-            <p className="text-muted-foreground text-sm">Please enter your details</p>
+            <h1 className={`text-3xl font-bold tracking-tight mb-2 ${darkMode ? 'text-white' : ''}`}>Welcome back!</h1>
+            <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-muted-foreground'}`}>Please enter your details</p>
           </div>
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium">Email</Label>
+              <Label htmlFor="email" className={`text-sm font-medium ${darkMode ? 'text-gray-300' : ''}`}>Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -486,11 +502,11 @@ function LoginPage() {
                 onFocus={() => setIsTyping(true)}
                 onBlur={() => setIsTyping(false)}
                 required
-                className="h-12 bg-background border-border/60 focus:border-primary"
+                className={`h-12 focus:border-primary ${darkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-background border-border/60'}`}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-medium">Password</Label>
+              <Label htmlFor="password" className={`text-sm font-medium ${darkMode ? 'text-gray-300' : ''}`}>Password</Label>
               <div className="relative">
                 <Input
                   id="password"
@@ -499,12 +515,12 @@ function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="h-12 pr-10 bg-background border-border/60 focus:border-primary"
+                  className={`h-12 pr-10 focus:border-primary ${darkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-background border-border/60'}`}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  className={`absolute right-3 top-1/2 -translate-y-1/2 transition-colors ${darkMode ? 'text-gray-400 hover:text-white' : 'text-muted-foreground hover:text-foreground'}`}
                 >
                   {showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
                 </button>
@@ -513,7 +529,7 @@ function LoginPage() {
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <Checkbox id="remember" />
-                <Label htmlFor="remember" className="text-sm font-normal cursor-pointer">
+                <Label htmlFor="remember" className={`text-sm font-normal cursor-pointer ${darkMode ? 'text-gray-400' : ''}`}>
                   Remember for 30 days
                 </Label>
               </div>
@@ -522,7 +538,7 @@ function LoginPage() {
               </button>
             </div>
             {error && (
-              <div className="p-3 text-sm text-red-400 bg-red-950/20 border border-red-900/30 rounded-lg">
+              <div className={`p-3 text-sm border rounded-lg ${darkMode ? 'text-red-300 bg-red-950/30 border-red-900/50' : 'text-red-400 bg-red-950/20 border-red-900/30'}`}>
                 {error}
               </div>
             )}
@@ -531,14 +547,14 @@ function LoginPage() {
             </Button>
           </form>
           <div className="mt-6">
-            <Button variant="outline" className="w-full h-12 bg-background border-border/60 hover:bg-accent" type="button">
+            <Button variant="outline" className={`w-full h-12 border-border/60 hover:bg-accent ${darkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-background'}`} type="button">
               <Mail className="mr-2 size-5" />
               Log in with Google
             </Button>
           </div>
-          <div className="text-center text-sm text-muted-foreground mt-8">
+          <div className={`text-center text-sm mt-8 ${darkMode ? 'text-gray-400' : 'text-muted-foreground'}`}>
             Don't have an account?{" "}
-            <button type="button" className="text-foreground font-medium hover:underline">
+            <button type="button" className={`font-medium hover:underline ${darkMode ? 'text-white' : 'text-foreground'}`}>
               Sign Up
             </button>
           </div>
