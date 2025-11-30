@@ -37,7 +37,7 @@ const MindTraceFooter = () => {
       navLinks={navLinks}
       creatorName="Parth Gupta"
       creatorUrl="https://www.linkedin.com/in/parth-gupta-4598b8324/"
-      brandIcon={<Award className="w-8 sm:w-10 md:w-14 h-8 sm:h-10 md:h-14 text-background drop-shadow-lg" />}
+      brandIcon={<Award className="w-8 sm:w-10 md:w-14 h-8 sm:h-10 md:h-14 text-background dark:text-foreground drop-shadow-lg" />}
     />
   );
 };
