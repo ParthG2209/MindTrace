@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SparklesCore } from '../components/ui/sparkles';
 import { ContainerScroll } from '../components/ui/container-scroll-animation';
+import { AnimatedHero } from '../components/ui/animated-hero';
 import MindTraceFooter from '../components/ui/mindtrace-footer';
 import { ArrowRight, CheckCircle, BarChart3, Users, Award } from 'lucide-react';
 
@@ -254,32 +255,8 @@ const LandingPage = () => {
         </div>
       </div>
 
-      {/* CTA Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 py-20 px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl md:text-5xl font-bold mb-6">
-            Ready to Transform Teaching Evaluation?
-          </h2>
-          <p className="text-xl mb-8 text-blue-100">
-            Join educators who are already using MindTrace to improve teaching quality
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button
-              onClick={() => navigate('/login')}
-              className="bg-white text-blue-600 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-gray-100 transition-colors inline-flex items-center justify-center"
-            >
-              Get Started Free
-              <ArrowRight className="ml-2 w-5 h-5" />
-            </button>
-            <button
-              onClick={() => navigate('/dashboard')}
-              className="bg-transparent border-2 border-white text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-white/10 transition-colors"
-            >
-              View Demo
-            </button>
-          </div>
-        </div>
-      </div>
+      {/* CTA Section - Animated Hero */}
+      <AnimatedHero />
 
       {/* Footer */}
       <MindTraceFooter />
