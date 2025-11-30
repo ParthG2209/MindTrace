@@ -5,7 +5,17 @@ import { Label } from "./label";
 import { Checkbox } from "./checkbox";
 import { Eye, EyeOff, Mail, Sparkles, Sun, Moon } from "lucide-react";
 import { cn } from "../../lib/utils";
+import { 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword,
+  signInWithPopup,
+  updateProfile 
+} from "firebase/auth";
+import { auth, googleProvider } from "../../lib/firebase";
+import { useNavigate } from "react-router-dom";
 
+
+// Pupil component (kept exactly as in original)
 const Pupil = ({ 
   size = 12, 
   maxDistance = 5,
@@ -68,6 +78,7 @@ const Pupil = ({
   );
 };
 
+// EyeBall component (kept exactly as in original)
 const EyeBall = ({ 
   size = 48, 
   pupilSize = 16, 
@@ -146,6 +157,7 @@ const EyeBall = ({
 };
 
 function LoginPage() {
+  const navigate = useNavigate();
   const [isSignUp, setIsSignUp] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -156,6 +168,7 @@ function LoginPage() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+
   const [mouseX, setMouseX] = useState(0);
   const [mouseY, setMouseY] = useState(0);
   const [isPurpleBlinking, setIsPurpleBlinking] = useState(false);
@@ -270,47 +283,68 @@ function LoginPage() {
     setError("");
     setIsLoading(true);
 
-    await new Promise(resolve => setTimeout(resolve, 300));
-
-    if (isSignUp) {
-      // Sign Up Logic
-      if (password !== confirmPassword) {
-        setError("Passwords do not match!");
-        setIsLoading(false);
-        return;
-      }
-      if (password.length < 6) {
-        setError("Password must be at least 6 characters!");
-        setIsLoading(false);
-        return;
-      }
-      if (!name.trim()) {
-        setError("Name is required!");
-        setIsLoading(false);
-        return;
-      }
-      
-      // Simulate account creation
-      console.log("✅ Sign up successful!", { name, email });
-      alert(`Account created successfully! Welcome, ${name}!`);
-      // Reset form and switch to login
-      setIsSignUp(false);
-      setName("");
-      setPassword("");
-      setConfirmPassword("");
-      setEmail("");
-    } else {
-      // Login Logic
-      if (email === "erik@gmail.com" && password === "1234") {
-        console.log("✅ Login successful!");
-        alert("Login successful! Welcome, Erik!");
-        window.location.href = "/";
+    try {
+      if (isSignUp) {
+        // Sign Up Logic with Firebase
+        if (password !== confirmPassword) {
+          throw new Error("Passwords do not match!");
+        }
+        if (password.length < 6) {
+          throw new Error("Password must be at least 6 characters!");
+        }
+        if (!name.trim()) {
+          throw new Error("Name is required!");
+        }
+        
+        // Create Firebase account
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        
+        // Update user profile with display name
+        await updateProfile(userCredential.user, {
+          displayName: name
+        });
+        
+        console.log("✅ Sign up successful!", userCredential.user);
+        alert(`Account created successfully! Welcome, ${name}!`);
+        
+        // Redirect to dashboard
+        navigate("/dashboard");
+        
       } else {
-        setError("Invalid email or password. Please try again.");
-        console.log("❌ Login failed");
+        // Login Logic with Firebase
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        console.log("✅ Login successful!", userCredential.user);
+        alert(`Login successful! Welcome back, ${userCredential.user.email}!`);
+        
+        // Redirect to dashboard
+        navigate("/dashboard");
       }
+    } catch (err) {
+      console.error("Authentication error:", err);
+      setError(err.message || "Authentication failed. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
+  };
+
+  const handleGoogleSignIn = async () => {
+    setError("");
+    setIsLoading(true);
+
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      console.log("✅ Google sign-in successful!", result.user);
+      alert(`Welcome, ${result.user.displayName || result.user.email}!`);
+      
+      // Redirect to dashboard
+      navigate("/dashboard");
+      
+    } catch (err) {
+      console.error("Google sign-in error:", err);
+      setError(err.message || "Google sign-in failed. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const toggleAuthMode = () => {
@@ -328,8 +362,9 @@ function LoginPage() {
 
   return (
     <div className={`min-h-screen grid lg:grid-cols-2 ${darkMode ? 'dark' : ''}`}>
-      {/* Left Content Section */}
+      {/* Left Content Section - Keep as is */}
       <div className="relative hidden lg:flex flex-col justify-between bg-gradient-to-br from-primary/90 via-primary to-primary/80 p-12 text-primary-foreground">
+        {/* ... Keep all the character animation code ... */}
         <div className="relative z-20">
           <div className="flex items-center gap-2 text-lg font-semibold">
             <div className="size-8 rounded-lg bg-primary-foreground/10 backdrop-blur-sm flex items-center justify-center">
@@ -339,7 +374,6 @@ function LoginPage() {
           </div>
         </div>
         <div className="relative z-20 flex items-end justify-center h-[500px]">
-          {/* Cartoon Characters */}
           <div className="relative" style={{ width: '550px', height: '400px' }}>
             {/* Purple tall rectangle character */}
             <div 
@@ -509,6 +543,7 @@ function LoginPage() {
         <div className="absolute top-1/4 right-1/4 size-64 bg-primary-foreground/10 rounded-full blur-3xl" />
         <div className="absolute bottom-1/4 left-1/4 size-96 bg-primary-foreground/5 rounded-full blur-3xl" />
       </div>
+
       {/* Right Login Section */}
       <div className={`flex items-center justify-center p-8 ${darkMode ? 'bg-gray-900' : 'bg-background'}`}>
         <div className="w-full max-w-[420px]">
@@ -528,6 +563,7 @@ function LoginPage() {
             </div>
             <span className={darkMode ? 'text-white' : ''}>MindTrace</span>
           </div>
+
           <div className="text-center mb-10">
             <h1 className={`text-3xl font-bold tracking-tight mb-2 ${darkMode ? 'text-white' : ''}`}>
               {isSignUp ? 'Create an account' : 'Welcome back!'}
@@ -536,6 +572,7 @@ function LoginPage() {
               {isSignUp ? 'Sign up to get started' : 'Please enter your details'}
             </p>
           </div>
+
           <form onSubmit={handleSubmit} className="space-y-5">
             {isSignUp && (
               <div className="space-y-2">
@@ -547,13 +584,12 @@ function LoginPage() {
                   value={name}
                   autoComplete="off"
                   onChange={(e) => setName(e.target.value)}
-                  onFocus={() => setIsTyping(true)}
-                  onBlur={() => setIsTyping(false)}
                   required
                   className={`h-12 focus:border-primary ${darkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-background border-border/60'}`}
                 />
               </div>
             )}
+
             <div className="space-y-2">
               <Label htmlFor="email" className={`text-sm font-medium ${darkMode ? 'text-gray-300' : ''}`}>Email</Label>
               <Input
@@ -563,12 +599,11 @@ function LoginPage() {
                 value={email}
                 autoComplete="off"
                 onChange={(e) => setEmail(e.target.value)}
-                onFocus={() => setIsTyping(true)}
-                onBlur={() => setIsTyping(false)}
                 required
                 className={`h-12 focus:border-primary ${darkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-background border-border/60'}`}
               />
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="password" className={`text-sm font-medium ${darkMode ? 'text-gray-300' : ''}`}>Password</Label>
               <div className="relative">
@@ -590,6 +625,7 @@ function LoginPage() {
                 </button>
               </div>
             </div>
+
             {isSignUp && (
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword" className={`text-sm font-medium ${darkMode ? 'text-gray-300' : ''}`}>Confirm Password</Label>
@@ -613,6 +649,7 @@ function LoginPage() {
                 </div>
               </div>
             )}
+
             {!isSignUp && (
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
@@ -626,21 +663,31 @@ function LoginPage() {
                 </button>
               </div>
             )}
+
             {error && (
               <div className={`p-3 text-sm border rounded-lg ${darkMode ? 'text-red-300 bg-red-950/30 border-red-900/50' : 'text-red-400 bg-red-950/20 border-red-900/30'}`}>
                 {error}
               </div>
             )}
+
             <Button type="submit" className="w-full h-12 text-base font-medium" size="lg" disabled={isLoading}>
               {isLoading ? (isSignUp ? "Creating account..." : "Signing in...") : (isSignUp ? "Sign up" : "Log in")}
             </Button>
           </form>
+
           <div className="mt-6">
-            <Button variant="outline" className={`w-full h-12 border-border/60 hover:bg-accent ${darkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-background'}`} type="button">
+            <Button 
+              variant="outline" 
+              className={`w-full h-12 border-border/60 hover:bg-accent ${darkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-background'}`} 
+              type="button"
+              onClick={handleGoogleSignIn}
+              disabled={isLoading}
+            >
               <Mail className="mr-2 size-5" />
               {isSignUp ? 'Sign up' : 'Log in'} with Google
             </Button>
           </div>
+
           <div className={`text-center text-sm mt-8 ${darkMode ? 'text-gray-400' : 'text-muted-foreground'}`}>
             {isSignUp ? 'Already have an account?' : "Don't have an account?"}{" "}
             <button type="button" onClick={toggleAuthMode} className={`font-medium hover:underline ${darkMode ? 'text-white' : 'text-foreground'}`}>
