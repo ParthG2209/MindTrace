@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Users, LogIn } from 'lucide-react';
 import MentorCard from '../components/MentorCard.jsx';
+import MindTraceFooter from '../components/ui/mindtrace-footer.jsx';
 import { mentorApi } from '../api/client.js';
 
 const MentorDashboard = () => {
@@ -231,6 +232,9 @@ const MentorDashboard = () => {
           </div>
         )}
       </div>
+      
+      {/* Footer */}
+      <MindTraceFooter />
     </div>
   );
 };
