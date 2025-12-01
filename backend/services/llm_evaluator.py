@@ -1,15 +1,26 @@
 import json
-import httpx
+# ===== REMOVED: Old imports =====
+# import httpx
+# from typing import Dict
+# from config import settings
+# ===== END REMOVED =====
+
+# ===== NEW: Import unified LLM client =====
 from typing import Dict
-from config import settings
+from utils.llm_client import llm_client
+# ===== END NEW =====
+
 from models.evaluation import ScoreDetail
 
 class LLMEvaluator:
     """Service for evaluating teaching segments using LLM"""
     
     def __init__(self):
-        self.provider = settings.LLM_PROVIDER
-        self.model = settings.LLM_MODEL
+        # ===== REMOVED: Old provider config =====
+        # self.provider = settings.LLM_PROVIDER
+        # self.model = settings.LLM_MODEL
+        # ===== END REMOVED =====
+        pass
         
     async def evaluate_segment(self, segment_text: str, topic: str) -> Dict[str, ScoreDetail]:
         """
@@ -25,12 +36,34 @@ class LLMEvaluator:
         
         prompt = self._build_evaluation_prompt(segment_text, topic)
         
-        if self.provider == "anthropic" and settings.ANTHROPIC_API_KEY:
-            return await self._evaluate_with_anthropic(prompt)
-        elif self.provider == "openai" and settings.OPENAI_API_KEY:
-            return await self._evaluate_with_openai(prompt)
-        else:
+        # ===== NEW: Use unified LLM client =====
+        try:
+            result = await llm_client.call_llm(
+                prompt=prompt,
+                task_type='evaluate',
+                response_format='json'
+            )
+            
+            return {
+                'clarity': ScoreDetail(**result['clarity']),
+                'structure': ScoreDetail(**result['structure']),
+                'correctness': ScoreDetail(**result['correctness']),
+                'pacing': ScoreDetail(**result['pacing']),
+                'communication': ScoreDetail(**result['communication'])
+            }
+        except Exception as e:
+            print(f"LLM evaluation failed: {e}")
             return self._mock_evaluation()
+        # ===== END NEW =====
+        
+        # ===== REMOVED: Old provider-specific logic =====
+        # if self.provider == "anthropic" and settings.ANTHROPIC_API_KEY:
+        #     return await self._evaluate_with_anthropic(prompt)
+        # elif self.provider == "openai" and settings.OPENAI_API_KEY:
+        #     return await self._evaluate_with_openai(prompt)
+        # else:
+        #     return self._mock_evaluation()
+        # ===== END REMOVED =====
     
     def _build_evaluation_prompt(self, segment_text: str, topic: str) -> str:
         """Build the evaluation prompt"""
@@ -60,77 +93,10 @@ Return your evaluation in the following JSON format:
 
 Provide ONLY the JSON response, no additional text."""
 
-    async def _evaluate_with_anthropic(self, prompt: str) -> Dict[str, ScoreDetail]:
-        """Evaluate using Anthropic Claude API"""
-        try:
-            async with httpx.AsyncClient(timeout=60.0) as client:
-                response = await client.post(
-                    "https://api.anthropic.com/v1/messages",
-                    headers={
-                        "x-api-key": settings.ANTHROPIC_API_KEY,
-                        "anthropic-version": "2023-06-01",
-                        "content-type": "application/json"
-                    },
-                    json={
-                        "model": self.model,
-                        "max_tokens": 2000,
-                        "messages": [
-                            {"role": "user", "content": prompt}
-                        ]
-                    }
-                )
-                
-                if response.status_code != 200:
-                    print(f"Anthropic API error: {response.text}")
-                    return self._mock_evaluation()
-                
-                data = response.json()
-                content = data['content'][0]['text']
-                
-                # Parse JSON from response
-                result = json.loads(content)
-                
-                return {
-                    'clarity': ScoreDetail(**result['clarity']),
-                    'structure': ScoreDetail(**result['structure']),
-                    'correctness': ScoreDetail(**result['correctness']),
-                    'pacing': ScoreDetail(**result['pacing']),
-                    'communication': ScoreDetail(**result['communication'])
-                }
-                
-        except Exception as e:
-            print(f"Anthropic evaluation failed: {e}")
-            return self._mock_evaluation()
-    
-    async def _evaluate_with_openai(self, prompt: str) -> Dict[str, ScoreDetail]:
-        """Evaluate using OpenAI GPT API"""
-        try:
-            import openai
-            client = openai.AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
-            
-            response = await client.chat.completions.create(
-                model="gpt-4-turbo-preview",
-                messages=[
-                    {"role": "system", "content": "You are an expert educational evaluator. Respond only with valid JSON."},
-                    {"role": "user", "content": prompt}
-                ],
-                response_format={"type": "json_object"}
-            )
-            
-            content = response.choices[0].message.content
-            result = json.loads(content)
-            
-            return {
-                'clarity': ScoreDetail(**result['clarity']),
-                'structure': ScoreDetail(**result['structure']),
-                'correctness': ScoreDetail(**result['correctness']),
-                'pacing': ScoreDetail(**result['pacing']),
-                'communication': ScoreDetail(**result['communication'])
-            }
-            
-        except Exception as e:
-            print(f"OpenAI evaluation failed: {e}")
-            return self._mock_evaluation()
+    # ===== REMOVED: Provider-specific methods =====
+    # async def _evaluate_with_anthropic(self, prompt: str) -> Dict[str, ScoreDetail]:
+    # async def _evaluate_with_openai(self, prompt: str) -> Dict[str, ScoreDetail]:
+    # ===== END REMOVED =====
     
     def _mock_evaluation(self) -> Dict[str, ScoreDetail]:
         """Mock evaluation for demo purposes"""
