@@ -3,7 +3,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 from db import db
+# ===== UPDATED: Import new routes =====
 from routes import mentors, sessions, evaluations
+from routes import evidence, rewrites, coherence
+# ===== END UPDATED =====
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -29,10 +32,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers
+# ===== UPDATED: Include new routers =====
+# Original routers
 app.include_router(mentors.router)
 app.include_router(sessions.router)
 app.include_router(evaluations.router)
+
+# NEW routers
+app.include_router(evidence.evidence_router)
+app.include_router(rewrites.rewrite_router)
+app.include_router(coherence.coherence_router)
+# ===== END UPDATED =====
 
 @app.get("/")
 async def root():
