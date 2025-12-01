@@ -11,6 +11,18 @@ from .evaluation import (
     EvaluationSummary
 )
 
+# ===== NEW: Import new models =====
+from .evidence import EvidenceItem, EvidenceCollection
+from .rewrite import RewriteComparison, RewriteSuggestion, RewriteCollection
+from .coherence import (
+    ContradictionIssue,
+    TopicDriftIssue,
+    LogicalGap,
+    CoherenceReport,
+    CoherenceSummary
+)
+# ===== END NEW =====
+
 __all__ = [
     # Mentor models
     'MentorBase',
@@ -40,4 +52,22 @@ __all__ = [
     'EvaluationCreate',
     'EvaluationInDB',
     'EvaluationSummary',
+    
+    # ===== NEW: Export new models =====
+    # Evidence models
+    'EvidenceItem',
+    'EvidenceCollection',
+    
+    # Rewrite models
+    'RewriteComparison',
+    'RewriteSuggestion',
+    'RewriteCollection',
+    
+    # Coherence models
+    'ContradictionIssue',
+    'TopicDriftIssue',
+    'LogicalGap',
+    'CoherenceReport',
+    'CoherenceSummary',
+    # ===== END NEW =====
 ]
