@@ -3,6 +3,8 @@ import asyncio
 from typing import Dict, Any, Optional, List
 from datetime import datetime
 import httpx
+import google.generativeai as genai
+import re  # ✅ ADDED: Missing import for regex
 from config import settings
 
 class LLMClientError(Exception):
@@ -105,7 +107,12 @@ class UnifiedLLMClient:
     ) -> Dict[str, Any]:
         """Call Google Gemini API"""
         
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={self.gemini_api_key}"
+        url = f"https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key={self.gemini_api_key}"
+        
+        # For JSON format, ensure prompt requests JSON
+        if response_format == 'json':
+            if not ('json' in prompt.lower() and 'return' in prompt.lower()):
+                prompt = prompt + "\n\nYou MUST return ONLY a valid JSON object. No markdown, no code blocks, no explanations - just pure JSON."
         
         # Prepare request
         payload = {
@@ -119,9 +126,6 @@ class UnifiedLLMClient:
                 "maxOutputTokens": 2048,
             }
         }
-        
-        if response_format == 'json':
-            payload["generationConfig"]["responseMimeType"] = "application/json"
         
         # Make request
         response = await self.http_client.post(url, json=payload)
@@ -139,10 +143,28 @@ class UnifiedLLMClient:
             content = data['candidates'][0]['content']['parts'][0]['text']
             
             if response_format == 'json':
-                return json.loads(content)
+                # Remove markdown formatting if present
+                content = content.strip()
+                if content.startswith('```json'):
+                    content = content[7:]
+                elif content.startswith('```'):
+                    content = content[3:]
+                if content.endswith('```'):
+                    content = content[:-3]
+                content = content.strip()
+                
+                try:
+                    return json.loads(content)
+                except json.JSONDecodeError as je:
+                    # If JSON parsing fails, try to extract JSON from the content
+                    json_match = re.search(r'\{.*\}', content, re.DOTALL)
+                    if json_match:
+                        return json.loads(json_match.group())
+                    raise LLMClientError(f"Failed to parse JSON: {je}\nContent: {content[:200]}")
+            
             return {'text': content}
             
-        except (KeyError, IndexError, json.JSONDecodeError) as e:
+        except (KeyError, IndexError) as e:
             raise LLMClientError(f"Failed to parse Gemini response: {e}")
     
     async def _call_groq(
