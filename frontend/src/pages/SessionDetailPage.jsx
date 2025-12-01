@@ -1,103 +1,135 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Play, Award, TrendingUp, AlertCircle, Sparkles } from 'lucide-react';
-import MetricCard from '../components/MetricCard.jsx';
-import SegmentList from '../components/SegmentList.jsx';
-import ExplanationGraph from '../components/ExplanationGraph.jsx';
-import EvidencePanel from '../components/EvidencePanel.jsx';
-import RewriteComparison from '../components/RewriteComparison.jsx';
-import CoherenceIssuesViewer from '../components/CoherenceIssuesViewer.jsx';
-import { sessionApi, evaluationApi } from '../api/client.js';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Upload, Video, ArrowLeft } from 'lucide-react';
+import SessionCard from '../components/SessionCard.jsx';
+import { sessionApi, mentorApi } from '../api/client.js';
 
-const SessionDetailPage = () => {
-  const { sessionId } = useParams();
+const SessionsPage = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const mentorId = searchParams.get('mentor');
 
-  const [session, setSession] = useState(null);
-  const [evaluation, setEvaluation] = useState(null);
+  const [sessions, setSessions] = useState([]);
+  const [mentor, setMentor] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [evaluating, setEvaluating] = useState(false);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+  const [uploadForm, setUploadForm] = useState({
+    title: '',
+    topic: '',
+    video: null,
+  });
 
   useEffect(() => {
-    fetchSessionData();
-    const interval = setInterval(fetchSessionData, 3000);
+    fetchData();
+    const interval = setInterval(fetchSessions, 5000);
     return () => clearInterval(interval);
-  }, [sessionId]);
+  }, [mentorId]);
 
-  const fetchSessionData = async () => {
+  const fetchData = async () => {
+    await Promise.all([fetchSessions(), fetchMentor()]);
+  };
+
+  const fetchSessions = async () => {
     try {
-      const sessionResponse = await sessionApi.getById(sessionId);
-      setSession(sessionResponse.data);
-
-      if (sessionResponse.data.status === 'completed' && sessionResponse.data.evaluation_id) {
-        try {
-          const evalResponse = await evaluationApi.getBySessionId(sessionId);
-          setEvaluation(evalResponse.data);
-        } catch (error) {
-          console.error('Error fetching evaluation:', error);
-        }
-      }
+      const params = mentorId ? { mentor_id: mentorId } : {};
+      const response = await sessionApi.getAll(params);
+      setSessions(response.data);
     } catch (error) {
-      console.error('Error fetching session:', error);
+      console.error('Error fetching sessions:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleStartEvaluation = async () => {
-    try {
-      setEvaluating(true);
-      await evaluationApi.startEvaluation(sessionId);
-      const pollInterval = setInterval(async () => {
-        const response = await sessionApi.getById(sessionId);
-        setSession(response.data);
-        if (response.data.status === 'completed' || response.data.status === 'failed') {
-          clearInterval(pollInterval);
-          setEvaluating(false);
-          fetchSessionData();
-        }
-      }, 3000);
-    } catch (error) {
-      console.error('Error starting evaluation:', error);
-      alert('Failed to start evaluation');
-      setEvaluating(false);
+  const fetchMentor = async () => {
+    if (mentorId) {
+      try {
+        const response = await mentorApi.getById(mentorId);
+        setMentor(response.data);
+      } catch (error) {
+        console.error('Error fetching mentor:', error);
+      }
     }
   };
 
-  const getOverallScoreColor = (score) => {
-    if (score >= 8) return 'text-green-600 bg-green-50 border-green-300';
-    if (score >= 6) return 'text-yellow-600 bg-yellow-50 border-yellow-300';
-    return 'text-red-600 bg-red-50 border-red-300';
+  const handleUploadSession = async (e) => {
+    e.preventDefault();
+    
+    if (!uploadForm.video) {
+      setUploadError('Please select a video file');
+      return;
+    }
+    
+    if (!mentorId) {
+      setUploadError('No mentor selected');
+      return;
+    }
+
+    // Validate file type
+    const validTypes = ['video/mp4', 'video/mpeg', 'video/quicktime', 'video/x-msvideo', 'video/x-matroska'];
+    if (!validTypes.includes(uploadForm.video.type)) {
+      setUploadError('Please select a valid video file (MP4, MOV, AVI, MKV)');
+      return;
+    }
+
+    // Validate file size (max 500MB)
+    const maxSize = 500 * 1024 * 1024;
+    if (uploadForm.video.size > maxSize) {
+      setUploadError('Video file is too large. Maximum size is 500MB');
+      return;
+    }
+
+    try {
+      setUploading(true);
+      setUploadError('');
+      
+      const formData = new FormData();
+      formData.append('mentor_id', mentorId);
+      formData.append('title', uploadForm.title);
+      formData.append('topic', uploadForm.topic);
+      formData.append('video', uploadForm.video);
+
+      const response = await sessionApi.create(formData);
+      
+      if (response.data && response.data.id) {
+        setShowUploadModal(false);
+        setUploadForm({ title: '', topic: '', video: null });
+        setUploadError('');
+        await fetchSessions();
+        
+        // Show success message
+        alert('Session uploaded successfully!');
+      }
+    } catch (error) {
+      console.error('Error uploading session:', error);
+      
+      if (error.response) {
+        setUploadError(error.response.data.detail || 'Failed to upload session. Please try again.');
+      } else if (error.request) {
+        setUploadError('Network error. Please check your connection and try again.');
+      } else {
+        setUploadError('Failed to upload session. Please try again.');
+      }
+    } finally {
+      setUploading(false);
+    }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          <p className="text-gray-600 mt-4">Loading session...</p>
-        </div>
-      </div>
-    );
-  }
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setUploadForm({ ...uploadForm, video: file });
+      setUploadError('');
+    }
+  };
 
-  if (!session) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <AlertCircle className="w-16 h-16 mx-auto text-red-500 mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Session Not Found</h2>
-          <button
-            onClick={() => navigate('/sessions')}
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            Back to Sessions
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const handleCloseModal = () => {
+    setShowUploadModal(false);
+    setUploadForm({ title: '', topic: '', video: null });
+    setUploadError('');
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -105,233 +137,177 @@ const SessionDetailPage = () => {
         {/* Header */}
         <div className="mb-8">
           <button
-            onClick={() => navigate('/sessions')}
-            className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
+            onClick={() => navigate('/dashboard')}
+            className="flex items-center text-gray-600 hover:text-gray-900 mb-4 transition-colors"
           >
             <ArrowLeft className="w-5 h-5 mr-2" />
-            Back to Sessions
+            Back to Dashboard
           </button>
-          <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
-            <div className="flex items-start justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">{session.title}</h1>
-                <p className="text-gray-600">{session.topic}</p>
-                <div className="flex items-center mt-4 space-x-4 text-sm text-gray-500">
-                  <span>Created: {new Date(session.created_at).toLocaleDateString()}</span>
-                  {session.duration && <span>Duration: {Math.floor(session.duration / 60)}m</span>}
-                </div>
-              </div>
-              <div className="flex items-center space-x-3">
-                {session.status === 'uploaded' && (
-                  <button
-                    onClick={handleStartEvaluation}
-                    disabled={evaluating}
-                    className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-                  >
-                    <Play className="w-5 h-5 mr-2" />
-                    {evaluating ? 'Starting...' : 'Start Evaluation'}
-                  </button>
-                )}
-                {session.status === 'completed' && (
-                  <button
-                    onClick={handleStartEvaluation}
-                    className="flex items-center px-4 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors"
-                  >
-                    Re-run Evaluation
-                  </button>
-                )}
-              </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+                <Video className="w-8 h-8 mr-3 text-blue-600" />
+                {mentor ? `${mentor.name}'s Sessions` : 'All Sessions'}
+              </h1>
+              <p className="text-gray-600 mt-2">
+                Upload and manage teaching session videos
+              </p>
             </div>
+            {mentorId && (
+              <button
+                onClick={() => setShowUploadModal(true)}
+                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <Upload className="w-5 h-5 mr-2" />
+                Upload Session
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Processing Status */}
-        {(session.status === 'transcribing' || session.status === 'analyzing') && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
-            <div className="flex items-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-4"></div>
-              <div>
-                <h3 className="text-lg font-semibold text-blue-900">
-                  {session.status === 'transcribing' ? 'Transcribing...' : 'Analyzing...'}
-                </h3>
-                <p className="text-blue-700 text-sm">
-                  {session.status === 'transcribing'
-                    ? 'Converting your video to text transcript'
-                    : 'Evaluating teaching quality with AI'}
-                </p>
-              </div>
-            </div>
+        {/* Sessions Grid */}
+        {loading ? (
+          <div className="text-center py-12">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <p className="text-gray-600 mt-4">Loading sessions...</p>
+          </div>
+        ) : sessions.length === 0 ? (
+          <div className="bg-white rounded-lg shadow-md p-12 text-center border border-gray-200">
+            <Video className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              No sessions yet
+            </h3>
+            <p className="text-gray-600 mb-6">
+              {mentorId
+                ? 'Upload your first teaching session to get started'
+                : 'Select a mentor from the dashboard to upload sessions'}
+            </p>
+            {mentorId && (
+              <button
+                onClick={() => setShowUploadModal(true)}
+                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <Upload className="w-5 h-5 mr-2" />
+                Upload Session
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {sessions.map((session) => (
+              <SessionCard
+                key={session.id}
+                session={session}
+                onClick={() => navigate(`/sessions/${session.id}`)}
+              />
+            ))}
           </div>
         )}
 
-        {/* Failed Status */}
-        {session.status === 'failed' && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-8">
-            <div className="flex items-center">
-              <AlertCircle className="w-8 h-8 text-red-600 mr-4" />
-              <div>
-                <h3 className="text-lg font-semibold text-red-900">Evaluation Failed</h3>
-                <p className="text-red-700 text-sm">
-                  There was an error processing this session. Please try again.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Evaluation Results */}
-        {evaluation && session.status === 'completed' && (
-          <>
-            {/* Tab Navigation */}
-            <div className="bg-white rounded-lg shadow-md border border-gray-200 mb-8">
-              <div className="border-b border-gray-200">
-                <div className="flex overflow-x-auto">
-                  <button
-                    onClick={() => setActiveTab('overview')}
-                    className={`px-6 py-4 font-medium text-sm border-b-2 whitespace-nowrap transition-colors ${activeTab === 'overview'
-                        ? 'border-blue-600 text-blue-600'
-                        : 'border-transparent text-gray-600 hover:text-gray-900'
-                      }`}
-                  >
-                    <span className="flex items-center">
-                      <Award className="w-4 h-4 mr-2" />
-                      Overview
-                    </span>
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('segments')}
-                    className={`px-6 py-4 font-medium text-sm border-b-2 whitespace-nowrap transition-colors ${activeTab === 'segments'
-                        ? 'border-blue-600 text-blue-600'
-                        : 'border-transparent text-gray-600 hover:text-gray-900'
-                      }`}
-                  >
-                    <span className="flex items-center">
-                      <TrendingUp className="w-4 h-4 mr-2" />
-                      Segments
-                    </span>
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('evidence')}
-                    className={`px-6 py-4 font-medium text-sm border-b-2 whitespace-nowrap transition-colors ${activeTab === 'evidence'
-                        ? 'border-blue-600 text-blue-600'
-                        : 'border-transparent text-gray-600 hover:text-gray-900'
-                      }`}
-                  >
-                    <span className="flex items-center">
-                      <AlertCircle className="w-4 h-4 mr-2" />
-                      Evidence
-                    </span>
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('rewrites')}
-                    className={`px-6 py-4 font-medium text-sm border-b-2 whitespace-nowrap transition-colors ${activeTab === 'rewrites'
-                        ? 'border-blue-600 text-blue-600'
-                        : 'border-transparent text-gray-600 hover:text-gray-900'
-                      }`}
-                  >
-                    <span className="flex items-center">
-                      <Sparkles className="w-4 h-4 mr-2" />
-                      Rewrites
-                    </span>
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('coherence')}
-                    className={`px-6 py-4 font-medium text-sm border-b-2 whitespace-nowrap transition-colors ${activeTab === 'coherence'
-                        ? 'border-blue-600 text-blue-600'
-                        : 'border-transparent text-gray-600 hover:text-gray-900'
-                      }`}
-                  >
-                    <span className="flex items-center">
-                      <TrendingUp className="w-4 h-4 mr-2" />
-                      Coherence
-                    </span>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Tab Content */}
-            {activeTab === 'overview' && (
-              <>
-                {/* Overall Score */}
-                <div className="bg-white rounded-lg shadow-md p-8 mb-8 border border-gray-200 text-center">
-                  <Award className="w-12 h-12 mx-auto text-blue-600 mb-4" />
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Overall Teaching Score</h2>
-                  <div className={`inline-block px-8 py-4 rounded-xl border-2 ${getOverallScoreColor(evaluation.overall_score)}`}>
-                    <span className="text-5xl font-bold">{evaluation.overall_score.toFixed(1)}</span>
-                    <span className="text-2xl ml-2">/10</span>
+        {/* Upload Modal */}
+        {showUploadModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                Upload Teaching Session
+              </h2>
+              <form onSubmit={handleUploadSession}>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Session Title *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={uploadForm.title}
+                      onChange={(e) =>
+                        setUploadForm({ ...uploadForm, title: e.target.value })
+                      }
+                      placeholder="e.g., Python Decorators Explained"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white placeholder-gray-400"
+                    />
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Topic *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={uploadForm.topic}
+                      onChange={(e) =>
+                        setUploadForm({ ...uploadForm, topic: e.target.value })
+                      }
+                      placeholder="e.g., Python Programming"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white placeholder-gray-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Video File *
+                    </label>
+                    <input
+                      type="file"
+                      required
+                      accept="video/mp4,video/mpeg,video/quicktime,video/x-msvideo,video/x-matroska"
+                      onChange={handleFileChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
+                    />
+                    {uploadForm.video && (
+                      <p className="text-sm text-gray-600 mt-2">
+                        Selected: {uploadForm.video.name}
+                        <span className="text-gray-400 ml-2">
+                          ({(uploadForm.video.size / (1024 * 1024)).toFixed(2)} MB)
+                        </span>
+                      </p>
+                    )}
+                    <p className="text-xs text-gray-500 mt-1">
+                      Supported formats: MP4, MOV, AVI, MKV (Max 500MB)
+                    </p>
+                  </div>
+                  
+                  {uploadError && (
+                    <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                      {uploadError}
+                    </div>
+                  )}
                 </div>
-
-                {/* Metrics Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-                  <MetricCard
-                    title="Clarity"
-                    score={evaluation.metrics.clarity}
-                    icon={TrendingUp}
-                  />
-                  <MetricCard
-                    title="Structure"
-                    score={evaluation.metrics.structure}
-                    icon={TrendingUp}
-                  />
-                  <MetricCard
-                    title="Correctness"
-                    score={evaluation.metrics.correctness}
-                    icon={TrendingUp}
-                  />
-                  <MetricCard
-                    title="Pacing"
-                    score={evaluation.metrics.pacing
-                    }
-                    icon={TrendingUp}
-                  />
-                  <MetricCard
-                    title="Communication"
-                    score={evaluation.metrics.communication}
-                    icon={TrendingUp}
-                  />
+                
+                <div className="flex space-x-3 mt-6">
+                  <button
+                    type="button"
+                    onClick={handleCloseModal}
+                    disabled={uploading}
+                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={uploading || !uploadForm.video}
+                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {uploading ? (
+                      <span className="flex items-center justify-center">
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Uploading...
+                      </span>
+                    ) : (
+                      'Upload'
+                    )}
+                  </button>
                 </div>
-                {/* Visualization */}
-                <div className="mb-8">
-                  <ExplanationGraph segments={evaluation.segments} />
-                </div>
-              </>
-            )}
-
-            {activeTab === 'segments' && (
-              <div className="mb-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                  Segment-by-Segment Analysis
-                </h2>
-                <SegmentList segments={evaluation.segments} />
-              </div>
-            )}
-
-            {activeTab === 'evidence' && (
-              <EvidencePanel
-                evaluationId={evaluation.id}
-                sessionId={sessionId}
-              />
-            )}
-
-            {activeTab === 'rewrites' && (
-              <RewriteComparison
-                sessionId={sessionId}
-                evaluationId={evaluation.id}
-              />
-            )}
-
-            {activeTab === 'coherence' && (
-              <CoherenceIssuesViewer
-                sessionId={sessionId}
-                evaluationId={evaluation.id}
-              />
-            )}
-          </>
+              </form>
+            </div>
+          </div>
         )}
       </div>
     </div>
   );
 };
-export default SessionDetailPage;
+
+export default SessionsPage;
