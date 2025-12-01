@@ -1,12 +1,59 @@
+# FastAPI and server
 fastapi==0.104.1
 uvicorn==0.24.0
+python-multipart==0.0.6
+
+# Database
 motor==3.6.0
 pymongo==4.9.0
+
+# Data validation
 pydantic==2.5.0
-python-multipart==0.0.6
+
+# Authentication
 python-jose[cryptography]==3.3.0
 passlib==1.7.4
+
+# HTTP client for LLM calls
 httpx==0.25.1
+
+# Environment variables
 python-dotenv==1.0.0
-openai==1.3.0
-anthropic==0.7.0
+
+# Google Gemini (FREE)
+google-generativeai==0.3.1
+
+# Groq (FREE - but using httpx for direct API calls)
+# groq==0.4.1  # Optional, we use httpx
+
+# OpenAI (optional, for future use)
+# openai==1.3.0
+
+# Anthropic (optional, for future use)  
+# anthropic==0.7.0
+
+# Audio/Video processing
+# ffmpeg-python==0.2.0  # For audio extraction
+# pydub==0.25.1         # Audio manipulation
+
+# Transcription (Whisper)
+# openai-whisper==20231117  # If using local Whisper
+
+# Text processing
+nltk==3.8.1
+
+# Async utilities
+aiofiles==23.2.1
+
+# Logging
+python-json-logger==2.0.7
+
+# Testing
+pytest==7.4.3
+pytest-asyncio==0.21.1
+httpx==0.25.1  # For testing async endpoints
+
+# Development
+black==23.11.0
+flake8==6.1.0
+mypy==1.7.0
