@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Upload, Video, ArrowLeft } from 'lucide-react';
+import { Upload, Video, ArrowLeft, AlertCircle } from 'lucide-react';
 import SessionCard from '../components/SessionCard.jsx';
 import { sessionApi, mentorApi } from '../api/client.js';
 
@@ -22,18 +22,29 @@ const SessionsPage = () => {
   });
 
   useEffect(() => {
+    // Check if mentor ID is provided
+    if (!mentorId) {
+      console.error('No mentor ID provided');
+      navigate('/dashboard');
+      return;
+    }
+    
+    console.log('Mentor ID from URL:', mentorId);
     fetchData();
     const interval = setInterval(fetchSessions, 5000);
     return () => clearInterval(interval);
-  }, [mentorId]);
+  }, [mentorId, navigate]);
 
   const fetchData = async () => {
     await Promise.all([fetchSessions(), fetchMentor()]);
   };
 
   const fetchSessions = async () => {
+    if (!mentorId) return;
+    
     try {
-      const params = mentorId ? { mentor_id: mentorId } : {};
+      const params = { mentor_id: mentorId };
+      console.log('Fetching sessions with params:', params);
       const response = await sessionApi.getAll(params);
       setSessions(response.data);
     } catch (error) {
@@ -44,12 +55,17 @@ const SessionsPage = () => {
   };
 
   const fetchMentor = async () => {
-    if (mentorId) {
-      try {
-        const response = await mentorApi.getById(mentorId);
-        setMentor(response.data);
-      } catch (error) {
-        console.error('Error fetching mentor:', error);
+    if (!mentorId) return;
+    
+    try {
+      console.log('Fetching mentor with ID:', mentorId);
+      const response = await mentorApi.getById(mentorId);
+      setMentor(response.data);
+    } catch (error) {
+      console.error('Error fetching mentor:', error);
+      if (error.response?.status === 404 || error.response?.status === 400) {
+        alert('Mentor not found. Redirecting to dashboard...');
+        navigate('/dashboard');
       }
     }
   };
@@ -63,7 +79,7 @@ const SessionsPage = () => {
     }
     
     if (!mentorId) {
-      setUploadError('No mentor selected');
+      setUploadError('No mentor selected. Please go back and select a mentor.');
       return;
     }
 
@@ -85,6 +101,8 @@ const SessionsPage = () => {
       setUploading(true);
       setUploadError('');
       
+      console.log('Uploading session for mentor:', mentorId);
+      
       const formData = new FormData();
       formData.append('mentor_id', mentorId);
       formData.append('title', uploadForm.title);
@@ -93,20 +111,26 @@ const SessionsPage = () => {
 
       const response = await sessionApi.create(formData);
       
+      console.log('Upload response:', response.data);
+      
       if (response.data && response.data.id) {
         setShowUploadModal(false);
         setUploadForm({ title: '', topic: '', video: null });
         setUploadError('');
         await fetchSessions();
-        
-        // Show success message
         alert('Session uploaded successfully!');
       }
     } catch (error) {
       console.error('Error uploading session:', error);
+      console.error('Error response:', error.response);
       
       if (error.response) {
-        setUploadError(error.response.data.detail || 'Failed to upload session. Please try again.');
+        const errorDetail = error.response.data.detail;
+        if (typeof errorDetail === 'string') {
+          setUploadError(errorDetail);
+        } else {
+          setUploadError('Failed to upload session. Please try again.');
+        }
       } else if (error.request) {
         setUploadError('Network error. Please check your connection and try again.');
       } else {
@@ -120,6 +144,7 @@ const SessionsPage = () => {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      console.log('File selected:', file.name, file.type, file.size);
       setUploadForm({ ...uploadForm, video: file });
       setUploadError('');
     }
@@ -130,6 +155,27 @@ const SessionsPage = () => {
     setUploadForm({ title: '', topic: '', video: null });
     setUploadError('');
   };
+
+  // Show error if no mentor ID
+  if (!mentorId) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto px-4">
+          <AlertCircle className="w-16 h-16 mx-auto text-red-500 mb-4" />
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">No Mentor Selected</h2>
+          <p className="text-gray-600 mb-6">
+            Please select a mentor from the dashboard to view sessions.
+          </p>
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Go to Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -147,21 +193,19 @@ const SessionsPage = () => {
             <div>
               <h1 className="text-3xl font-bold text-gray-900 flex items-center">
                 <Video className="w-8 h-8 mr-3 text-blue-600" />
-                {mentor ? `${mentor.name}'s Sessions` : 'All Sessions'}
+                {mentor ? `${mentor.name}'s Sessions` : 'Sessions'}
               </h1>
               <p className="text-gray-600 mt-2">
                 Upload and manage teaching session videos
               </p>
             </div>
-            {mentorId && (
-              <button
-                onClick={() => setShowUploadModal(true)}
-                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                <Upload className="w-5 h-5 mr-2" />
-                Upload Session
-              </button>
-            )}
+            <button
+              onClick={() => setShowUploadModal(true)}
+              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Upload className="w-5 h-5 mr-2" />
+              Upload Session
+            </button>
           </div>
         </div>
 
@@ -178,19 +222,15 @@ const SessionsPage = () => {
               No sessions yet
             </h3>
             <p className="text-gray-600 mb-6">
-              {mentorId
-                ? 'Upload your first teaching session to get started'
-                : 'Select a mentor from the dashboard to upload sessions'}
+              Upload your first teaching session to get started
             </p>
-            {mentorId && (
-              <button
-                onClick={() => setShowUploadModal(true)}
-                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                <Upload className="w-5 h-5 mr-2" />
-                Upload Session
-              </button>
-            )}
+            <button
+              onClick={() => setShowUploadModal(true)}
+              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Upload className="w-5 h-5 mr-2" />
+              Upload Session
+            </button>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
