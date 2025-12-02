@@ -27,18 +27,29 @@ const MentorDashboard = () => {
       setLoading(true);
       const response = await mentorApi.getAll();
       const mentorList = response.data;
-      setMentors(mentorList);
+      
+      // Normalize mentor IDs - handle both 'id' and '_id'
+      const normalizedMentors = mentorList.map(mentor => ({
+        ...mentor,
+        id: mentor.id || mentor._id
+      }));
+      
+      console.log('Fetched mentors:', normalizedMentors);
+      setMentors(normalizedMentors);
 
       // Fetch stats for each mentor
-      const statsPromises = mentorList.map((mentor) =>
-        mentorApi.getStats(mentor.id).catch(() => null)
+      const statsPromises = normalizedMentors.map((mentor) =>
+        mentorApi.getStats(mentor.id).catch((err) => {
+          console.error(`Error fetching stats for mentor ${mentor.id}:`, err);
+          return null;
+        })
       );
       const statsResults = await Promise.all(statsPromises);
       
       const statsMap = {};
       statsResults.forEach((result, idx) => {
         if (result && result.data) {
-          statsMap[mentorList[idx].id] = result.data;
+          statsMap[normalizedMentors[idx].id] = result.data;
         }
       });
       setMentorStats(statsMap);
@@ -54,15 +65,16 @@ const MentorDashboard = () => {
     try {
       const mentorData = {
         ...newMentor,
-        expertise: newMentor.expertise.split(',').map((s) => s.trim()),
+        expertise: newMentor.expertise.split(',').map((s) => s.trim()).filter(s => s),
       };
-      await mentorApi.create(mentorData);
+      const response = await mentorApi.create(mentorData);
+      console.log('Mentor created:', response.data);
       setShowAddModal(false);
       setNewMentor({ name: '', email: '', expertise: '', bio: '' });
-      fetchMentors();
+      await fetchMentors();
     } catch (error) {
       console.error('Error adding mentor:', error);
-      alert('Failed to add mentor');
+      alert('Failed to add mentor: ' + (error.response?.data?.detail || error.message));
     }
   };
 
@@ -155,6 +167,11 @@ const MentorDashboard = () => {
                 stats={mentorStats[mentor.id]}
                 onClick={() => {
                   console.log('Navigating to sessions for mentor:', mentor.id);
+                  if (!mentor.id) {
+                    console.error('Mentor ID is missing!', mentor);
+                    alert('Error: Mentor ID is missing');
+                    return;
+                  }
                   navigate(`/sessions?mentor=${mentor.id}`);
                 }}
               />
@@ -178,7 +195,7 @@ const MentorDashboard = () => {
                       required
                       value={newMentor.name}
                       onChange={(e) => setNewMentor({ ...newMentor, name: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
                     />
                   </div>
                   <div>
@@ -190,7 +207,7 @@ const MentorDashboard = () => {
                       required
                       value={newMentor.email}
                       onChange={(e) => setNewMentor({ ...newMentor, email: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
                     />
                   </div>
                   <div>
@@ -202,7 +219,7 @@ const MentorDashboard = () => {
                       value={newMentor.expertise}
                       onChange={(e) => setNewMentor({ ...newMentor, expertise: e.target.value })}
                       placeholder="Python, Machine Learning, Data Science"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
                     />
                   </div>
                   <div>
@@ -211,7 +228,7 @@ const MentorDashboard = () => {
                       value={newMentor.bio}
                       onChange={(e) => setNewMentor({ ...newMentor, bio: e.target.value })}
                       rows="3"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
                     />
                   </div>
                 </div>
