@@ -195,7 +195,7 @@ class UnifiedLLMClient:
         ]
         
         payload = {
-            "model": "llama-3.1-70b-versatile",
+            "model": "llama-3.3-70b-versatile",
             "messages": messages,
             "temperature": temperature,
             "max_tokens": 2048,
