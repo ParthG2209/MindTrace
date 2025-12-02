@@ -1,0 +1,435 @@
+// src/pages/Dashboard/SessionsPage.jsx
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { 
+  Upload, Video, ArrowLeft, AlertCircle, Search, Filter,
+  Clock, Calendar, CheckCircle, Loader, XCircle
+} from 'lucide-react';
+import { sessionApi, mentorApi } from '../../api/client';
+
+const SessionsPage = () => {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const mentorId = searchParams.get('mentor');
+
+  const [sessions, setSessions] = useState([]);
+  const [allMentors, setAllMentors] = useState({});
+  const [mentor, setMentor] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [uploadForm, setUploadForm] = useState({
+    title: '',
+    topic: '',
+    video: null,
+  });
+
+  useEffect(() => {
+    if (!mentorId) {
+      navigate('/dashboard/mentors');
+      return;
+    }
+    fetchData();
+    const interval = setInterval(fetchSessions, 5000);
+    return () => clearInterval(interval);
+  }, [mentorId, navigate]);
+
+  const fetchData = async () => {
+    await Promise.all([fetchSessions(), fetchMentor(), fetchAllMentors()]);
+  };
+
+  const fetchSessions = async () => {
+    if (!mentorId) return;
+    try {
+      const params = { mentor_id: mentorId };
+      const response = await sessionApi.getAll(params);
+      setSessions(response.data);
+    } catch (error) {
+      console.error('Error fetching sessions:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchMentor = async () => {
+    if (!mentorId) return;
+    try {
+      const response = await mentorApi.getById(mentorId);
+      setMentor(response.data);
+    } catch (error) {
+      console.error('Error fetching mentor:', error);
+      if (error.response?.status === 404 || error.response?.status === 400) {
+        alert('Mentor not found. Redirecting...');
+        navigate('/dashboard/mentors');
+      }
+    }
+  };
+
+  const fetchAllMentors = async () => {
+    try {
+      const response = await mentorApi.getAll();
+      const mentorsMap = {};
+      response.data.forEach(m => {
+        const id = m.id || m._id;
+        mentorsMap[id] = m.name;
+      });
+      setAllMentors(mentorsMap);
+    } catch (error) {
+      console.error('Error fetching all mentors:', error);
+    }
+  };
+
+  const handleUploadSession = async (e) => {
+    e.preventDefault();
+    if (!uploadForm.video) {
+      setUploadError('Please select a video file');
+      return;
+    }
+
+    const validTypes = ['video/mp4', 'video/mpeg', 'video/quicktime', 'video/x-msvideo', 'video/x-matroska'];
+    if (!validTypes.includes(uploadForm.video.type)) {
+      setUploadError('Please select a valid video file (MP4, MOV, AVI, MKV)');
+      return;
+    }
+
+    const maxSize = 500 * 1024 * 1024;
+    if (uploadForm.video.size > maxSize) {
+      setUploadError('Video file is too large. Maximum size is 500MB');
+      return;
+    }
+
+    try {
+      setUploading(true);
+      setUploadError('');
+      
+      const formData = new FormData();
+      formData.append('mentor_id', mentorId);
+      formData.append('title', uploadForm.title);
+      formData.append('topic', uploadForm.topic);
+      formData.append('video', uploadForm.video);
+
+      const response = await sessionApi.create(formData);
+      
+      if (response.data && response.data.id) {
+        setShowUploadModal(false);
+        setUploadForm({ title: '', topic: '', video: null });
+        setUploadError('');
+        await fetchSessions();
+        alert('Session uploaded successfully!');
+      }
+    } catch (error) {
+      console.error('Error uploading session:', error);
+      if (error.response) {
+        setUploadError(error.response.data.detail || 'Failed to upload session');
+      } else if (error.request) {
+        setUploadError('Network error. Please check your connection');
+      } else {
+        setUploadError('Failed to upload session');
+      }
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const getStatusConfig = (status) => {
+    const configs = {
+      uploaded: { icon: Video, text: 'Uploaded', color: 'from-gray-500 to-gray-600', bgColor: 'bg-gray-500/10', textColor: 'text-gray-400' },
+      transcribing: { icon: Loader, text: 'Transcribing', color: 'from-blue-500 to-blue-600', bgColor: 'bg-blue-500/10', textColor: 'text-blue-400', animate: true },
+      analyzing: { icon: Loader, text: 'Analyzing', color: 'from-purple-500 to-purple-600', bgColor: 'bg-purple-500/10', textColor: 'text-purple-400', animate: true },
+      completed: { icon: CheckCircle, text: 'Completed', color: 'from-green-500 to-green-600', bgColor: 'bg-green-500/10', textColor: 'text-green-400' },
+      failed: { icon: XCircle, text: 'Failed', color: 'from-red-500 to-red-600', bgColor: 'bg-red-500/10', textColor: 'text-red-400' },
+    };
+    return configs[status] || configs.uploaded;
+  };
+
+  const formatDuration = (seconds) => {
+    if (!seconds) return 'N/A';
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  };
+
+  const filteredSessions = sessions.filter(session => {
+    const matchesSearch = session.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         session.topic.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesFilter = filterStatus === 'all' || session.status === filterStatus;
+    return matchesSearch && matchesFilter;
+  });
+
+  const SessionCard = ({ session }) => {
+    const statusConfig = getStatusConfig(session.status);
+    const StatusIcon = statusConfig.icon;
+
+    return (
+      <div
+        onClick={() => navigate(`/dashboard/sessions/${session.id || session._id}`)}
+        className="group bg-gradient-to-br from-gray-900 to-black rounded-2xl p-6 border border-white/10 hover:border-white/20 transition-all cursor-pointer relative overflow-hidden"
+      >
+        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/10 to-purple-600/10 rounded-full blur-3xl group-hover:opacity-100 opacity-0 transition-opacity"></div>
+        
+        <div className="relative z-10">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex-1">
+              <h3 className="text-lg font-bold text-white group-hover:text-blue-400 transition-colors mb-1">
+                {session.title}
+              </h3>
+              <p className="text-sm text-gray-400">{session.topic}</p>
+            </div>
+            <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${statusConfig.bgColor} border border-white/10`}>
+              <StatusIcon className={`w-4 h-4 ${statusConfig.textColor} ${statusConfig.animate ? 'animate-spin' : ''}`} />
+              <span className={`text-xs font-medium ${statusConfig.textColor}`}>
+                {statusConfig.text}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4 text-sm text-gray-400 mb-4">
+            <div className="flex items-center gap-1">
+              <Clock className="w-4 h-4" />
+              <span>{formatDuration(session.duration)}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Calendar className="w-4 h-4" />
+              <span>{formatDate(session.created_at)}</span>
+            </div>
+          </div>
+
+          {allMentors[session.mentor_id] && (
+            <div className="pt-3 border-t border-white/10">
+              <span className="text-xs text-gray-500">Mentor: </span>
+              <span className="text-sm text-gray-300">{allMentors[session.mentor_id]}</span>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <button
+              onClick={() => navigate('/dashboard/mentors')}
+              className="p-2 hover:bg-white/5 rounded-lg transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5 text-gray-400 hover:text-white" />
+            </button>
+            <h1 className="text-3xl font-bold text-white">
+              {mentor ? `${mentor.name}'s Sessions` : 'Sessions'}
+            </h1>
+          </div>
+          <p className="text-gray-400 ml-14">Upload and manage teaching session videos</p>
+        </div>
+        <button
+          onClick={() => setShowUploadModal(true)}
+          className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-semibold hover:from-blue-600 hover:to-purple-700 transition-all shadow-lg"
+        >
+          <Upload className="w-5 h-5" />
+          Upload Session
+        </button>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="bg-gradient-to-br from-gray-900 to-black rounded-2xl p-6 border border-white/10">
+          <p className="text-sm text-gray-400 mb-2">Total Sessions</p>
+          <p className="text-4xl font-bold text-white">{sessions.length}</p>
+        </div>
+        <div className="bg-gradient-to-br from-gray-900 to-black rounded-2xl p-6 border border-white/10">
+          <p className="text-sm text-gray-400 mb-2">Completed</p>
+          <p className="text-4xl font-bold text-green-400">
+            {sessions.filter(s => s.status === 'completed').length}
+          </p>
+        </div>
+        <div className="bg-gradient-to-br from-gray-900 to-black rounded-2xl p-6 border border-white/10">
+          <p className="text-sm text-gray-400 mb-2">Processing</p>
+          <p className="text-4xl font-bold text-blue-400">
+            {sessions.filter(s => ['transcribing', 'analyzing'].includes(s.status)).length}
+          </p>
+        </div>
+        <div className="bg-gradient-to-br from-gray-900 to-black rounded-2xl p-6 border border-white/10">
+          <p className="text-sm text-gray-400 mb-2">Failed</p>
+          <p className="text-4xl font-bold text-red-400">
+            {sessions.filter(s => s.status === 'failed').length}
+          </p>
+        </div>
+      </div>
+
+      {/* Search and Filter */}
+      <div className="flex items-center gap-4">
+        <div className="flex-1 relative">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search sessions..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
+          />
+        </div>
+        <select
+          value={filterStatus}
+          onChange={(e) => setFilterStatus(e.target.value)}
+          className="px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
+        >
+          <option value="all">All Status</option>
+          <option value="completed">Completed</option>
+          <option value="analyzing">Analyzing</option>
+          <option value="transcribing">Transcribing</option>
+          <option value="uploaded">Uploaded</option>
+          <option value="failed">Failed</option>
+        </select>
+      </div>
+
+      {/* Sessions Grid */}
+      {filteredSessions.length === 0 ? (
+        <div className="bg-gradient-to-br from-gray-900 to-black rounded-2xl p-12 text-center border border-white/10">
+          <Video className="w-16 h-16 mx-auto text-gray-600 mb-4" />
+          <h3 className="text-xl font-bold text-white mb-2">
+            {searchQuery || filterStatus !== 'all' ? 'No sessions found' : 'No sessions yet'}
+          </h3>
+          <p className="text-gray-400 mb-6">
+            {searchQuery || filterStatus !== 'all'
+              ? 'Try adjusting your filters'
+              : 'Upload your first teaching session to get started'}
+          </p>
+          {!searchQuery && filterStatus === 'all' && (
+            <button
+              onClick={() => setShowUploadModal(true)}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-semibold hover:from-blue-600 hover:to-purple-700 transition-all shadow-lg"
+            >
+              <Upload className="w-5 h-5" />
+              Upload Session
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredSessions.map((session) => (
+            <SessionCard key={session.id || session._id} session={session} />
+          ))}
+        </div>
+      )}
+
+      {/* Upload Modal */}
+      {showUploadModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-gradient-to-br from-gray-900 to-black rounded-2xl border border-white/10 max-w-md w-full p-8 shadow-2xl">
+            <h2 className="text-2xl font-bold text-white mb-6">Upload Teaching Session</h2>
+            <form onSubmit={handleUploadSession} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Session Title *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={uploadForm.title}
+                  onChange={(e) => setUploadForm({ ...uploadForm, title: e.target.value })}
+                  placeholder="e.g., Python Decorators Explained"
+                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Topic *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={uploadForm.topic}
+                  onChange={(e) => setUploadForm({ ...uploadForm, topic: e.target.value })}
+                  placeholder="e.g., Python Programming"
+                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Video File *
+                </label>
+                <input
+                  type="file"
+                  required
+                  accept="video/mp4,video/mpeg,video/quicktime,video/x-msvideo,video/x-matroska"
+                  onChange={(e) => setUploadForm({ ...uploadForm, video: e.target.files[0] })}
+                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-500/20 file:text-blue-400 hover:file:bg-blue-500/30 cursor-pointer transition-all"
+                />
+                {uploadForm.video && (
+                  <p className="text-sm text-gray-400 mt-2">
+                    Selected: {uploadForm.video.name}
+                    <span className="text-gray-500 ml-2">
+                      ({(uploadForm.video.size / (1024 * 1024)).toFixed(2)} MB)
+                    </span>
+                  </p>
+                )}
+                <p className="text-xs text-gray-500 mt-2">
+                  Supported: MP4, MOV, AVI, MKV (Max 500MB)
+                </p>
+              </div>
+              
+              {uploadError && (
+                <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-xl text-sm">
+                  {uploadError}
+                </div>
+              )}
+
+              <div className="flex gap-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowUploadModal(false);
+                    setUploadForm({ title: '', topic: '', video: null });
+                    setUploadError('');
+                  }}
+                  disabled={uploading}
+                  className="flex-1 px-6 py-3 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-all font-medium disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={uploading || !uploadForm.video}
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all font-medium shadow-lg disabled:opacity-50"
+                >
+                  {uploading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <Loader className="w-4 h-4 animate-spin" />
+                      Uploading...
+                    </span>
+                  ) : (
+                    'Upload'
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default SessionsPage;
