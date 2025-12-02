@@ -78,6 +78,7 @@ backend/
 │   └── __init__.py
 │
 └── test_api.py                     # API endpoint tests
+
 ### Frontend (React + TailwindCSS)
 ```
 frontend/
@@ -154,7 +155,7 @@ frontend/
 ├── Dockerfile                      # Docker container configuration
 ├── nginx.conf                      # Nginx web server config
 └── .gitignore                     # Git ignore rules
-
+```
 ---
 
 ## Features
