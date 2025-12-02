@@ -1,0 +1,347 @@
+// src/pages/Dashboard/SessionDetailPage.jsx
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { 
+  ArrowLeft, Video, Clock, Calendar, User, 
+  TrendingUp, Play, Loader, CheckCircle
+} from 'lucide-react';
+import { sessionApi, evaluationApi, mentorApi } from '../../api/client';
+import MetricCard from '../../components/MetricCard';
+import SegmentList from '../../components/SegmentList';
+import ExplanationGraph from '../../components/ExplanationGraph';
+import EvidencePanel from '../../components/EvidencePanel';
+import RewriteComparison from '../../components/RewriteComparison';
+import CoherenceIssuesViewer from '../../components/CoherenceIssuesViewer';
+
+const SessionDetailPage = () => {
+  const { sessionId } = useParams();
+  const navigate = useNavigate();
+  const [session, setSession] = useState(null);
+  const [evaluation, setEvaluation] = useState(null);
+  const [mentor, setMentor] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [evaluating, setEvaluating] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview');
+
+  useEffect(() => {
+    fetchSessionData();
+    const interval = setInterval(() => {
+      if (session?.status !== 'completed') {
+        fetchSessionData();
+      }
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [sessionId]);
+
+  const fetchSessionData = async () => {
+    try {
+      const sessionRes = await sessionApi.getById(sessionId);
+      setSession(sessionRes.data);
+
+      if (sessionRes.data.mentor_id) {
+        const mentorRes = await mentorApi.getById(sessionRes.data.mentor_id);
+        setMentor(mentorRes.data);
+      }
+
+      if (sessionRes.data.evaluation_id || sessionRes.data.status === 'completed') {
+        try {
+          const evalRes = await evaluationApi.getBySessionId(sessionId);
+          setEvaluation(evalRes.data);
+        } catch (error) {
+          console.error('Evaluation not found:', error);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching session:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleStartEvaluation = async () => {
+    try {
+      setEvaluating(true);
+      await evaluationApi.startEvaluation(sessionId);
+      setTimeout(fetchSessionData, 2000);
+    } catch (error) {
+      console.error('Error starting evaluation:', error);
+      alert('Failed to start evaluation');
+    } finally {
+      setEvaluating(false);
+    }
+  };
+
+  const formatDuration = (seconds) => {
+    if (!seconds) return 'N/A';
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const getStatusColor = (status) => {
+    const colors = {
+      uploaded: 'from-gray-500 to-gray-600',
+      transcribing: 'from-blue-500 to-blue-600',
+      analyzing: 'from-purple-500 to-purple-600',
+      completed: 'from-green-500 to-green-600',
+      failed: 'from-red-500 to-red-600',
+    };
+    return colors[status] || colors.uploaded;
+  };
+
+  const tabs = [
+    { id: 'overview', label: 'Overview', show: true },
+    { id: 'segments', label: 'Segments', show: evaluation },
+    { id: 'evidence', label: 'Evidence', show: evaluation },
+    { id: 'rewrites', label: 'Rewrites', show: evaluation },
+    { id: 'coherence', label: 'Coherence', show: evaluation },
+  ];
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <Video className="w-16 h-16 mx-auto text-gray-600 mb-4" />
+          <h3 className="text-xl font-bold text-white mb-2">Session not found</h3>
+          <button
+            onClick={() => navigate('/dashboard/sessions')}
+            className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
+          >
+            Back to Sessions
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-start justify-between">
+        <div className="flex items-start gap-4 flex-1">
+          <button
+            onClick={() => navigate(`/dashboard/sessions?mentor=${session.mentor_id}`)}
+            className="p-2 hover:bg-white/5 rounded-lg transition-colors mt-1"
+          >
+            <ArrowLeft className="w-5 h-5 text-gray-400 hover:text-white" />
+          </button>
+          <div className="flex-1">
+            <h1 className="text-3xl font-bold text-white mb-2">{session.title}</h1>
+            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-400">
+              <div className="flex items-center gap-2">
+                <Video className="w-4 h-4" />
+                <span>{session.topic}</span>
+              </div>
+              {mentor && (
+                <div className="flex items-center gap-2">
+                  <User className="w-4 h-4" />
+                  <span>{mentor.name}</span>
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4" />
+                <span>{formatDuration(session.duration)}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                <span>{formatDate(session.created_at)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Status Badge */}
+        <div className={`px-4 py-2 rounded-xl bg-gradient-to-r ${getStatusColor(session.status)} text-white font-semibold flex items-center gap-2 shadow-lg`}>
+          {session.status === 'completed' && <CheckCircle className="w-5 h-5" />}
+          {['transcribing', 'analyzing'].includes(session.status) && (
+            <Loader className="w-5 h-5 animate-spin" />
+          )}
+          {session.status.charAt(0).toUpperCase() + session.status.slice(1)}
+        </div>
+      </div>
+
+      {/* Evaluation Action */}
+      {session.status === 'uploaded' && !evaluation && (
+        <div className="bg-gradient-to-r from-blue-500/20 to-purple-600/20 border border-blue-500/30 rounded-2xl p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-bold text-white mb-1">Ready for Evaluation</h3>
+              <p className="text-gray-300">Start AI-powered analysis of this teaching session</p>
+            </div>
+            <button
+              onClick={handleStartEvaluation}
+              disabled={evaluating}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-semibold hover:from-blue-600 hover:to-purple-700 transition-all shadow-lg disabled:opacity-50"
+            >
+              {evaluating ? (
+                <>
+                  <Loader className="w-5 h-5 animate-spin" />
+                  Starting...
+                </>
+              ) : (
+                <>
+                  <Play className="w-5 h-5" />
+                  Start Evaluation
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Processing Status */}
+      {['transcribing', 'analyzing'].includes(session.status) && (
+        <div className="bg-gradient-to-r from-blue-500/20 to-purple-600/20 border border-blue-500/30 rounded-2xl p-6">
+          <div className="flex items-center gap-4">
+            <Loader className="w-8 h-8 text-blue-400 animate-spin" />
+            <div>
+              <h3 className="text-lg font-bold text-white mb-1">
+                {session.status === 'transcribing' ? 'Transcribing Video...' : 'Analyzing Session...'}
+              </h3>
+              <p className="text-gray-300">
+                This may take a few minutes. The page will update automatically.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Evaluation Results */}
+      {evaluation && (
+        <>
+          {/* Metrics Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+            <MetricCard
+              title="Overall Score"
+              score={evaluation.overall_score}
+              icon={TrendingUp}
+            />
+            <MetricCard
+              title="Clarity"
+              score={evaluation.metrics.clarity}
+            />
+            <MetricCard
+              title="Structure"
+              score={evaluation.metrics.structure}
+            />
+            <MetricCard
+              title="Correctness"
+              score={evaluation.metrics.correctness}
+            />
+            <MetricCard
+              title="Pacing"
+              score={evaluation.metrics.pacing}
+            />
+          </div>
+
+          {/* Tabs */}
+          <div className="bg-gradient-to-br from-gray-900 to-black rounded-2xl border border-white/10 overflow-hidden">
+            {/* Tab Headers */}
+            <div className="flex border-b border-white/10 overflow-x-auto">
+              {tabs.filter(tab => tab.show).map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`px-6 py-4 font-medium text-sm whitespace-nowrap transition-all ${
+                    activeTab === tab.id
+                      ? 'text-white border-b-2 border-blue-500 bg-blue-500/10'
+                      : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Tab Content */}
+            <div className="p-6">
+              {activeTab === 'overview' && (
+                <div className="space-y-6">
+                  <ExplanationGraph segments={evaluation.segments} />
+                  
+                  {/* Strengths & Weaknesses */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-6">
+                      <h3 className="text-lg font-bold text-green-400 mb-4">Strengths</h3>
+                      <ul className="space-y-2">
+                        {evaluation.segments
+                          .filter(s => s.overall_segment_score >= 8)
+                          .slice(0, 3)
+                          .map((seg, idx) => (
+                            <li key={idx} className="flex items-start gap-2 text-gray-300">
+                              <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                              <span>Segment {seg.segment_id + 1}: {seg.clarity.reason}</span>
+                            </li>
+                          ))}
+                      </ul>
+                    </div>
+                    <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-6">
+                      <h3 className="text-lg font-bold text-yellow-400 mb-4">Areas for Improvement</h3>
+                      <ul className="space-y-2">
+                        {evaluation.segments
+                          .filter(s => s.overall_segment_score < 7)
+                          .slice(0, 3)
+                          .map((seg, idx) => (
+                            <li key={idx} className="flex items-start gap-2 text-gray-300">
+                              <TrendingUp className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
+                              <span>Segment {seg.segment_id + 1}: {seg.clarity.reason}</span>
+                            </li>
+                          ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'segments' && (
+                <SegmentList segments={evaluation.segments} />
+              )}
+
+              {activeTab === 'evidence' && (
+                <EvidencePanel
+                  evaluationId={evaluation.id}
+                  sessionId={sessionId}
+                />
+              )}
+
+              {activeTab === 'rewrites' && (
+                <RewriteComparison
+                  sessionId={sessionId}
+                  evaluationId={evaluation.id}
+                />
+              )}
+
+              {activeTab === 'coherence' && (
+                <CoherenceIssuesViewer
+                  sessionId={sessionId}
+                  evaluationId={evaluation.id}
+                />
+              )}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
+export default SessionDetailPage;
