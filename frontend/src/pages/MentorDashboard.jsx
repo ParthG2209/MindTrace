@@ -153,7 +153,10 @@ const MentorDashboard = () => {
                 key={mentor.id}
                 mentor={mentor}
                 stats={mentorStats[mentor.id]}
-                onClick={() => navigate(`/sessions?mentor=${mentor.id}`)}
+                onClick={() => {
+                  console.log('Navigating to sessions for mentor:', mentor.id);
+                  navigate(`/sessions?mentor=${mentor.id}`);
+                }}
               />
             ))}
           </div>
