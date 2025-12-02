@@ -10,6 +10,7 @@ const SessionsPage = () => {
   const mentorId = searchParams.get('mentor');
 
   const [sessions, setSessions] = useState([]);
+  const [allMentors, setAllMentors] = useState({});
   const [mentor, setMentor] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -22,7 +23,6 @@ const SessionsPage = () => {
   });
 
   useEffect(() => {
-    // Check if mentor ID is provided
     if (!mentorId) {
       console.error('No mentor ID provided');
       navigate('/dashboard');
@@ -36,7 +36,7 @@ const SessionsPage = () => {
   }, [mentorId, navigate]);
 
   const fetchData = async () => {
-    await Promise.all([fetchSessions(), fetchMentor()]);
+    await Promise.all([fetchSessions(), fetchMentor(), fetchAllMentors()]);
   };
 
   const fetchSessions = async () => {
@@ -70,6 +70,20 @@ const SessionsPage = () => {
     }
   };
 
+  const fetchAllMentors = async () => {
+    try {
+      const response = await mentorApi.getAll();
+      const mentorsMap = {};
+      response.data.forEach(m => {
+        const id = m.id || m._id;
+        mentorsMap[id] = m.name;
+      });
+      setAllMentors(mentorsMap);
+    } catch (error) {
+      console.error('Error fetching all mentors:', error);
+    }
+  };
+
   const handleUploadSession = async (e) => {
     e.preventDefault();
     
@@ -83,14 +97,12 @@ const SessionsPage = () => {
       return;
     }
 
-    // Validate file type
     const validTypes = ['video/mp4', 'video/mpeg', 'video/quicktime', 'video/x-msvideo', 'video/x-matroska'];
     if (!validTypes.includes(uploadForm.video.type)) {
       setUploadError('Please select a valid video file (MP4, MOV, AVI, MKV)');
       return;
     }
 
-    // Validate file size (max 500MB)
     const maxSize = 500 * 1024 * 1024;
     if (uploadForm.video.size > maxSize) {
       setUploadError('Video file is too large. Maximum size is 500MB');
@@ -156,7 +168,11 @@ const SessionsPage = () => {
     setUploadError('');
   };
 
-  // Show error if no mentor ID
+  const handleSessionClick = (sessionId) => {
+    console.log('Navigating to session:', sessionId);
+    navigate(`/sessions/${sessionId}`);
+  };
+
   if (!mentorId) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -234,13 +250,18 @@ const SessionsPage = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {sessions.map((session) => (
-              <SessionCard
-                key={session.id}
-                session={session}
-                onClick={() => navigate(`/sessions/${session.id}`)}
-              />
-            ))}
+            {sessions.map((session) => {
+              const sessionId = session.id || session._id;
+              const sessionMentorId = session.mentor_id;
+              return (
+                <SessionCard
+                  key={sessionId}
+                  session={session}
+                  mentorName={allMentors[sessionMentorId]}
+                  onClick={() => handleSessionClick(sessionId)}
+                />
+              );
+            })}
           </div>
         )}
 
