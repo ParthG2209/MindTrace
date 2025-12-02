@@ -1,8 +1,8 @@
-// src/pages/Dashboard/SettingsPage.jsx
+// src/pages/Dashboard/SettingsPage.jsx - FIXED VERSION (API Section Removed)
 import React, { useState } from 'react';
 import { 
-  Settings, Bell, Shield, Palette, Key, 
-  Globe, Save, Moon, Sun, Mail, Smartphone
+  Bell, Shield, Palette,
+  Globe, Save, Moon, Sun
 } from 'lucide-react';
 
 const SettingsPage = () => {
@@ -21,14 +21,10 @@ const SettingsPage = () => {
     publicProfile: false,
     shareAnalytics: true,
     
-    // API
-    apiKey: '••••••••••••••••',
-    
     // Language
     language: 'en',
   });
 
-  const [showApiKey, setShowApiKey] = useState(false);
   const [saved, setSaved] = useState(false);
 
   const handleSave = () => {
@@ -228,45 +224,6 @@ const SettingsPage = () => {
         >
           <button className="px-4 py-2 bg-white/5 border border-white/10 text-white rounded-lg hover:bg-white/10 transition-all text-sm">
             Enable 2FA
-          </button>
-        </SettingItem>
-      </Section>
-
-      {/* API Access */}
-      <Section
-        title="API Access"
-        description="Manage your API credentials"
-        icon={Key}
-      >
-        <SettingItem
-          label="API Key"
-          description="Use this key to access MindTrace API"
-        >
-          <div className="flex gap-2">
-            <input
-              type={showApiKey ? 'text' : 'password'}
-              value={settings.apiKey}
-              readOnly
-              className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white w-48"
-            />
-            <button
-              onClick={() => setShowApiKey(!showApiKey)}
-              className="px-4 py-2 bg-white/5 border border-white/10 text-white rounded-lg hover:bg-white/10 transition-all"
-            >
-              {showApiKey ? 'Hide' : 'Show'}
-            </button>
-            <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all">
-              Regenerate
-            </button>
-          </div>
-        </SettingItem>
-
-        <SettingItem
-          label="API Documentation"
-          description="Learn how to integrate with MindTrace"
-        >
-          <button className="px-4 py-2 bg-white/5 border border-white/10 text-white rounded-lg hover:bg-white/10 transition-all text-sm">
-            View Docs
           </button>
         </SettingItem>
       </Section>
