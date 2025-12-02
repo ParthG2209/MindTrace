@@ -156,7 +156,7 @@ frontend/
 ├── Dockerfile                      # Docker container configuration
 ├── nginx.conf                      # Nginx web server config
 └── .gitignore                     # Git ignore rules
-
+```
 ---
 
 ## Features
