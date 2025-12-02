@@ -1,7 +1,7 @@
-// src/pages/Dashboard/SessionsPage.jsx
+// src/pages/Dashboard/SessionsPage.jsx - FIXED VERSION
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { 
+import {
   Upload, Video, ArrowLeft, AlertCircle, Search, Filter,
   Clock, Calendar, CheckCircle, Loader, XCircle
 } from 'lucide-react';
@@ -25,26 +25,22 @@ const SessionsPage = () => {
     title: '',
     topic: '',
     video: null,
+    selectedMentorId: mentorId || '',
   });
 
   useEffect(() => {
-    if (!mentorId) {
-      navigate('/dashboard/mentors');
-      return;
-    }
     fetchData();
     const interval = setInterval(fetchSessions, 5000);
     return () => clearInterval(interval);
-  }, [mentorId, navigate]);
+  }, [mentorId]);
 
   const fetchData = async () => {
-    await Promise.all([fetchSessions(), fetchMentor(), fetchAllMentors()]);
+    await Promise.all([fetchSessions(), fetchAllMentors(), mentorId && fetchMentor()]);
   };
 
   const fetchSessions = async () => {
-    if (!mentorId) return;
     try {
-      const params = { mentor_id: mentorId };
+      const params = mentorId ? { mentor_id: mentorId } : {};
       const response = await sessionApi.getAll(params);
       setSessions(response.data);
     } catch (error) {
@@ -61,10 +57,6 @@ const SessionsPage = () => {
       setMentor(response.data);
     } catch (error) {
       console.error('Error fetching mentor:', error);
-      if (error.response?.status === 404 || error.response?.status === 400) {
-        alert('Mentor not found. Redirecting...');
-        navigate('/dashboard/mentors');
-      }
     }
   };
 
@@ -84,8 +76,14 @@ const SessionsPage = () => {
 
   const handleUploadSession = async (e) => {
     e.preventDefault();
+
     if (!uploadForm.video) {
       setUploadError('Please select a video file');
+      return;
+    }
+
+    if (!uploadForm.selectedMentorId) {
+      setUploadError('Please select a mentor');
       return;
     }
 
@@ -104,18 +102,18 @@ const SessionsPage = () => {
     try {
       setUploading(true);
       setUploadError('');
-      
+
       const formData = new FormData();
-      formData.append('mentor_id', mentorId);
+      formData.append('mentor_id', uploadForm.selectedMentorId);
       formData.append('title', uploadForm.title);
       formData.append('topic', uploadForm.topic);
       formData.append('video', uploadForm.video);
 
       const response = await sessionApi.create(formData);
-      
+
       if (response.data && response.data.id) {
         setShowUploadModal(false);
-        setUploadForm({ title: '', topic: '', video: null });
+        setUploadForm({ title: '', topic: '', video: null, selectedMentorId: mentorId || '' });
         setUploadError('');
         await fetchSessions();
         alert('Session uploaded successfully!');
@@ -163,7 +161,7 @@ const SessionsPage = () => {
 
   const filteredSessions = sessions.filter(session => {
     const matchesSearch = session.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         session.topic.toLowerCase().includes(searchQuery.toLowerCase());
+      session.topic.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesFilter = filterStatus === 'all' || session.status === filterStatus;
     return matchesSearch && matchesFilter;
   });
@@ -178,7 +176,7 @@ const SessionsPage = () => {
         className="group bg-gradient-to-br from-gray-900 to-black rounded-2xl p-6 border border-white/10 hover:border-white/20 transition-all cursor-pointer relative overflow-hidden"
       >
         <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/10 to-purple-600/10 rounded-full blur-3xl group-hover:opacity-100 opacity-0 transition-opacity"></div>
-        
+
         <div className="relative z-10">
           <div className="flex items-start justify-between mb-4">
             <div className="flex-1">
@@ -231,14 +229,16 @@ const SessionsPage = () => {
       <div className="flex items-center justify-between">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <button
-              onClick={() => navigate('/dashboard/mentors')}
-              className="p-2 hover:bg-white/5 rounded-lg transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5 text-gray-400 hover:text-white" />
-            </button>
+            {mentorId && (
+              <button
+                onClick={() => navigate('/dashboard/mentors')}
+                className="p-2 hover:bg-white/5 rounded-lg transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5 text-gray-400 hover:text-white" />
+              </button>
+            )}
             <h1 className="text-3xl font-bold text-white">
-              {mentor ? `${mentor.name}'s Sessions` : 'Sessions'}
+              {mentor ? `${mentor.name}'s Sessions` : 'All Sessions'}
             </h1>
           </div>
           <p className="text-gray-400 ml-14">Upload and manage teaching session videos</p>
@@ -342,6 +342,22 @@ const SessionsPage = () => {
             <form onSubmit={handleUploadSession} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Select Mentor *
+                </label>
+                <select
+                  required
+                  value={uploadForm.selectedMentorId}
+                  onChange={(e) => setUploadForm({ ...uploadForm, selectedMentorId: e.target.value })}
+                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
+                >
+                  <option value="">Choose a mentor...</option>
+                  {Object.entries(allMentors).map(([id, name]) => (
+                    <option key={id} value={id}>{name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
                   Session Title *
                 </label>
                 <input
@@ -389,7 +405,7 @@ const SessionsPage = () => {
                   Supported: MP4, MOV, AVI, MKV (Max 500MB)
                 </p>
               </div>
-              
+
               {uploadError && (
                 <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-xl text-sm">
                   {uploadError}
@@ -401,7 +417,7 @@ const SessionsPage = () => {
                   type="button"
                   onClick={() => {
                     setShowUploadModal(false);
-                    setUploadForm({ title: '', topic: '', video: null });
+                    setUploadForm({ title: '', topic: '', video: null, selectedMentorId: mentorId || '' });
                     setUploadError('');
                   }}
                   disabled={uploading}
