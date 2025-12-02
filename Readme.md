@@ -78,6 +78,7 @@ backend/
 │   └── __init__.py
 │
 └── test_api.py                     # API endpoint tests
+```
 
 ### Frontend (React + TailwindCSS)
 ```
