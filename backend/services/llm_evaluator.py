@@ -1,25 +1,12 @@
 import json
-# ===== REMOVED: Old imports =====
-# import httpx
-# from typing import Dict
-# from config import settings
-# ===== END REMOVED =====
-
-# ===== NEW: Import unified LLM client =====
 from typing import Dict
 from utils.llm_client import llm_client
-# ===== END NEW =====
-
 from models.evaluation import ScoreDetail
 
 class LLMEvaluator:
     """Service for evaluating teaching segments using LLM"""
     
     def __init__(self):
-        # ===== REMOVED: Old provider config =====
-        # self.provider = settings.LLM_PROVIDER
-        # self.model = settings.LLM_MODEL
-        # ===== END REMOVED =====
         pass
         
     async def evaluate_segment(self, segment_text: str, topic: str) -> Dict[str, ScoreDetail]:
@@ -36,14 +23,29 @@ class LLMEvaluator:
         
         prompt = self._build_evaluation_prompt(segment_text, topic)
         
-        # ===== NEW: Use unified LLM client =====
         try:
+            print(f"🔍 Evaluating segment (length: {len(segment_text)} chars)")
+            
             result = await llm_client.call_llm(
                 prompt=prompt,
                 task_type='evaluate',
-                response_format='json'
+                response_format='json',
+                max_retries=3
             )
             
+            print(f"✅ LLM evaluation successful")
+            
+            # Validate response structure
+            required_keys = ['clarity', 'structure', 'correctness', 'pacing', 'communication']
+            for key in required_keys:
+                if key not in result:
+                    print(f"⚠️  Missing key in LLM response: {key}")
+                    return self._mock_evaluation()
+                if 'score' not in result[key] or 'reason' not in result[key]:
+                    print(f"⚠️  Invalid structure for {key} in LLM response")
+                    return self._mock_evaluation()
+            
+            # Create ScoreDetail objects
             return {
                 'clarity': ScoreDetail(**result['clarity']),
                 'structure': ScoreDetail(**result['structure']),
@@ -51,19 +53,11 @@ class LLMEvaluator:
                 'pacing': ScoreDetail(**result['pacing']),
                 'communication': ScoreDetail(**result['communication'])
             }
+            
         except Exception as e:
-            print(f"LLM evaluation failed: {e}")
+            print(f"❌ LLM evaluation failed: {e}")
+            print(f"   Using mock evaluation as fallback")
             return self._mock_evaluation()
-        # ===== END NEW =====
-        
-        # ===== REMOVED: Old provider-specific logic =====
-        # if self.provider == "anthropic" and settings.ANTHROPIC_API_KEY:
-        #     return await self._evaluate_with_anthropic(prompt)
-        # elif self.provider == "openai" and settings.OPENAI_API_KEY:
-        #     return await self._evaluate_with_openai(prompt)
-        # else:
-        #     return self._mock_evaluation()
-        # ===== END REMOVED =====
     
     def _build_evaluation_prompt(self, segment_text: str, topic: str) -> str:
         """Build the evaluation prompt"""
@@ -92,15 +86,12 @@ Return your evaluation in the following JSON format:
 }}
 
 Provide ONLY the JSON response, no additional text."""
-
-    # ===== REMOVED: Provider-specific methods =====
-    # async def _evaluate_with_anthropic(self, prompt: str) -> Dict[str, ScoreDetail]:
-    # async def _evaluate_with_openai(self, prompt: str) -> Dict[str, ScoreDetail]:
-    # ===== END REMOVED =====
     
     def _mock_evaluation(self) -> Dict[str, ScoreDetail]:
-        """Mock evaluation for demo purposes"""
+        """Mock evaluation for demo purposes or when LLM fails"""
         import random
+        
+        print("📝 Generating mock evaluation scores")
         
         scores = {
             'clarity': random.uniform(6.5, 9.5),
