@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, List
 from datetime import datetime
 
@@ -18,8 +18,10 @@ class MentorInDB(MentorBase):
     total_sessions: int = 0
     average_score: Optional[float] = None
     
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(
+        populate_by_name=True,
+        json_encoders={datetime: lambda v: v.isoformat()}
+    )
 
 class MentorUpdate(BaseModel):
     name: Optional[str] = None
