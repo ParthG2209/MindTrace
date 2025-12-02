@@ -21,21 +21,27 @@ async def process_evaluation(session_id: str, db):
         # Get session
         session = await db.sessions.find_one({"_id": ObjectId(session_id)})
         if not session:
+            print(f"Session {session_id} not found")
             return
         
-        # Update status
+        print(f"Starting evaluation for session {session_id}")
+        
+        # Update status to transcribing
         await db.sessions.update_one(
             {"_id": ObjectId(session_id)},
             {"$set": {"status": SessionStatus.TRANSCRIBING, "updated_at": datetime.utcnow()}}
         )
         
         # Transcribe video
+        print(f"Transcribing video: {session['video_path']}")
         full_text, segments = await transcription_service.transcribe_video(
             session['video_path']
         )
+        print(f"Transcription complete: {len(segments)} segments")
         
         # Segment transcript
         logical_segments = segmentation_service.segment_transcript(segments)
+        print(f"Segmentation complete: {len(logical_segments)} logical segments")
         
         # Save transcript
         transcript_dict = TranscriptCreate(
@@ -47,8 +53,9 @@ async def process_evaluation(session_id: str, db):
         
         transcript_result = await db.transcripts.insert_one(transcript_dict)
         transcript_id = str(transcript_result.inserted_id)
+        print(f"Transcript saved: {transcript_id}")
         
-        # Update session
+        # Update session with transcript
         await db.sessions.update_one(
             {"_id": ObjectId(session_id)},
             {
@@ -62,30 +69,43 @@ async def process_evaluation(session_id: str, db):
         )
         
         # Evaluate each segment
+        print(f"Starting LLM evaluation for {len(logical_segments)} segments")
         segment_evaluations = []
-        for seg in logical_segments:
-            eval_scores = await llm_evaluator.evaluate_segment(
-                seg.text,
-                session['topic']
-            )
-            
-            seg_eval = SegmentEvaluation(
-                segment_id=seg.segment_id,
-                text=seg.text,
-                clarity=eval_scores['clarity'],
-                structure=eval_scores['structure'],
-                correctness=eval_scores['correctness'],
-                pacing=eval_scores['pacing'],
-                communication=eval_scores['communication'],
-                overall_segment_score=0.0  # Will be computed
-            )
-            
-            seg_eval.overall_segment_score = scoring_service.compute_segment_score(seg_eval)
-            segment_evaluations.append(seg_eval)
+        for i, seg in enumerate(logical_segments):
+            print(f"Evaluating segment {i+1}/{len(logical_segments)}")
+            try:
+                eval_scores = await llm_evaluator.evaluate_segment(
+                    seg.text,
+                    session['topic']
+                )
+                
+                seg_eval = SegmentEvaluation(
+                    segment_id=seg.segment_id,
+                    text=seg.text,
+                    clarity=eval_scores['clarity'],
+                    structure=eval_scores['structure'],
+                    correctness=eval_scores['correctness'],
+                    pacing=eval_scores['pacing'],
+                    communication=eval_scores['communication'],
+                    overall_segment_score=0.0
+                )
+                
+                seg_eval.overall_segment_score = scoring_service.compute_segment_score(seg_eval)
+                segment_evaluations.append(seg_eval)
+                print(f"Segment {i+1} evaluated: score = {seg_eval.overall_segment_score}")
+            except Exception as e:
+                print(f"Error evaluating segment {i+1}: {e}")
+                raise
         
         # Compute overall metrics
+        print("Computing overall metrics")
         metrics = scoring_service.compute_overall_metrics(segment_evaluations)
         overall_score = scoring_service.compute_overall_score(metrics)
+        print(f"Overall score: {overall_score}")
+        
+        # Determine which LLM provider was used (from settings)
+        llm_provider = "gemini" if settings.GOOGLE_API_KEY else "groq" if settings.GROQ_API_KEY else "mock"
+        llm_model = settings.GEMINI_MODEL if llm_provider == "gemini" else settings.GROQ_MODEL if llm_provider == "groq" else "mock"
         
         # Save evaluation
         evaluation_dict = {
@@ -94,14 +114,15 @@ async def process_evaluation(session_id: str, db):
             'metrics': metrics.model_dump(),
             'segments': [seg.model_dump() for seg in segment_evaluations],
             'created_at': datetime.utcnow(),
-            'llm_provider': settings.LLM_PROVIDER,
-            'llm_model': settings.LLM_MODEL
+            'llm_provider': llm_provider,
+            'llm_model': llm_model
         }
         
         eval_result = await db.evaluations.insert_one(evaluation_dict)
         evaluation_id = str(eval_result.inserted_id)
+        print(f"Evaluation saved: {evaluation_id}")
         
-        # Update session
+        # Update session status to completed
         await db.sessions.update_one(
             {"_id": ObjectId(session_id)},
             {
@@ -127,13 +148,23 @@ async def process_evaluation(session_id: str, db):
                 {"_id": ObjectId(mentor_id)},
                 {"$set": {"average_score": round(avg_score, 2)}}
             )
+            print(f"Updated mentor average score: {avg_score}")
+        
+        print(f"Evaluation complete for session {session_id}")
         
     except Exception as e:
-        print(f"Evaluation processing error: {e}")
-        await db.sessions.update_one(
-            {"_id": ObjectId(session_id)},
-            {"$set": {"status": SessionStatus.FAILED, "updated_at": datetime.utcnow()}}
-        )
+        print(f"❌ Evaluation processing error for session {session_id}: {e}")
+        import traceback
+        traceback.print_exc()
+        
+        # Update session status to failed
+        try:
+            await db.sessions.update_one(
+                {"_id": ObjectId(session_id)},
+                {"$set": {"status": SessionStatus.FAILED, "updated_at": datetime.utcnow()}}
+            )
+        except Exception as update_error:
+            print(f"Error updating session status to failed: {update_error}")
 
 @router.post("/sessions/{session_id}/evaluate")
 async def start_evaluation(
@@ -147,6 +178,18 @@ async def start_evaluation(
         if not session:
             raise HTTPException(status_code=404, detail="Session not found")
         
+        # Check if already evaluated
+        if session.get('status') == SessionStatus.COMPLETED:
+            raise HTTPException(status_code=400, detail="Session already evaluated")
+        
+        # Check if already processing
+        if session.get('status') in [SessionStatus.TRANSCRIBING, SessionStatus.ANALYZING]:
+            return {
+                "message": "Evaluation already in progress",
+                "session_id": session_id,
+                "status": "processing"
+            }
+        
         # Add background task
         background_tasks.add_task(process_evaluation, session_id, db)
         
@@ -155,7 +198,10 @@ async def start_evaluation(
             "session_id": session_id,
             "status": "processing"
         }
+    except HTTPException:
+        raise
     except Exception as e:
+        print(f"Error starting evaluation: {e}")
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/sessions/{session_id}", response_model=EvaluationInDB)
@@ -168,7 +214,10 @@ async def get_session_evaluation(session_id: str, db=Depends(get_db)):
         
         evaluation['_id'] = str(evaluation['_id'])
         return EvaluationInDB(**evaluation)
+    except HTTPException:
+        raise
     except Exception as e:
+        print(f"Error fetching evaluation: {e}")
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/{evaluation_id}", response_model=EvaluationInDB)
@@ -181,7 +230,10 @@ async def get_evaluation(evaluation_id: str, db=Depends(get_db)):
         
         evaluation['_id'] = str(evaluation['_id'])
         return EvaluationInDB(**evaluation)
+    except HTTPException:
+        raise
     except Exception as e:
+        print(f"Error fetching evaluation: {e}")
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/{evaluation_id}/summary", response_model=EvaluationSummary)
@@ -209,7 +261,10 @@ async def get_evaluation_summary(evaluation_id: str, db=Depends(get_db)):
             areas_for_improvement=weaknesses,
             created_at=evaluation['created_at']
         )
+    except HTTPException:
+        raise
     except Exception as e:
+        print(f"Error fetching evaluation summary: {e}")
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/", response_model=List[EvaluationSummary])
@@ -240,4 +295,5 @@ async def list_evaluations(mentor_id: str = None, db=Depends(get_db)):
         
         return evaluations
     except Exception as e:
+        print(f"Error listing evaluations: {e}")
         raise HTTPException(status_code=400, detail=str(e))
