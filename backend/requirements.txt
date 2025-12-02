@@ -57,3 +57,4 @@ httpx==0.25.1  # For testing async endpoints
 black==23.11.0
 flake8==6.1.0
 mypy==1.7.0
+gunicorn==21.2.0
