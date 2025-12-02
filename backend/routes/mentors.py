@@ -35,13 +35,20 @@ async def list_mentors(db=Depends(get_db)):
 async def get_mentor(mentor_id: str, db=Depends(get_db)):
     """Get mentor by ID"""
     try:
+        # Validate ObjectId format
+        if not ObjectId.is_valid(mentor_id):
+            raise HTTPException(status_code=400, detail=f"Invalid mentor ID format: {mentor_id}")
+        
         mentor = await db.mentors.find_one({"_id": ObjectId(mentor_id)})
         if not mentor:
             raise HTTPException(status_code=404, detail="Mentor not found")
         
         mentor['_id'] = str(mentor['_id'])
         return MentorInDB(**mentor)
+    except HTTPException:
+        raise
     except Exception as e:
+        print(f"Error getting mentor {mentor_id}: {e}")
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.put("/{mentor_id}", response_model=MentorInDB)
@@ -52,6 +59,9 @@ async def update_mentor(
 ):
     """Update mentor"""
     try:
+        if not ObjectId.is_valid(mentor_id):
+            raise HTTPException(status_code=400, detail=f"Invalid mentor ID format: {mentor_id}")
+        
         update_data = {k: v for k, v in mentor_update.model_dump().items() if v is not None}
         update_data['updated_at'] = datetime.utcnow()
         
@@ -66,24 +76,36 @@ async def update_mentor(
         
         result['_id'] = str(result['_id'])
         return MentorInDB(**result)
+    except HTTPException:
+        raise
     except Exception as e:
+        print(f"Error updating mentor {mentor_id}: {e}")
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.delete("/{mentor_id}")
 async def delete_mentor(mentor_id: str, db=Depends(get_db)):
     """Delete mentor"""
     try:
+        if not ObjectId.is_valid(mentor_id):
+            raise HTTPException(status_code=400, detail=f"Invalid mentor ID format: {mentor_id}")
+        
         result = await db.mentors.delete_one({"_id": ObjectId(mentor_id)})
         if result.deleted_count == 0:
             raise HTTPException(status_code=404, detail="Mentor not found")
         return {"message": "Mentor deleted successfully"}
+    except HTTPException:
+        raise
     except Exception as e:
+        print(f"Error deleting mentor {mentor_id}: {e}")
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/{mentor_id}/stats", response_model=MentorStats)
 async def get_mentor_stats(mentor_id: str, db=Depends(get_db)):
     """Get mentor statistics"""
     try:
+        if not ObjectId.is_valid(mentor_id):
+            raise HTTPException(status_code=400, detail=f"Invalid mentor ID format: {mentor_id}")
+        
         # Get all evaluations for this mentor's sessions
         sessions = await db.sessions.find({"mentor_id": mentor_id}).to_list(None)
         session_ids = [str(s['_id']) for s in sessions]
@@ -135,5 +157,8 @@ async def get_mentor_stats(mentor_id: str, db=Depends(get_db)):
             communication_avg=round(communication_avg, 2),
             recent_trend=trend
         )
+    except HTTPException:
+        raise
     except Exception as e:
+        print(f"Error getting mentor stats {mentor_id}: {e}")
         raise HTTPException(status_code=400, detail=str(e))
