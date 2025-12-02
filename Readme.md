@@ -22,68 +22,138 @@ MindTrace transforms teaching evaluation by providing:
 ### Backend (FastAPI + Python)
 ```
 backend/
-├── main.py                 # FastAPI application entry
-├── config.py              # Configuration & environment variables
-├── db.py                  # MongoDB async client
-├── models/                # Pydantic models
-│   ├── mentor.py
-│   ├── session.py
-│   ├── evaluation.py
-│   ├── evidence.py
-│   ├── rewrite.py
-│   └── coherence.py
-├── routes/                # API endpoints
-│   ├── mentors.py
-│   ├── sessions.py
-│   ├── evaluations.py
-│   ├── evidence.py
-│   ├── rewrites.py
-│   └── coherence.py
-├── services/              # Business logic
-│   ├── llm_evaluator.py   # LLM-based evaluation
-│   ├── evidence_extractor.py
-│   ├── explanation_rewriter.py
-│   ├── coherence_checker.py
-│   ├── transcription.py
-│   ├── segmentation.py
-│   └── scoring.py
-└── utils/
-    ├── llm_client.py      # Unified LLM interface
-    ├── file_handler.py
-    └── auth.py
-```
-
+├── main.py                          # FastAPI application entry point
+├── config.py                        # Configuration & environment variables
+├── db.py                           # MongoDB async client setup
+├── requirements.txt                # Python dependencies
+├── requiremnets.txt               # Legacy requirements file
+├── Dockerfile                      # Docker container configuration
+├── .gitignore                     # Git ignore rules
+│
+├── models/                         # Pydantic data models
+│   ├── __init__.py                # Model exports
+│   ├── mentor.py                  # Mentor model (profile, stats)
+│   ├── session.py                 # Session model (video, status)
+│   ├── transcript.py              # Transcript model (segments)
+│   ├── evaluation.py              # Evaluation model (scores, metrics)
+│   ├── evidence.py                # Evidence model (problematic phrases)
+│   ├── rewrite.py                 # Rewrite model (improvements)
+│   └── coherence.py               # Coherence model (contradictions, gaps)
+│
+├── routes/                         # API endpoint handlers
+│   ├── __init__.py                # Route exports
+│   ├── mentors.py                 # CRUD operations for mentors
+│   ├── sessions.py                # Session upload & management
+│   ├── evaluations.py             # Evaluation orchestration
+│   ├── evidence.py                # Evidence extraction endpoints
+│   ├── rewrites.py                # Rewrite generation endpoints
+│   └── coherence.py               # Coherence checking endpoints
+│
+├── services/                       # Business logic layer
+│   ├── __init__.py                # Service exports
+│   ├── llm_evaluator.py           # Core LLM-based evaluation
+│   ├── evidence_extractor.py      # Extract problematic phrases
+│   ├── explanation_rewriter.py    # Generate improved explanations
+│   ├── coherence_checker.py       # Detect logical issues
+│   ├── transcription.py           # Video-to-text conversion
+│   ├── segmentation.py            # Logical segment detection
+│   └── scoring.py                 # Score aggregation & metrics
+│
+├── utils/                          # Utility functions
+│   ├── __init__.py                # Utility exports
+│   ├── llm_client.py              # Unified LLM interface (Gemini/Groq)
+│   ├── file_handler.py            # File upload/storage handling
+│   └── auth.py                    # Firebase authentication helpers
+│
+├── middleware/                     # HTTP middleware
+│   ├── __init__.py
+│   └── auth.py                    # Authentication middleware
+│
+├── scripts/                        # Utility scripts
+│   ├── __init__.py
+│   ├── load_demo_data.py          # Load sample data for testing
+│   └── test_new_features.py       # Feature integration tests
+│
+├── tests/                          # Unit tests
+│   └── __init__.py
+│
+└── test_api.py                     # API endpoint tests
 ### Frontend (React + TailwindCSS)
 ```
 frontend/
+├── public/
+│   └── index.html                  # HTML entry point
+│
 ├── src/
-│   ├── components/        # Reusable UI components
-│   │   ├── ui/           # shadcn/ui components
-│   │   ├── MentorCard.jsx
-│   │   ├── SessionCard.jsx
-│   │   ├── MetricCard.jsx
-│   │   ├── SegmentList.jsx
-│   │   ├── ExplanationGraph.jsx
-│   │   ├── EvidencePanel.jsx
-│   │   ├── RewriteComparison.jsx
-│   │   └── CoherenceIssuesViewer.jsx
-│   ├── pages/
-│   │   ├── LandingPage.jsx
-│   │   └── Dashboard/
-│   │       ├── DashboardHome.jsx
-│   │       ├── MentorsPage.jsx
-│   │       ├── SessionsPage.jsx
-│   │       ├── SessionDetailPage.jsx
-│   │       ├── AnalyticsPage.jsx
-│   │       ├── ProfilePage.jsx
-│   │       └── SettingsPage.jsx
-│   ├── layouts/
-│   │   └── DashboardLayout.jsx
-│   ├── api/
-│   │   └── client.js      # Axios API client
-│   └── lib/
-│       └── firebase.js    # Firebase authentication
-```
+│   ├── index.jsx                   # React entry point
+│   ├── App.jsx                     # Main app component & routing
+│   │
+│   ├── components/                 # Reusable UI components
+│   │   ├── MentorCard.jsx          # Mentor display card
+│   │   ├── SessionCard.jsx         # Session display card
+│   │   ├── MetricCard.jsx          # Score metric card
+│   │   ├── SegmentList.jsx         # Expandable segment list
+│   │   ├── ExplanationGraph.jsx    # D3.js flow visualization
+│   │   ├── EvidencePanel.jsx       # Evidence extraction UI
+│   │   ├── RewriteComparison.jsx   # Original vs improved comparison
+│   │   └── CoherenceIssuesViewer.jsx # Coherence issues display
+│   │
+│   ├── components/ui/              # Base UI components (shadcn/ui)
+│   │   ├── button.jsx              # Button component
+│   │   ├── input.jsx               # Input component
+│   │   ├── label.jsx               # Label component
+│   │   ├── checkbox.jsx            # Checkbox component
+│   │   ├── sparkles.jsx            # Sparkle animation effect
+│   │   ├── animated-hero.jsx       # Animated hero section
+│   │   ├── container-scroll-animation.jsx # Scroll animation
+│   │   ├── animated-characters-login-page.jsx # Login with animations
+│   │   ├── mindtrace-footer.jsx    # Custom footer
+│   │   └── modern-animated-footer.jsx # Animated footer base
+│   │
+│   ├── pages/                      # Page components
+│   │   ├── LandingPage.jsx         # Marketing landing page
+│   │   ├── MentorDashboard.jsx     # Legacy mentor dashboard
+│   │   ├── SessionsPage.jsx        # Legacy sessions page
+│   │   ├── SessionDetailPage.jsx   # Legacy session detail
+│   │   ├── DemoOne.jsx             # Demo login page
+│   │   │
+│   │   └── Dashboard/              # Main dashboard pages
+│   │       ├── DashboardHome.jsx   # Dashboard overview
+│   │       ├── MentorsPage.jsx     # Mentor management
+│   │       ├── SessionsPage.jsx    # Session management
+│   │       ├── SessionDetailPage.jsx # Detailed session view
+│   │       ├── AnalyticsPage.jsx   # Performance analytics
+│   │       ├── ProfilePage.jsx     # User profile
+│   │       └── SettingsPage.jsx    # Application settings
+│   │
+│   ├── layouts/                    # Layout components
+│   │   └── DashboardLayout.jsx     # Sidebar + header layout
+│   │
+│   ├── api/                        # API client
+│   │   └── client.js               # Axios HTTP client + endpoints
+│   │
+│   ├── lib/                        # Utility libraries
+│   │   ├── firebase.js             # Firebase configuration
+│   │   └── utils.js                # Utility functions (cn, etc.)
+│   │
+│   ├── styles/                     # Global styles
+│   │   └── index.css               # Tailwind + custom CSS
+│   │
+│   └── ui/                         # Duplicate UI components (legacy)
+│       ├── animated-characters-login-page.jsx
+│       ├── button.jsx
+│       ├── checkbox.jsx
+│       ├── input.jsx
+│       └── label.jsx
+│
+├── package.json                    # NPM dependencies & scripts
+├── package-lock.json               # NPM lock file
+├── tailwind.config.js              # Tailwind configuration
+├── postcss.config.js               # PostCSS configuration
+├── jsconfig.json                   # JavaScript configuration
+├── Dockerfile                      # Docker container configuration
+├── nginx.conf                      # Nginx web server config
+└── .gitignore                     # Git ignore rules
 
 ---
 
