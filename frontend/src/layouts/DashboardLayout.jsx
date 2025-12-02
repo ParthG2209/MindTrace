@@ -1,19 +1,19 @@
-// src/layouts/DashboardLayout.jsx
+// src/layouts/DashboardLayout.jsx - FIXED VERSION
 import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { 
   Award, Users, Video, BarChart3, Menu, X, LogOut, 
-  User as UserIcon, Home, Search, Bell, Settings
+  User as UserIcon, Home, Bell
 } from 'lucide-react';
 import { auth } from '../lib/firebase';
 import { signOut } from 'firebase/auth';
+import MindTraceFooter from '../components/ui/mindtrace-footer';
 
 const DashboardLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [user, setUser] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((currentUser) => {
@@ -43,7 +43,6 @@ const DashboardLayout = () => {
 
   const accountPages = [
     { icon: UserIcon, label: 'Profile', path: '/dashboard/profile' },
-    { icon: Settings, label: 'Settings', path: '/dashboard/settings' },
   ];
 
   const isActivePath = (path) => location.pathname === path;
@@ -169,43 +168,17 @@ const DashboardLayout = () => {
         {/* Top Navbar */}
         <header className="sticky top-0 z-30 bg-gradient-to-r from-gray-900/95 to-black/95 backdrop-blur-xl border-b border-white/10">
           <div className="flex items-center justify-between px-6 py-4">
-            {/* Breadcrumb */}
-            <div className="flex items-center gap-2 text-sm">
-              <span className="text-gray-400">Pages</span>
-              <span className="text-gray-600">/</span>
-              <span className="text-white font-medium">
-                {menuItems.find(item => item.path === location.pathname)?.label || 'Dashboard'}
-              </span>
+            {/* Current Page Title */}
+            <div className="flex items-center gap-2">
+              <h2 className="text-xl font-bold text-white">
+                {menuItems.find(item => item.path === location.pathname)?.label || 
+                 accountPages.find(item => item.path === location.pathname)?.label || 
+                 'Dashboard'}
+              </h2>
             </div>
 
             {/* Right Section */}
             <div className="flex items-center gap-4">
-              {/* Search Bar */}
-              <div className="relative hidden md:block">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Type here..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-64 pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
-                />
-              </div>
-
-              {/* Sign In Link */}
-              <button
-                onClick={() => navigate('/login')}
-                className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
-              >
-                <UserIcon className="w-4 h-4" />
-                <span className="text-sm font-medium">Sign In</span>
-              </button>
-
-              {/* Settings Icon */}
-              <button className="p-2 hover:bg-white/5 rounded-lg transition-colors">
-                <Settings className="w-5 h-5 text-gray-400 hover:text-white transition-colors" />
-              </button>
-
               {/* Notifications */}
               <button className="p-2 hover:bg-white/5 rounded-lg transition-colors relative">
                 <Bell className="w-5 h-5 text-gray-400 hover:text-white transition-colors" />
@@ -216,9 +189,12 @@ const DashboardLayout = () => {
         </header>
 
         {/* Page Content */}
-        <main className="p-6">
+        <main className="p-6 min-h-screen">
           <Outlet />
         </main>
+
+        {/* Footer */}
+        <MindTraceFooter />
       </div>
 
       {/* Mobile Overlay */}
