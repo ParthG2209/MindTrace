@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Users, LogIn } from 'lucide-react';
+import { Plus, Users, LogIn, LogOut, User as UserIcon } from 'lucide-react';
 import MentorCard from '../components/MentorCard.jsx';
 import MindTraceFooter from '../components/ui/mindtrace-footer.jsx';
 import { mentorApi } from '../api/client.js';
+import { auth } from '../lib/firebase.js';
+import { signOut } from 'firebase/auth';
 
 const MentorDashboard = () => {
   const navigate = useNavigate();
@@ -11,6 +13,7 @@ const MentorDashboard = () => {
   const [mentorStats, setMentorStats] = useState({});
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [user, setUser] = useState(null);
   const [newMentor, setNewMentor] = useState({
     name: '',
     email: '',
@@ -20,6 +23,14 @@ const MentorDashboard = () => {
 
   useEffect(() => {
     fetchMentors();
+
+    // Listen for auth state changes
+    const unsubscribe = auth.onAuthStateChanged((currentUser) => {
+      console.log('Auth state changed:', currentUser);
+      setUser(currentUser);
+    });
+
+    return () => unsubscribe();
   }, []);
 
   const fetchMentors = async () => {
@@ -27,17 +38,15 @@ const MentorDashboard = () => {
       setLoading(true);
       const response = await mentorApi.getAll();
       const mentorList = response.data;
-      
-      // Normalize mentor IDs - handle both 'id' and '_id'
+
       const normalizedMentors = mentorList.map(mentor => ({
         ...mentor,
         id: mentor.id || mentor._id
       }));
-      
+
       console.log('Fetched mentors:', normalizedMentors);
       setMentors(normalizedMentors);
 
-      // Fetch stats for each mentor
       const statsPromises = normalizedMentors.map((mentor) =>
         mentorApi.getStats(mentor.id).catch((err) => {
           console.error(`Error fetching stats for mentor ${mentor.id}:`, err);
@@ -45,7 +54,7 @@ const MentorDashboard = () => {
         })
       );
       const statsResults = await Promise.all(statsPromises);
-      
+
       const statsMap = {};
       statsResults.forEach((result, idx) => {
         if (result && result.data) {
@@ -78,6 +87,16 @@ const MentorDashboard = () => {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      navigate('/login');
+    } catch (error) {
+      console.error('Error logging out:', error);
+      alert('Failed to log out');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -93,14 +112,30 @@ const MentorDashboard = () => {
                 Manage mentors and track their teaching performance
               </p>
             </div>
-            <div className="flex gap-3">
-              <button
-                onClick={() => navigate('/login')}
-                className="flex items-center px-4 py-2 bg-white border-2 border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors"
-              >
-                <LogIn className="w-5 h-5 mr-2" />
-                Login
-              </button>
+            <div className="flex gap-3 items-center">
+              {user ? (
+                <>
+                  <div className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded-lg">
+                    <UserIcon className="w-5 h-5 text-gray-600" />
+                    <span className="text-sm text-gray-700">{user.email}</span>
+                  </div>
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center px-4 py-2 bg-white border-2 border-red-600 text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+                  >
+                    <LogOut className="w-5 h-5 mr-2" />
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => navigate('/login')}
+                  className="flex items-center px-4 py-2 bg-white border-2 border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors"
+                >
+                  <LogIn className="w-5 h-5 mr-2" />
+                  Login
+                </button>
+              )}
               <button
                 onClick={() => setShowAddModal(true)}
                 className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -129,11 +164,11 @@ const MentorDashboard = () => {
             <p className="text-3xl font-bold text-gray-900">
               {mentors.filter((m) => m.average_score).length > 0
                 ? (
-                    mentors
-                      .filter((m) => m.average_score)
-                      .reduce((sum, m) => sum + m.average_score, 0) /
-                    mentors.filter((m) => m.average_score).length
-                  ).toFixed(1)
+                  mentors
+                    .filter((m) => m.average_score)
+                    .reduce((sum, m) => sum + m.average_score, 0) /
+                  mentors.filter((m) => m.average_score).length
+                ).toFixed(1)
                 : 'N/A'}
             </p>
           </div>
@@ -195,7 +230,8 @@ const MentorDashboard = () => {
                       required
                       value={newMentor.name}
                       onChange={(e) => setNewMentor({ ...newMentor, name: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white placeholder-gray-400"
+                      placeholder="Enter mentor name"
                     />
                   </div>
                   <div>
@@ -207,7 +243,8 @@ const MentorDashboard = () => {
                       required
                       value={newMentor.email}
                       onChange={(e) => setNewMentor({ ...newMentor, email: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white placeholder-gray-400"
+                      placeholder="mentor@example.com"
                     />
                   </div>
                   <div>
@@ -219,7 +256,7 @@ const MentorDashboard = () => {
                       value={newMentor.expertise}
                       onChange={(e) => setNewMentor({ ...newMentor, expertise: e.target.value })}
                       placeholder="Python, Machine Learning, Data Science"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white placeholder-gray-400"
                     />
                   </div>
                   <div>
@@ -228,7 +265,8 @@ const MentorDashboard = () => {
                       value={newMentor.bio}
                       onChange={(e) => setNewMentor({ ...newMentor, bio: e.target.value })}
                       rows="3"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                      placeholder="Tell us about this mentor..."
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white placeholder-gray-400"
                     />
                   </div>
                 </div>
@@ -252,11 +290,9 @@ const MentorDashboard = () => {
           </div>
         )}
       </div>
-      
       {/* Footer */}
       <MindTraceFooter />
     </div>
   );
 };
-
 export default MentorDashboard;
