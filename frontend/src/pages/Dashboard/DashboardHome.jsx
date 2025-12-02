@@ -1,9 +1,9 @@
-// src/pages/Dashboard/DashboardHome.jsx
+// src/pages/Dashboard/DashboardHome.jsx - FIXED VERSION
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   TrendingUp, Users, Video, Award, ArrowRight,
-  CheckCircle, AlertCircle, Activity
+  CheckCircle, Activity
 } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 import { mentorApi, sessionApi, evaluationApi } from '../../api/client';
@@ -21,27 +21,12 @@ const DashboardHome = () => {
   const [recentSessions, setRecentSessions] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Sample data for charts
-  const salesOverviewData = [
-    { month: 'Jan', value1: 250, value2: 180 },
-    { month: 'Feb', value1: 300, value2: 220 },
-    { month: 'Mar', value1: 280, value2: 240 },
-    { month: 'Apr', value1: 400, value2: 320 },
-    { month: 'May', value1: 380, value2: 300 },
-    { month: 'Jun', value1: 450, value2: 380 },
-    { month: 'Jul', value1: 420, value2: 360 },
-    { month: 'Aug', value1: 500, value2: 420 },
-    { month: 'Sep', value1: 480, value2: 400 },
-    { month: 'Oct', value1: 550, value2: 460 },
-    { month: 'Nov', value1: 600, value2: 500 },
-    { month: 'Dec', value1: 650, value2: 540 }
-  ];
-
+  // Sample data for active users chart
   const activeUsersData = [
-    { category: 'Users', value: 32000 },
-    { category: 'Clicks', value: 2400 },
-    { category: 'Sales', value: 2400 },
-    { category: 'Items', value: 320 }
+    { category: 'Mentors', value: 0 },
+    { category: 'Sessions', value: 0 },
+    { category: 'Completed', value: 0 },
+    { category: 'Analyzing', value: 0 }
   ];
 
   useEffect(() => {
@@ -64,6 +49,7 @@ const DashboardHome = () => {
       const sessions = sessionsRes.data;
       
       const completedSessions = sessions.filter(s => s.status === 'completed');
+      const analyzingSessions = sessions.filter(s => ['analyzing', 'transcribing'].includes(s.status));
       const avgScore = mentors
         .filter(m => m.average_score)
         .reduce((sum, m) => sum + m.average_score, 0) / (mentors.filter(m => m.average_score).length || 1);
@@ -74,6 +60,12 @@ const DashboardHome = () => {
         averageScore: avgScore || 0,
         completedSessions: completedSessions.length
       });
+
+      // Update active users data
+      activeUsersData[0].value = mentors.length;
+      activeUsersData[1].value = sessions.length;
+      activeUsersData[2].value = completedSessions.length;
+      activeUsersData[3].value = analyzingSessions.length;
 
       setRecentSessions(sessions.slice(0, 5));
     } catch (error) {
@@ -182,13 +174,13 @@ const DashboardHome = () => {
             </h3>
             <p className="text-white/80 mb-6 max-w-md">
               Glad to see you again!<br />
-              Ask me anything.
+              Ready to analyze teaching sessions?
             </p>
             <button
               onClick={() => navigate('/dashboard/sessions')}
               className="inline-flex items-center gap-2 px-6 py-3 bg-white text-purple-600 rounded-xl font-semibold hover:bg-white/90 transition-all shadow-lg"
             >
-              Tap to record
+              View Sessions
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
@@ -203,7 +195,7 @@ const DashboardHome = () => {
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-bold text-white">Satisfaction Rate</h3>
           </div>
-          <p className="text-gray-400 text-sm mb-8">From all projects</p>
+          <p className="text-gray-400 text-sm mb-8">From all evaluations</p>
           
           <div className="flex items-center justify-center mb-6">
             <div className="relative w-48 h-48">
@@ -248,118 +240,12 @@ const DashboardHome = () => {
         </div>
       </div>
 
-      {/* Charts Row 2 */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Referral Tracking */}
-        <div className="bg-gradient-to-br from-gray-900 to-black rounded-2xl p-6 border border-white/10">
-          <h3 className="text-lg font-bold text-white mb-6">Referral Tracking</h3>
-          
-          <div className="space-y-4 mb-6">
-            <div>
-              <p className="text-gray-400 text-sm mb-1">Invited</p>
-              <p className="text-2xl font-bold text-white">145 people</p>
-            </div>
-            <div>
-              <p className="text-gray-400 text-sm mb-1">Bonus</p>
-              <p className="text-2xl font-bold text-white">1,465</p>
-            </div>
-          </div>
-
-          {/* Score Circle */}
-          <div className="flex items-center justify-center">
-            <div className="relative w-40 h-40">
-              <svg className="w-full h-full transform -rotate-90">
-                <circle
-                  cx="80"
-                  cy="80"
-                  r="70"
-                  stroke="rgba(255,255,255,0.1)"
-                  strokeWidth="10"
-                  fill="none"
-                />
-                <circle
-                  cx="80"
-                  cy="80"
-                  r="70"
-                  stroke="url(#gradientGreen)"
-                  strokeWidth="10"
-                  fill="none"
-                  strokeDasharray={`${2 * Math.PI * 70 * 0.93} ${2 * Math.PI * 70}`}
-                  strokeLinecap="round"
-                />
-                <defs>
-                  <linearGradient id="gradientGreen" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#10b981" />
-                    <stop offset="100%" stopColor="#059669" />
-                  </linearGradient>
-                </defs>
-              </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-sm text-gray-400 mb-1">Safety</span>
-                <span className="text-3xl font-bold text-white">9.3</span>
-                <span className="text-xs text-gray-400">Total Score</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Sales Overview Chart */}
-        <div className="lg:col-span-2 bg-gradient-to-br from-gray-900 to-black rounded-2xl p-6 border border-white/10">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="text-lg font-bold text-white mb-1">Sales overview</h3>
-              <p className="text-green-400 text-sm font-medium">(+5) more in 2021</p>
-            </div>
-          </div>
-
-          <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={salesOverviewData}>
-              <defs>
-                <linearGradient id="colorValue1" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="colorValue2" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-              <XAxis dataKey="month" stroke="rgba(255,255,255,0.3)" />
-              <YAxis stroke="rgba(255,255,255,0.3)" />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'rgba(0,0,0,0.9)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: '8px',
-                  color: '#fff'
-                }}
-              />
-              <Area
-                type="monotone"
-                dataKey="value1"
-                stroke="#3b82f6"
-                strokeWidth={3}
-                fill="url(#colorValue1)"
-              />
-              <Area
-                type="monotone"
-                dataKey="value2"
-                stroke="#8b5cf6"
-                strokeWidth={3}
-                fill="url(#colorValue2)"
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Active Users */}
+      {/* Active Stats */}
       <div className="bg-gradient-to-br from-gray-900 to-black rounded-2xl p-6 border border-white/10">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h3 className="text-lg font-bold text-white mb-1">Active Users</h3>
-            <p className="text-green-400 text-sm font-medium">(+23) than last week</p>
+            <h3 className="text-lg font-bold text-white mb-1">Platform Statistics</h3>
+            <p className="text-green-400 text-sm font-medium">Overall performance metrics</p>
           </div>
         </div>
 
