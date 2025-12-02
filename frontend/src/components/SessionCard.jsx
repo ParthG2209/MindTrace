@@ -1,7 +1,7 @@
 import React from 'react';
-import { Video, Clock, CheckCircle, AlertCircle, Loader } from 'lucide-react';
+import { Video, Clock, CheckCircle, AlertCircle, Loader, User } from 'lucide-react';
 
-const SessionCard = ({ session, onClick }) => {
+const SessionCard = ({ session, onClick, mentorName }) => {
   const getStatusConfig = (status) => {
     const configs = {
       uploaded: {
@@ -65,6 +65,12 @@ const SessionCard = ({ session, onClick }) => {
             {session.title}
           </h3>
           <p className="text-sm text-gray-600">{session.topic}</p>
+          {mentorName && (
+            <div className="flex items-center mt-2 text-sm text-gray-500">
+              <User className="w-4 h-4 mr-1" />
+              <span>{mentorName}</span>
+            </div>
+          )}
         </div>
         <div className={`flex items-center px-3 py-1 rounded-full ${statusConfig.color}`}>
           <StatusIcon
