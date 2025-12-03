@@ -4,6 +4,17 @@
 
 An explainable evaluation platform that analyzes teaching sessions using advanced LLMs. Upload videos, get detailed feedback across multiple dimensions (clarity, structure, correctness, pacing, communication), and receive actionable insights to improve teaching quality.
 
+[![Frontend](https://img.shields.io/badge/Frontend-Live%20on%20Vercel-00C7B7?style=for-the-badge&logo=vercel)](https://mind-trace-beta.vercel.app/)
+[![Backend](https://img.shields.io/badge/Backend-Deployed%20on%20HuggingFace-FFD21E?style=for-the-badge&logo=huggingface)](https://huggingface.co/spaces/ParthG2209/MindTrace)
+
+---
+
+## Live Demo
+
+- **Frontend Application**: [https://mind-trace-beta.vercel.app/](https://mind-trace-beta.vercel.app/)
+- **Backend API**: [https://huggingface.co/spaces/ParthG2209/MindTrace](https://huggingface.co/spaces/ParthG2209/MindTrace)
+- **API Documentation**: [Backend URL]/docs
+
 ---
 
 ## Overview
@@ -14,6 +25,83 @@ MindTrace transforms teaching evaluation by providing:
 - **Smart Rewrites**: AI-generated improvements for unclear explanations
 - **Coherence Checking**: Detects contradictions, topic drift, and logical gaps
 - **Visual Analytics**: Interactive charts and performance tracking
+- **Real-time Processing**: Automated video transcription and segment analysis
+
+---
+
+## Current Features (Fully Functional)
+
+### Core Evaluation System
+- **Multi-Dimensional Scoring**: Evaluates teaching across 5 key metrics
+  - Clarity (25% weight)
+  - Structure (20% weight)
+  - Correctness (25% weight)
+  - Pacing (15% weight)
+  - Communication (15% weight)
+- **Segment-by-Segment Analysis**: Breaks down sessions into logical teaching units
+- **Automated Transcription**: Converts video to timestamped text segments using Google Gemini
+- **LLM-Powered Evaluation**: Uses Google Gemini 2.5 Flash for accurate, explainable feedback
+
+### Mentor Management
+- **Create & Manage Mentors**: Add mentors with expertise, bio, and contact information
+- **Performance Tracking**: Track mentor performance over time with trend analysis
+- **Session History**: View all sessions associated with each mentor
+- **Statistics Dashboard**: Average scores, total sessions, and performance trends
+
+### Session Management
+- **Video Upload**: Support for MP4, MOV, AVI, MKV formats (up to 500MB)
+- **Session Metadata**: Title, topic, duration, and mentor assignment
+- **Status Tracking**: Real-time status updates (Uploaded → Transcribing → Analyzing → Completed)
+- **Session Details**: Comprehensive view with evaluation results and visualizations
+
+### Visual Analytics
+- **Interactive Dashboard**: Real-time metrics and performance overview
+- **Explanation Flow Graphs**: Visual representation of teaching quality progression
+- **Performance Charts**: Line charts, bar charts, and area charts using Recharts
+- **Score Distribution**: Visualize score ranges and trends
+- **Comparative Analytics**: Compare mentor performance across sessions
+
+### Authentication & Security
+- **Firebase Authentication**: Email/password and Google OAuth sign-in
+- **Protected Routes**: Secure dashboard and evaluation features
+- **User Profiles**: Personalized user experience with profile management
+
+---
+
+## Coming Soon (Under Development)
+
+### Evidence Extraction
+- 🚧 **Problematic Phrase Detection**: Identify exact text causing low scores
+- 🚧 **Character-Level Precision**: Pinpoint issues with start/end positions
+- 🚧 **Issue Classification**: Categorize by severity (minor, moderate, major)
+- 🚧 **Alternative Phrasing**: Suggest better ways to express concepts
+- 🚧 **Contextual Feedback**: Explain why specific phrases are problematic
+
+### Explanation Rewriting
+- 🚧 **AI-Powered Rewrites**: Generate improved versions of low-scoring explanations
+- 🚧 **Improvement Tracking**: Show specific changes and score improvements
+- 🚧 **Multiple Versions**: Generate alternative rewrites for comparison
+- 🚧 **Confidence Scoring**: Indicate reliability of suggested improvements
+- 🚧 **Before/After Comparison**: Side-by-side view of original vs. rewritten
+
+### Coherence Analysis
+- 🚧 **Contradiction Detection**: Find statements that conflict with each other
+- 🚧 **Topic Drift Identification**: Detect when explanations stray off-topic
+- 🚧 **Logical Gap Analysis**: Identify missing steps or unexplained concepts
+- 🚧 **Session-Wide Coherence Score**: Overall measure of logical consistency
+- 🚧 **Resolution Suggestions**: Recommendations for fixing coherence issues
+
+### Advanced Analytics
+- 🚧 **Predictive Insights**: ML-based predictions for mentor improvement
+- 🚧 **Comparative Benchmarking**: Compare against industry standards
+- 🚧 **Custom Reports**: Generate PDF reports for stakeholders
+- 🚧 **Export Functionality**: Download data in CSV/JSON formats
+
+### UI/UX Enhancements
+- 🚧 **Dark Mode Persistence**: Save theme preference across sessions
+- 🚧 **Mobile Optimization**: Enhanced responsive design for all devices
+- 🚧 **Keyboard Shortcuts**: Power user features for faster navigation
+- 🚧 **Accessibility Improvements**: WCAG 2.1 Level AA compliance
 
 ---
 
@@ -26,69 +114,46 @@ backend/
 ├── config.py                        # Configuration & environment variables
 ├── db.py                           # MongoDB async client setup
 ├── requirements.txt                # Python dependencies
-├── requiremnets.txt               # Legacy requirements file
 ├── Dockerfile                      # Docker container configuration
-├── .gitignore                     # Git ignore rules
 │
 ├── models/                         # Pydantic data models
-│   ├── __init__.py                # Model exports
-│   ├── mentor.py                  # Mentor model (profile, stats)
-│   ├── session.py                 # Session model (video, status)
-│   ├── transcript.py              # Transcript model (segments)
-│   ├── evaluation.py              # Evaluation model (scores, metrics)
-│   ├── evidence.py                # Evidence model (problematic phrases)
-│   ├── rewrite.py                 # Rewrite model (improvements)
-│   └── coherence.py               # Coherence model (contradictions, gaps)
+│   ├── mentor.py                  # Mentor profile and stats
+│   ├── session.py                 # Session with video metadata
+│   ├── transcript.py              # Transcript with segments
+│   ├── evaluation.py              # Evaluation scores and metrics
+│   ├── evidence.py                # Evidence extraction (Coming Soon)
+│   ├── rewrite.py                 # Explanation rewrites (Coming Soon)
+│   └── coherence.py               # Coherence analysis (Coming Soon)
 │
 ├── routes/                         # API endpoint handlers
-│   ├── __init__.py                # Route exports
-│   ├── mentors.py                 # CRUD operations for mentors
-│   ├── sessions.py                # Session upload & management
+│   ├── mentors.py                 # Mentor CRUD operations
+│   ├── sessions.py                # Session management
 │   ├── evaluations.py             # Evaluation orchestration
-│   ├── evidence.py                # Evidence extraction endpoints
-│   ├── rewrites.py                # Rewrite generation endpoints
-│   └── coherence.py               # Coherence checking endpoints
+│   ├── evidence.py                # Evidence endpoints (Coming Soon)
+│   ├── rewrites.py                # Rewrite endpoints (Coming Soon)
+│   └── coherence.py               # Coherence endpoints (Coming Soon)
 │
 ├── services/                       # Business logic layer
-│   ├── __init__.py                # Service exports
 │   ├── llm_evaluator.py           # Core LLM-based evaluation
-│   ├── evidence_extractor.py      # Extract problematic phrases
-│   ├── explanation_rewriter.py    # Generate improved explanations
-│   ├── coherence_checker.py       # Detect logical issues
-│   ├── transcription.py           # Video-to-text conversion
+│   ├── transcription.py           # Video-to-text conversion (Gemini)
 │   ├── segmentation.py            # Logical segment detection
-│   └── scoring.py                 # Score aggregation & metrics
+│   ├── scoring.py                 # Score aggregation & metrics
+│   ├── evidence_extractor.py      # Extract problematic phrases (Coming Soon)
+│   ├── explanation_rewriter.py    # Generate improvements (Coming Soon)
+│   └── coherence_checker.py       # Detect logical issues (Coming Soon)
 │
-├── utils/                          # Utility functions
-│   ├── __init__.py                # Utility exports
-│   ├── llm_client.py              # Unified LLM interface (Gemini/Groq)
-│   ├── file_handler.py            # File upload/storage handling
-│   └── auth.py                    # Firebase authentication helpers
-│
-├── middleware/                     # HTTP middleware
-│   ├── __init__.py
-│   └── auth.py                    # Authentication middleware
-│
-├── scripts/                        # Utility scripts
-│   ├── __init__.py
-│   ├── load_demo_data.py          # Load sample data for testing
-│   └── test_new_features.py       # Feature integration tests
-│
-├── tests/                          # Unit tests
-│   └── __init__.py
-│
-└── test_api.py                     # API endpoint tests
+└── utils/                          # Utility functions
+    ├── llm_client.py              # Unified LLM interface (Gemini/Groq)
+    ├── file_handler.py            # File upload/storage handling
+    └── auth.py                    # Firebase authentication helpers
 ```
 
 ### Frontend (React + TailwindCSS)
 ```
 frontend/
-├── public/
-│   └── index.html                  # HTML entry point
-│
 ├── src/
-│   ├── index.jsx                   # React entry point
 │   ├── App.jsx                     # Main app component & routing
+│   ├── index.jsx                   # React entry point
 │   │
 │   ├── components/                 # Reusable UI components
 │   │   ├── MentorCard.jsx          # Mentor display card
@@ -96,37 +161,18 @@ frontend/
 │   │   ├── MetricCard.jsx          # Score metric card
 │   │   ├── SegmentList.jsx         # Expandable segment list
 │   │   ├── ExplanationGraph.jsx    # D3.js flow visualization
-│   │   ├── EvidencePanel.jsx       # Evidence extraction UI
-│   │   ├── RewriteComparison.jsx   # Original vs improved comparison
-│   │   └── CoherenceIssuesViewer.jsx # Coherence issues display
+│   │   ├── EvidencePanel.jsx       # Evidence UI (Coming Soon)
+│   │   ├── RewriteComparison.jsx   # Before/after comparison (Coming Soon)
+│   │   └── CoherenceIssuesViewer.jsx # Coherence display (Coming Soon)
 │   │
-│   ├── components/ui/              # Base UI components (shadcn/ui)
-│   │   ├── button.jsx              # Button component
-│   │   ├── input.jsx               # Input component
-│   │   ├── label.jsx               # Label component
-│   │   ├── checkbox.jsx            # Checkbox component
-│   │   ├── sparkles.jsx            # Sparkle animation effect
-│   │   ├── animated-hero.jsx       # Animated hero section
-│   │   ├── container-scroll-animation.jsx # Scroll animation
-│   │   ├── animated-characters-login-page.jsx # Login with animations
-│   │   ├── mindtrace-footer.jsx    # Custom footer
-│   │   └── modern-animated-footer.jsx # Animated footer base
-│   │
-│   ├── pages/                      # Page components
-│   │   ├── LandingPage.jsx         # Marketing landing page
-│   │   ├── MentorDashboard.jsx     # Legacy mentor dashboard
-│   │   ├── SessionsPage.jsx        # Legacy sessions page
-│   │   ├── SessionDetailPage.jsx   # Legacy session detail
-│   │   ├── DemoOne.jsx             # Demo login page
-│   │   │
-│   │   └── Dashboard/              # Main dashboard pages
-│   │       ├── DashboardHome.jsx   # Dashboard overview
-│   │       ├── MentorsPage.jsx     # Mentor management
-│   │       ├── SessionsPage.jsx    # Session management
-│   │       ├── SessionDetailPage.jsx # Detailed session view
-│   │       ├── AnalyticsPage.jsx   # Performance analytics
-│   │       ├── ProfilePage.jsx     # User profile
-│   │       └── SettingsPage.jsx    # Application settings
+│   ├── pages/Dashboard/            # Dashboard pages
+│   │   ├── DashboardHome.jsx       # Overview with stats
+│   │   ├── MentorsPage.jsx         # Mentor management
+│   │   ├── SessionsPage.jsx        # Session list and upload
+│   │   ├── SessionDetailPage.jsx   # Detailed session view
+│   │   ├── AnalyticsPage.jsx       # Performance analytics
+│   │   ├── ProfilePage.jsx         # User profile
+│   │   └── SettingsPage.jsx        # App settings
 │   │
 │   ├── layouts/                    # Layout components
 │   │   └── DashboardLayout.jsx     # Sidebar + header layout
@@ -134,66 +180,13 @@ frontend/
 │   ├── api/                        # API client
 │   │   └── client.js               # Axios HTTP client + endpoints
 │   │
-│   ├── lib/                        # Utility libraries
-│   │   ├── firebase.js             # Firebase configuration
-│   │   └── utils.js                # Utility functions (cn, etc.)
-│   │
-│   ├── styles/                     # Global styles
-│   │   └── index.css               # Tailwind + custom CSS
-│   │
-│   └── ui/                         # Duplicate UI components (legacy)
-│       ├── animated-characters-login-page.jsx
-│       ├── button.jsx
-│       ├── checkbox.jsx
-│       ├── input.jsx
-│       └── label.jsx
+│   └── lib/                        # Utility libraries
+│       ├── firebase.js             # Firebase configuration
+│       └── utils.js                # Utility functions
 │
-├── package.json                    # NPM dependencies & scripts
-├── package-lock.json               # NPM lock file
-├── tailwind.config.js              # Tailwind configuration
-├── postcss.config.js               # PostCSS configuration
-├── jsconfig.json                   # JavaScript configuration
-├── Dockerfile                      # Docker container configuration
-├── nginx.conf                      # Nginx web server config
-└── .gitignore                     # Git ignore rules
+└── public/
+    └── index.html                  # HTML entry point
 ```
----
-
-## Features
-
-### 1. Core Evaluation System
-- **Multi-Dimensional Scoring**: Evaluates teaching across 5 key metrics
-  - Clarity (25% weight)
-  - Structure (20% weight)
-  - Correctness (25% weight)
-  - Pacing (15% weight)
-  - Communication (15% weight)
-- **Segment-by-Segment Analysis**: Breaks down sessions into logical teaching units
-- **Automated Transcription**: Converts video to timestamped text segments
-
-### 2. Explainable AI Features
-- **Evidence Extraction**: Identifies exact problematic phrases with character-level precision
-- **Issue Classification**: Categorizes problems by severity (minor, moderate, major)
-- **Alternative Phrasing**: Suggests better ways to express unclear concepts
-- **Contextual Feedback**: Explains why specific phrases are problematic
-
-### 3. Explanation Rewriting
-- **AI-Powered Rewrites**: Generates improved versions of low-scoring explanations
-- **Improvement Tracking**: Shows specific changes and estimated score improvements
-- **Multiple Versions**: Can generate alternative rewrites for comparison
-- **Confidence Scoring**: Indicates reliability of suggested improvements
-
-### 4. Coherence Analysis
-- **Contradiction Detection**: Finds statements that conflict with each other
-- **Topic Drift Identification**: Detects when explanations stray off-topic
-- **Logical Gap Analysis**: Identifies missing steps or unexplained concepts
-- **Session-Wide Coherence Score**: Overall measure of logical consistency
-
-### 5. Visual Analytics
-- **Performance Dashboards**: Real-time metrics and trends
-- **Explanation Flow Graphs**: Visual representation of teaching quality progression
-- **Comparative Analytics**: Track mentor performance over time
-- **Interactive Charts**: Drill down into specific metrics and segments
 
 ---
 
@@ -203,11 +196,13 @@ frontend/
 - **Framework**: FastAPI (async Python web framework)
 - **Database**: MongoDB (with Motor async driver)
 - **LLM Integration**: 
-  - Google Gemini 2.5 Flash (primary, free)
-  - Groq LLaMA 3.1 70B (secondary, free)
+  - Google Gemini 2.5 Flash (primary, free tier)
+  - Groq LLaMA 3.3 70B (secondary, free tier)
+- **Video Processing**: Google Gemini for transcription
 - **Authentication**: Firebase Auth (optional)
 - **Validation**: Pydantic v2
 - **HTTP Client**: httpx (async)
+- **Deployment**: Hugging Face Spaces
 
 ### Frontend
 - **Framework**: React 18
@@ -218,6 +213,7 @@ frontend/
 - **Animations**: Framer Motion
 - **Icons**: Lucide React
 - **Authentication**: Firebase SDK
+- **Deployment**: Vercel
 
 ---
 
@@ -298,7 +294,7 @@ npm install
 3. **Configure environment variables**
 Create a `.env` file:
 ```env
-REACT_APP_API_URL=http://localhost:8000
+REACT_APP_API_URL=https://huggingface.co/spaces/ParthG2209/MindTrace
 
 # Firebase Configuration (optional)
 REACT_APP_FIREBASE_API_KEY=your_api_key
@@ -307,7 +303,6 @@ REACT_APP_FIREBASE_PROJECT_ID=your_project_id
 REACT_APP_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
 REACT_APP_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 REACT_APP_FIREBASE_APP_ID=your_app_id
-REACT_APP_FIREBASE_MEASUREMENT_ID=your_measurement_id
 ```
 
 4. **Start development server**
@@ -316,6 +311,46 @@ npm start
 ```
 
 The application will open at `http://localhost:3000`
+
+---
+
+## Quick Start Guide
+
+### 1. Sign Up / Login
+- Visit [https://mind-trace-beta.vercel.app/](https://mind-trace-beta.vercel.app/)
+- Sign up with email/password or Google OAuth
+- Access the dashboard
+
+### 2. Add a Mentor
+- Navigate to "Mentors" in the sidebar
+- Click "Add Mentor" button
+- Fill in mentor details (name, email, expertise, bio)
+- Click "Add Mentor"
+
+### 3. Upload Teaching Session
+- Click on a mentor or navigate to "Sessions"
+- Click "Upload Session" button
+- Fill in session details:
+  - Select mentor from dropdown
+  - Enter session title
+  - Enter topic
+  - Upload video file (MP4, MOV, AVI, MKV - max 500MB)
+- Click "Upload"
+
+### 4. Start Evaluation
+- Session status will change to "Uploaded"
+- Click on the session to view details
+- Click "Start Evaluation" button
+- Wait for transcription and analysis (2-5 minutes)
+- Status will update automatically: Uploaded → Transcribing → Analyzing → Completed
+
+### 5. View Results
+- Once completed, view:
+  - Overall score and metric breakdown
+  - Explanation flow visualization
+  - Segment-by-segment scores
+  - Strengths and areas for improvement
+  - Detailed feedback for each metric
 
 ---
 
@@ -386,276 +421,25 @@ GET /api/evaluations/sessions/{session_id}
 GET /api/evaluations/{evaluation_id}/summary
 ```
 
-### Evidence
+### Coming Soon Endpoints
 
-**Extract Evidence**
+**Extract Evidence** (Under Development)
 ```http
 POST /api/evidence/extract/{evaluation_id}
-```
-
-**Get Evidence**
-```http
 GET /api/evidence/{evaluation_id}
 ```
 
-**Get Evidence by Metric**
-```http
-GET /api/evidence/{evaluation_id}/metric/{metric_name}
-```
-
-### Rewrites
-
-**Generate Rewrites**
+**Generate Rewrites** (Under Development)
 ```http
 POST /api/rewrites/session/{session_id}
-```
-
-**Get Rewrites**
-```http
 GET /api/rewrites/{session_id}
 ```
 
-**Get Rewrite Comparison**
-```http
-GET /api/rewrites/{session_id}/comparison
-```
-
-### Coherence
-
-**Check Coherence**
+**Check Coherence** (Under Development)
 ```http
 POST /api/coherence/check/{session_id}
-```
-
-**Get Coherence Report**
-```http
 GET /api/coherence/{session_id}
 ```
-
-**Get Contradictions**
-```http
-GET /api/coherence/{session_id}/contradictions
-```
-
-**Get Logical Gaps**
-```http
-GET /api/coherence/{session_id}/gaps
-```
-
----
-
-## Usage Guide
-
-### 1. Add a Mentor
-
-1. Navigate to the Dashboard
-2. Click "Mentors" in the sidebar
-3. Click "Add Mentor" button
-4. Fill in mentor details:
-   - Name
-   - Email
-   - Expertise areas (comma-separated)
-   - Bio (optional)
-5. Click "Add Mentor"
-
-### 2. Upload Teaching Session
-
-1. Select a mentor from the Mentors page
-2. Click "Upload Session"
-3. Fill in session details:
-   - Title (e.g., "Python Decorators Explained")
-   - Topic (e.g., "Python Programming")
-   - Video file (MP4, MOV, AVI, MKV - max 500MB)
-4. Click "Upload"
-
-### 3. Run Evaluation
-
-1. Navigate to Sessions
-2. Click on an uploaded session
-3. Click "Start Evaluation"
-4. Wait for processing (transcription + analysis)
-5. View results when status shows "Completed"
-
-### 4. Explore Results
-
-**Overview Tab**
-- Overall score and metric breakdown
-- Explanation flow visualization
-- Strengths and areas for improvement
-
-**Segments Tab**
-- Detailed segment-by-segment scores
-- Expand segments to see individual metric feedback
-
-**Evidence Tab**
-- Extract specific problematic phrases
-- View issue explanations and suggestions
-- Filter by metric or segment
-
-**Rewrites Tab**
-- Generate improved explanations
-- Compare original vs. rewritten versions
-- See estimated score improvements
-
-**Coherence Tab**
-- Check for contradictions
-- Identify topic drift
-- Find logical gaps in explanations
-
----
-
-## LLM Configuration
-
-### Unified LLM Client
-
-The system uses a unified client that supports multiple LLM providers with intelligent routing:
-
-**Default Configuration**
-```python
-# config.py
-LLM_STRATEGY = "hybrid"  # Uses both Gemini and Groq
-GOOGLE_API_KEY = "your_gemini_key"
-GROQ_API_KEY = "your_groq_key"
-FALLBACK_TO_MOCK = True  # Use mock responses if APIs fail
-```
-
-**Task Routing**
-- **Evaluation**: Gemini (frequent, needs accuracy)
-- **Evidence**: Gemini (needs precision)
-- **Rewrite**: Groq (needs speed)
-- **Coherence**: Groq (complex reasoning)
-
-### Obtaining API Keys
-
-**Google Gemini** (Free)
-1. Visit [Google AI Studio](https://makersuite.google.com/app/apikey)
-2. Create a new API key
-3. Copy and add to `.env`
-
-**Groq** (Free)
-1. Visit [Groq Console](https://console.groq.com/)
-2. Sign up for an account
-3. Generate API key
-4. Copy and add to `.env`
-
----
-
-## Demo Data
-
-Load sample data for testing:
-
-```bash
-cd backend
-python scripts/load_demo_data.py
-```
-
-This creates:
-- 5 sample mentors
-- 10 sample sessions with varying quality
-- Complete evaluations with scores
-
----
-
-## Testing
-
-### Backend Tests
-
-```bash
-cd backend
-pytest
-```
-
-### Test New Features
-
-```bash
-cd backend
-python scripts/test_new_features.py
-```
-
-Tests:
-- LLM client functionality
-- Evidence extraction
-- Explanation rewriting
-- Coherence checking
-- Full analysis pipeline
-
-### Frontend Tests
-
-```bash
-cd frontend
-npm test
-```
-
----
-
-## Docker Deployment
-
-### Using Docker Compose
-
-1. **Build and start services**
-```bash
-docker-compose up -d
-```
-
-2. **Access the application**
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:8000
-- API Docs: http://localhost:8000/docs
-
-### Individual Container Deployment
-
-**Backend**
-```bash
-cd backend
-docker build -t mindtrace-backend .
-docker run -p 8000:8000 --env-file .env mindtrace-backend
-```
-
-**Frontend**
-```bash
-cd frontend
-docker build -t mindtrace-frontend .
-docker run -p 3000:80 mindtrace-frontend
-```
-
----
-
-## Project Structure Details
-
-### Data Models
-
-**Mentor**
-- Profile information
-- Expertise areas
-- Performance statistics
-
-**Session**
-- Video metadata
-- Processing status
-- Associated evaluations
-
-**Evaluation**
-- Overall score (1-10)
-- 5 metric scores
-- Segment-level evaluations
-
-**Evidence**
-- Problematic phrase
-- Character position
-- Issue explanation
-- Suggested improvement
-
-**Rewrite**
-- Original text
-- Improved version
-- List of improvements
-- Estimated score gain
-
-**Coherence**
-- Contradictions
-- Topic drifts
-- Logical gaps
-- Overall coherence score
 
 ---
 
@@ -698,6 +482,52 @@ FALLBACK_TO_MOCK = True
 
 ---
 
+## Roadmap
+
+### Phase 1: Core Features (Completed)
+- User authentication and profile management
+- Mentor CRUD operations
+- Video upload and session management
+- AI-powered transcription with Google Gemini
+- Multi-dimensional evaluation system
+- Interactive dashboard with analytics
+- Deployment on Vercel and Hugging Face
+
+### Phase 2: Advanced Analysis (In Progress)
+- Evidence extraction with problematic phrase detection
+- Explanation rewriting with improvement suggestions
+- Coherence analysis (contradictions, topic drift, logical gaps)
+- Advanced analytics dashboard
+- PDF report generation
+
+### Phase 3: Enterprise Features (Planned)
+- Real-time video streaming analysis
+- Multi-language support (Spanish, French, German, Japanese)
+- Team collaboration features
+- Custom evaluation criteria configuration
+- Integration with LMS platforms (Canvas, Moodle, Blackboard)
+- Mobile application (iOS & Android)
+- API webhooks for external integrations
+- White-label solutions for institutions
+
+---
+
+## Demo Data
+
+Load sample data for testing:
+
+```bash
+cd backend
+python scripts/load_demo_data.py
+```
+
+This creates:
+- 5 sample mentors
+- 10 sample sessions with varying quality
+- Complete evaluations with scores
+
+---
+
 ## Troubleshooting
 
 ### Common Issues
@@ -713,9 +543,9 @@ brew services start mongodb-community  # macOS
 ```
 
 **LLM API Errors**
-- Verify API keys are correct
-- Check rate limits
-- Enable FALLBACK_TO_MOCK for testing
+- Verify API keys are correct in `.env`
+- Check rate limits on Google AI Studio / Groq
+- Enable FALLBACK_TO_MOCK for testing without API keys
 
 **Video Upload Fails**
 - Check file size (max 500MB)
@@ -729,9 +559,18 @@ rm -rf node_modules package-lock.json
 npm install
 ```
 
+**CORS Issues**
+- Backend CORS is configured for:
+  - `http://localhost:3000`
+  - `https://mind-trace-beta.vercel.app`
+  - `https://*.vercel.app`
+  - Update `main.py` if deploying to different domain
+
 ---
 
 ## Contributing
+
+We welcome contributions! Here's how to get started:
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -739,11 +578,12 @@ npm install
 4. Push to branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
----
-
-## License
-
-This project is licensed under the MIT License.
+### Development Guidelines
+- Follow PEP 8 for Python code
+- Use ESLint/Prettier for JavaScript/React code
+- Write meaningful commit messages
+- Add tests for new features
+- Update documentation as needed
 
 ---
 
@@ -753,21 +593,36 @@ This project is licensed under the MIT License.
 - **UI Components**: shadcn/ui, Radix UI
 - **Charts**: Recharts, D3.js
 - **Authentication**: Firebase
+- **Deployment**: Vercel, Hugging Face Spaces
+- **Icons**: Lucide React
 
 ---
 
-## Contact
+## Contact & Support
 
-For questions or support, please open an issue on GitHub.
+- **Developer**: Parth Gupta
+- **LinkedIn**: [linkedin.com/in/parth-gupta-4598b8324/](https://www.linkedin.com/in/parth-gupta-4598b8324/)
+- **GitHub**: [github.com/ParthG2209/MindTrace](https://github.com/ParthG2209/MindTrace)
+- **Email**: guptaparth2209@gmail.com
+
+For questions, issues, or feature requests, please open an issue on GitHub.
 
 ---
 
-## Roadmap
+## Project Status
 
-- Real-time video streaming analysis
-- Multi-language support
-- Advanced analytics dashboard
-- Mobile application
-- Integration with learning management systems
-- Custom evaluation criteria configuration
-- Collaborative feedback features
+![GitHub last commit](https://img.shields.io/github/last-commit/ParthG2209/MindTrace)
+![GitHub issues](https://img.shields.io/github/issues/ParthG2209/MindTrace)
+![GitHub pull requests](https://img.shields.io/github/issues-pr/ParthG2209/MindTrace)
+
+**Current Version**: 1.0.0  
+**Last Updated**: December 2025  
+**Status**: Active Development
+
+---
+
+## Star History
+
+If you find MindTrace useful, please consider starring the repository! It helps us understand what features the community values most.
+
+[![Star History Chart](https://api.star-history.com/svg?repos=ParthG2209/MindTrace&type=Date)](https://star-history.com/#ParthG2209/MindTrace&Date)
