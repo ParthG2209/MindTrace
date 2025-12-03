@@ -1,4 +1,3 @@
-// frontend/src/api/client.js
 import axios from 'axios';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://parthg2209-mindtrace.hf.space';
@@ -11,13 +10,31 @@ const apiClient = axios.create({
 });
 
 // Add request interceptor to remove trailing slashes
-apiClient.interceptors.request.use((config) => {
-  // Remove trailing slash from URL if present
-  if (config.url && config.url.endsWith('/')) {
-    config.url = config.url.slice(0, -1);
+apiClient.interceptors.request.use(
+  (config) => {
+    // Remove trailing slash from URL if present
+    if (config.url && config.url.endsWith('/')) {
+      config.url = config.url.slice(0, -1);
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
   }
-  return config;
-});
+);
+
+// Add response interceptor for better error handling
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response) {
+      console.error('API Error:', error.response.status, error.response.data);
+    } else if (error.request) {
+      console.error('Network Error:', error.message);
+    }
+    return Promise.reject(error);
+  }
+);
 
 // Mentor APIs
 export const mentorApi = {
