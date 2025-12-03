@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://parthg2209-mindtrace.hf.space';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
