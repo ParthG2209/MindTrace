@@ -24,6 +24,7 @@ async def create_mentor(mentor: MentorCreate, db=Depends(get_db)):
     return MentorInDB(**mentor_dict)
 
 @router.get("/", response_model=List[MentorInDB])
+@router.get("", response_model=List[MentorInDB])
 async def list_mentors(db=Depends(get_db)):
     """List all mentors"""
     mentors = []
