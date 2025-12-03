@@ -20,7 +20,7 @@ app = FastAPI(
     description="Explainable Mentor Evaluation System",
     version="1.0.0",
     lifespan=lifespan,
-    redirect_slashes=False  # ✅ Add this to prevent automatic redirects
+    # REMOVED: redirect_slashes=False
 )
 
 # CORS middleware
