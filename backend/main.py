@@ -1,22 +1,10 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
 from contextlib import asynccontextmanager
-from starlette.middleware.base import BaseHTTPMiddleware
 
 from db import db
 from routes import mentors, sessions, evaluations
 from routes import evidence, rewrites, coherence
-
-# HTTPS Redirect Middleware
-class HTTPSRedirectMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):
-        # Only redirect in production (Hugging Face)
-        if request.url.scheme == "http" and "hf.space" in str(request.url.hostname):
-            https_url = str(request.url).replace("http://", "https://", 1)
-            return RedirectResponse(url=https_url, status_code=301)
-        response = await call_next(request)
-        return response
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -33,10 +21,7 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Add HTTPS redirect first
-app.add_middleware(HTTPSRedirectMiddleware)
-
-# CORS middleware - UPDATED with your Vercel domain
+# CORS middleware - CRITICAL: Must allow your Vercel domain
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -44,6 +29,7 @@ app.add_middleware(
         "https://mind-trace-beta.vercel.app",
         "https://*.vercel.app",
         "https://parthg2209-mindtrace.hf.space",
+        "*"  # Allow all origins for testing (remove in production)
     ],
     allow_credentials=True,
     allow_methods=["*"],
