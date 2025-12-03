@@ -1,3 +1,4 @@
+# backend/main.py
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
@@ -18,10 +19,11 @@ app = FastAPI(
     title="MindTrace API",
     description="Explainable Mentor Evaluation System",
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
+    redirect_slashes=False  # ✅ Add this to prevent automatic redirects
 )
 
-# CORS middleware - CRITICAL: Must allow your Vercel domain
+# CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -29,7 +31,7 @@ app.add_middleware(
         "https://mind-trace-beta.vercel.app",
         "https://*.vercel.app",
         "https://parthg2209-mindtrace.hf.space",
-        "*"  # Allow all origins for testing (remove in production)
+        "*"
     ],
     allow_credentials=True,
     allow_methods=["*"],
