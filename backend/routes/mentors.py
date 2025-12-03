@@ -9,6 +9,7 @@ from db import get_db
 router = APIRouter(prefix="/api/mentors", tags=["mentors"])
 
 @router.post("/", response_model=MentorInDB)
+@router.post("", response_model=MentorInDB)
 async def create_mentor(mentor: MentorCreate, db=Depends(get_db)):
     """Create a new mentor"""
     mentor_dict = mentor.model_dump()
