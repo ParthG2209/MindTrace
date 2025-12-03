@@ -10,6 +10,7 @@ from utils.file_handler import save_upload_file
 router = APIRouter(prefix="/api/sessions", tags=["sessions"])
 
 @router.post("/", response_model=SessionInDB)
+@router.post("", response_model=SessionInDB)
 async def create_session(
     mentor_id: str = Form(...),
     title: str = Form(...),
@@ -50,6 +51,7 @@ async def create_session(
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/", response_model=List[SessionInDB])
+@router.get("", response_model=List[SessionInDB])
 async def list_sessions(
     mentor_id: Optional[str] = None,
     status: Optional[SessionStatus] = None,
