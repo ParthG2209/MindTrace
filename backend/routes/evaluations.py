@@ -167,6 +167,7 @@ async def process_evaluation(session_id: str, db):
             print(f"Error updating session status to failed: {update_error}")
 
 @router.post("/sessions/{session_id}/evaluate")
+
 async def start_evaluation(
     session_id: str,
     background_tasks: BackgroundTasks,
@@ -205,6 +206,7 @@ async def start_evaluation(
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/sessions/{session_id}", response_model=EvaluationInDB)
+
 async def get_session_evaluation(session_id: str, db=Depends(get_db)):
     """Get evaluation for a session"""
     try:
@@ -237,6 +239,7 @@ async def get_evaluation(evaluation_id: str, db=Depends(get_db)):
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/{evaluation_id}/summary", response_model=EvaluationSummary)
+
 async def get_evaluation_summary(evaluation_id: str, db=Depends(get_db)):
     """Get evaluation summary"""
     try:
@@ -268,6 +271,7 @@ async def get_evaluation_summary(evaluation_id: str, db=Depends(get_db)):
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/", response_model=List[EvaluationSummary])
+@router.get("", response_model=List[EvaluationSummary])
 async def list_evaluations(mentor_id: str = None, db=Depends(get_db)):
     """List all evaluations"""
     try:
