@@ -1,3 +1,4 @@
+// frontend/src/api/client.js
 import axios from 'axios';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://parthg2209-mindtrace.hf.space';
@@ -7,6 +8,15 @@ const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+});
+
+// Add request interceptor to remove trailing slashes
+apiClient.interceptors.request.use((config) => {
+  // Remove trailing slash from URL if present
+  if (config.url && config.url.endsWith('/')) {
+    config.url = config.url.slice(0, -1);
+  }
+  return config;
 });
 
 // Mentor APIs
