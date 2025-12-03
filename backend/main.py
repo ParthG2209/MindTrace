@@ -1,12 +1,22 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 from contextlib import asynccontextmanager
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from db import db
-# ===== UPDATED: Import new routes =====
 from routes import mentors, sessions, evaluations
 from routes import evidence, rewrites, coherence
-# ===== END UPDATED =====
+
+# HTTPS Redirect Middleware
+class HTTPSRedirectMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        # Only redirect in production (Hugging Face)
+        if request.url.scheme == "http" and "hf.space" in str(request.url.hostname):
+            https_url = str(request.url).replace("http://", "https://", 1)
+            return RedirectResponse(url=https_url, status_code=301)
+        response = await call_next(request)
+        return response
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -23,29 +33,30 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS middleware
+# Add HTTPS redirect first
+app.add_middleware(HTTPSRedirectMiddleware)
+
+# CORS middleware - UPDATED with your Vercel domain
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
         "https://mind-trace-beta.vercel.app",
-        "https://*.vercel.app"],
+        "https://*.vercel.app",
+        "https://parthg2209-mindtrace.hf.space",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ===== UPDATED: Include new routers =====
-# Original routers
+# Include routers
 app.include_router(mentors.router)
 app.include_router(sessions.router)
 app.include_router(evaluations.router)
-
-# NEW routers
 app.include_router(evidence.evidence_router)
 app.include_router(rewrites.rewrite_router)
 app.include_router(coherence.coherence_router)
-# ===== END UPDATED =====
 
 @app.get("/")
 async def root():
@@ -61,4 +72,4 @@ async def health_check():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=7860)

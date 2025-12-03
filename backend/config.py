@@ -5,7 +5,7 @@ load_dotenv()
 
 class Settings:
     # MongoDB
-    MONGODB_URL = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
+    MONGODB_URL = os.getenv("MONGODB_URL", "mongodb+srv://guptaparth2209_db_user:Parth2209@cluster0.0um35et.mongodb.net/mindtrace?retryWrites=true&w=majority")
     DATABASE_NAME = os.getenv("DATABASE_NAME", "mindtrace")
     
     # ===== NEW: LLM Configuration =====
