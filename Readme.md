@@ -13,7 +13,7 @@ An explainable evaluation platform that analyzes teaching sessions using advance
 > 
 > The current deployed version is running in **Admin Mode** by default for testing purposes.
 > * **Permissions:** You have full access to **add or delete mentors** and view **any teaching session** on the platform.
-> * **Data Authenticity:** The data currently populated in the dashboard is **100% real evaluation data** processed by our AI pipeline. These are actual AI-generated evaluations, rewrites, and coherence checks—not static demo placeholders.
+> * **Data Authenticity:** The data currently populated in the dashboard is **100% real evaluation data** processed by our AI pipeline. These are actual AI-generated evaluations, rewrites, and coherence checks—not static demo placeholders and you can add your own mentors and sessions and evaluate them.
 
 
 
