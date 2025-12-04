@@ -66,30 +66,30 @@ MindTrace transforms teaching evaluation by providing:
 - **Protected Routes**: Secure dashboard and evaluation features
 - **User Profiles**: Personalized user experience with profile management
 
+### Evidence Extraction
+- **Problematic Phrase Detection**: Identify exact text causing low scores
+- **Character-Level Precision**: Pinpoint issues with start/end positions
+- **Issue Classification**: Categorize by severity (minor, moderate, major)
+- **Alternative Phrasing**: Suggest better ways to express concepts
+- **Contextual Feedback**: Explain why specific phrases are problematic
+
+### Explanation Rewriting
+- **AI-Powered Rewrites**: Generate improved versions of low-scoring explanations
+- **Improvement Tracking**: Show specific changes and score improvements
+- **Multiple Versions**: Generate alternative rewrites for comparison
+- **Confidence Scoring**: Indicate reliability of suggested improvements
+- **Before/After Comparison**: Side-by-side view of original vs. rewritten
+
+### Coherence Analysis
+- **Contradiction Detection**: Find statements that conflict with each other
+- **Topic Drift Identification**: Detect when explanations stray off-topic
+- **Logical Gap Analysis**: Identify missing steps or unexplained concepts
+- **Session-Wide Coherence Score**: Overall measure of logical consistency
+- **Resolution Suggestions**: Recommendations for fixing coherence issues
+
 ---
 
 ## Coming Soon (Under Development)
-
-### Evidence Extraction
-- 🚧 **Problematic Phrase Detection**: Identify exact text causing low scores
-- 🚧 **Character-Level Precision**: Pinpoint issues with start/end positions
-- 🚧 **Issue Classification**: Categorize by severity (minor, moderate, major)
-- 🚧 **Alternative Phrasing**: Suggest better ways to express concepts
-- 🚧 **Contextual Feedback**: Explain why specific phrases are problematic
-
-### Explanation Rewriting
-- 🚧 **AI-Powered Rewrites**: Generate improved versions of low-scoring explanations
-- 🚧 **Improvement Tracking**: Show specific changes and score improvements
-- 🚧 **Multiple Versions**: Generate alternative rewrites for comparison
-- 🚧 **Confidence Scoring**: Indicate reliability of suggested improvements
-- 🚧 **Before/After Comparison**: Side-by-side view of original vs. rewritten
-
-### Coherence Analysis
-- 🚧 **Contradiction Detection**: Find statements that conflict with each other
-- 🚧 **Topic Drift Identification**: Detect when explanations stray off-topic
-- 🚧 **Logical Gap Analysis**: Identify missing steps or unexplained concepts
-- 🚧 **Session-Wide Coherence Score**: Overall measure of logical consistency
-- 🚧 **Resolution Suggestions**: Recommendations for fixing coherence issues
 
 ### Advanced Analytics
 - 🚧 **Predictive Insights**: ML-based predictions for mentor improvement
