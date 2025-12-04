@@ -13,12 +13,12 @@ class ScoringService:
             'correctness': settings.WEIGHT_CORRECTNESS,
             'pacing': settings.WEIGHT_PACING,
             'communication': settings.WEIGHT_COMMUNICATION,
-            # Advanced metrics
-            'engagement': settings.WEIGHT_ENGAGEMENT,
-            'examples': settings.WEIGHT_EXAMPLES,
-            'questioning': settings.WEIGHT_QUESTIONING,
-            'adaptability': settings.WEIGHT_ADAPTABILITY,
-            'relevance': settings.WEIGHT_RELEVANCE,
+            # Advanced metrics - with default values if not in settings
+            'engagement': getattr(settings, 'WEIGHT_ENGAGEMENT', 0.10),
+            'examples': getattr(settings, 'WEIGHT_EXAMPLES', 0.10),
+            'questioning': getattr(settings, 'WEIGHT_QUESTIONING', 0.08),
+            'adaptability': getattr(settings, 'WEIGHT_ADAPTABILITY', 0.08),
+            'relevance': getattr(settings, 'WEIGHT_RELEVANCE', 0.09),
         }
     
     def compute_segment_score(self, segment_eval: SegmentEvaluation) -> float:
@@ -142,7 +142,7 @@ class ScoringService:
         
         # Calculate related topics bonus
         high_relevance_segments = [s for s in segments if s.relevance.score >= 8.0]
-        related_bonus = len(high_relevance_segments) / len(segments) * settings.RELATED_TOPIC_BONUS
+        related_bonus = len(high_relevance_segments) / len(segments) * getattr(settings, 'RELATED_TOPIC_BONUS', 0.5)
         
         return {
             'stated_topic': stated_topic,
@@ -166,4 +166,5 @@ class ScoringService:
         else:
             return "Poor - Content frequently strays from stated topic"
 
+# Create global instance
 scoring_service = ScoringService()
