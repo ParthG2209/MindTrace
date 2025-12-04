@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AlertCircle, Lightbulb, ArrowRight, Loader } from 'lucide-react';
-import axios from 'axios';
+import apiClient from '../api/client'; // ✅ CHANGED: Import apiClient instead of axios
 
 const EvidencePanel = ({ evaluationId, sessionId }) => {
   const [evidence, setEvidence] = useState(null);
@@ -18,7 +18,8 @@ const EvidencePanel = ({ evaluationId, sessionId }) => {
   const fetchEvidence = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`http://localhost:8000/api/evidence/${evaluationId}`);
+      // ✅ CHANGED: Use apiClient and remove localhost URL
+      const response = await apiClient.get(`/api/evidence/${evaluationId}`);
       setEvidence(response.data);
     } catch (error) {
       if (error.response?.status === 404) {
@@ -35,12 +36,14 @@ const EvidencePanel = ({ evaluationId, sessionId }) => {
   const handleExtractEvidence = async () => {
     try {
       setExtracting(true);
-      await axios.post(`http://localhost:8000/api/evidence/extract/${evaluationId}`);
+      // ✅ CHANGED: Use apiClient and remove localhost URL
+      await apiClient.post(`/api/evidence/extract/${evaluationId}`);
       
       // Poll for completion
       const pollInterval = setInterval(async () => {
         try {
-          const response = await axios.get(`http://localhost:8000/api/evidence/${evaluationId}`);
+          // ✅ CHANGED: Use apiClient
+          const response = await apiClient.get(`/api/evidence/${evaluationId}`);
           if (response.data && response.data.items) {
             setEvidence(response.data);
             setExtracting(false);
