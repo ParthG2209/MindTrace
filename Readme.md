@@ -8,6 +8,14 @@ An explainable evaluation platform that analyzes teaching sessions using advance
 [![Backend](https://img.shields.io/badge/Backend-Deployed%20on%20HuggingFace-FFD21E?style=for-the-badge&logo=huggingface)](https://huggingface.co/spaces/ParthG2209/MindTrace)
 
 ---
+> [!NOTE]
+> **🚧 Beta Access & Data Notice**
+> 
+> The current deployed version is running in **Admin Mode** by default for testing purposes.
+> * **Permissions:** You have full access to **add or delete mentors** and view **any teaching session** on the platform.
+> * **Data Authenticity:** The data currently populated in the dashboard is **100% real evaluation data** processed by our AI pipeline. These are actual AI-generated evaluations, rewrites, and coherence checks—not static demo placeholders.
+
+
 
 ## Live Demo
 
