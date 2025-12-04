@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AlertTriangle, GitBranch, Zap, Loader, TrendingDown } from 'lucide-react';
-import axios from 'axios';
+import apiClient from '../api/client'; // ✅ CHANGED: Import apiClient instead of axios
 
 const CoherenceIssuesViewer = ({ sessionId, evaluationId }) => {
   const [coherence, setCoherence] = useState(null);
@@ -17,7 +17,8 @@ const CoherenceIssuesViewer = ({ sessionId, evaluationId }) => {
   const fetchCoherence = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`http://localhost:8000/api/coherence/${sessionId}`);
+      // ✅ CHANGED: Use apiClient and remove localhost URL
+      const response = await apiClient.get(`/api/coherence/${sessionId}`);
       setCoherence(response.data);
     } catch (error) {
       if (error.response?.status === 404) {
@@ -33,11 +34,13 @@ const CoherenceIssuesViewer = ({ sessionId, evaluationId }) => {
   const handleCheckCoherence = async () => {
     try {
       setChecking(true);
-      await axios.post(`http://localhost:8000/api/coherence/check/${sessionId}`);
+      // ✅ CHANGED: Use apiClient and remove localhost URL
+      await apiClient.post(`/api/coherence/check/${sessionId}`);
       
       const pollInterval = setInterval(async () => {
         try {
-          const response = await axios.get(`http://localhost:8000/api/coherence/${sessionId}`);
+          // ✅ CHANGED: Use apiClient
+          const response = await apiClient.get(`/api/coherence/${sessionId}`);
           if (response.data) {
             setCoherence(response.data);
             setChecking(false);
