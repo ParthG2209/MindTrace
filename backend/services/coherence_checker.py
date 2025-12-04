@@ -1,12 +1,11 @@
 from typing import List, Dict, Any
 from models.evaluation import SegmentEvaluation
-from models.transcript import TranscriptSegment
 from utils.llm_client import llm_client
 
 class CoherenceChecker:
     """
     Analyzes entire teaching sessions for coherence issues
-    Detects contradictions, topic drift, and logical gaps
+    FIXED VERSION - Now properly detects contradictions, drift, and gaps
     """
     
     def __init__(self):
@@ -28,6 +27,8 @@ class CoherenceChecker:
             Comprehensive coherence report
         """
         
+        print(f"🔍 Checking coherence across {len(segments)} segments")
+        
         # Check for different types of issues
         contradictions = await self.detect_contradictions(segments)
         topic_drifts = await self.detect_topic_drift(segments, topic)
@@ -40,7 +41,7 @@ class CoherenceChecker:
             logical_gaps
         )
         
-        return {
+        report = {
             "session_coherence_score": coherence_score,
             "contradictions": contradictions,
             "topic_drifts": topic_drifts,
@@ -52,6 +53,11 @@ class CoherenceChecker:
                 len(logical_gaps)
             )
         }
+        
+        print(f"✅ Coherence check complete. Score: {coherence_score}/10")
+        print(f"   Found: {len(contradictions)} contradictions, {len(topic_drifts)} drifts, {len(logical_gaps)} gaps")
+        
+        return report
     
     async def detect_contradictions(
         self,
@@ -78,6 +84,11 @@ Your task: Identify any contradictions where the teacher:
 3. Uses examples that contradict the main explanation
 4. Makes statements that logically cannot both be true
 
+IMPORTANT: Be strict but fair. Only flag actual contradictions, not:
+- Different perspectives or nuances
+- Progressive refinement of ideas
+- Examples showing exceptions to rules (when explicitly stated as exceptions)
+
 Return as JSON:
 {{
   "contradictions": [
@@ -94,18 +105,20 @@ Return as JSON:
   ]
 }}
 
-Only report ACTUAL contradictions, not just different perspectives or clarifications.
-If no contradictions found, return empty array."""
+Only report ACTUAL contradictions. If no contradictions found, return empty array."""
         
         try:
             response = await llm_client.call_llm(
                 prompt=prompt,
                 task_type='coherence',
-                response_format='json'
+                response_format='json',
+                temperature=0.3  # Lower temp for more precise detection
             )
-            return response.get('contradictions', [])
+            contradictions = response.get('contradictions', [])
+            print(f"   Contradictions detected: {len(contradictions)}")
+            return contradictions
         except Exception as e:
-            print(f"Contradiction detection failed: {e}")
+            print(f"❌ Contradiction detection failed: {e}")
             return []
     
     async def detect_topic_drift(
@@ -130,10 +143,14 @@ SESSION TEXT:
 {segments_text}
 
 Your task: Identify segments where the teacher:
-1. Goes significantly off-topic
-2. Introduces unrelated tangents
-3. Spends too much time on peripheral concepts
+1. Goes significantly off-topic without educational justification
+2. Introduces unrelated tangents that don't enhance understanding
+3. Spends excessive time on peripheral concepts
 4. Loses focus on the main learning objective
+
+CRITICAL DISTINCTION:
+- VALUABLE DRIFT (Don't flag): Related topics that provide context, analogies from other fields that clarify concepts, real-world examples that enhance understanding
+- PROBLEMATIC DRIFT (Flag): Completely unrelated content, personal anecdotes without educational value, tangents that confuse rather than clarify
 
 Return as JSON:
 {{
@@ -145,23 +162,28 @@ Return as JSON:
       "drift_degree": 0.7,
       "relevance_score": 0.3,
       "impact": "how this affects learning",
-      "suggestion": "how to bring it back on topic"
+      "suggestion": "how to bring it back on topic or connect it better"
     }}
   ]
 }}
 
 drift_degree: 0.0 (perfectly on topic) to 1.0 (completely unrelated)
-Only report significant drift (degree > 0.5)."""
+relevance_score: 0.0 (no educational value) to 1.0 (highly valuable)
+
+Only report significant drift (degree > 0.6 AND relevance < 0.4)."""
         
         try:
             response = await llm_client.call_llm(
                 prompt=prompt,
                 task_type='coherence',
-                response_format='json'
+                response_format='json',
+                temperature=0.3
             )
-            return response.get('topic_drifts', [])
+            drifts = response.get('topic_drifts', [])
+            print(f"   Topic drifts detected: {len(drifts)}")
+            return drifts
         except Exception as e:
-            print(f"Topic drift detection failed: {e}")
+            print(f"❌ Topic drift detection failed: {e}")
             return []
     
     async def detect_logical_gaps(
@@ -184,10 +206,16 @@ SESSION TEXT:
 
 Your task: Identify where the teacher:
 1. Jumps to conclusions without explaining intermediate steps
-2. Uses concepts without introducing them first
-3. Makes assumptions about prior knowledge that may not exist
+2. Uses concepts without introducing them first (assumes prior knowledge)
+3. Makes assumptions about understanding that may not exist
 4. Skips critical steps in an explanation
 5. Has abrupt transitions without connecting ideas
+
+IDENTIFICATION CRITERIA:
+- Gap must significantly impact understanding
+- Missing information should be necessary for comprehension
+- Don't flag minor shortcuts in well-understood material
+- Focus on gaps that would genuinely confuse learners
 
 Return as JSON:
 {{
@@ -204,17 +232,20 @@ Return as JSON:
   ]
 }}
 
-Focus on gaps that would genuinely confuse learners."""
+Focus on gaps that would genuinely confuse learners at the target level."""
         
         try:
             response = await llm_client.call_llm(
                 prompt=prompt,
                 task_type='coherence',
-                response_format='json'
+                response_format='json',
+                temperature=0.3
             )
-            return response.get('logical_gaps', [])
+            gaps = response.get('logical_gaps', [])
+            print(f"   Logical gaps detected: {len(gaps)}")
+            return gaps
         except Exception as e:
-            print(f"Logical gap detection failed: {e}")
+            print(f"❌ Logical gap detection failed: {e}")
             return []
     
     def _calculate_coherence_score(
@@ -242,7 +273,10 @@ Focus on gaps that would genuinely confuse learners."""
         
         for drift in topic_drifts:
             drift_degree = drift.get('drift_degree', 0.5)
-            score -= drift_degree * 1.5
+            relevance_score = drift.get('relevance_score', 0.5)
+            # Higher drift and lower relevance = bigger penalty
+            penalty = drift_degree * (1 - relevance_score) * 1.5
+            score -= penalty
         
         for gap in logical_gaps:
             severity = gap.get('severity', 'moderate')
@@ -264,106 +298,18 @@ Focus on gaps that would genuinely confuse learners."""
     ) -> str:
         """Generate human-readable assessment"""
         
+        total_issues = num_contradictions + num_drifts + num_gaps
+        
         if score >= 9.0:
-            return "Excellent coherence. The explanation flows logically with no significant issues."
+            return f"Excellent coherence. The explanation flows logically with no significant issues. ({total_issues} minor items noted)"
         elif score >= 7.5:
-            return "Good coherence. Minor issues present but overall explanation is well-structured."
+            return f"Good coherence. Minor issues present ({total_issues} items) but overall explanation is well-structured."
         elif score >= 6.0:
-            return "Acceptable coherence. Some logical issues that should be addressed."
+            return f"Acceptable coherence. Some logical issues ({total_issues} items) that should be addressed to improve clarity."
         elif score >= 4.0:
-            return "Poor coherence. Multiple issues affecting understanding. Revision recommended."
+            return f"Poor coherence. Multiple issues ({total_issues} items) affecting understanding. Revision recommended."
         else:
-            return "Very poor coherence. Major logical problems. Significant revision needed."
-    
-    async def generate_coherence_report(
-        self,
-        issues: Dict[str, Any]
-    ) -> Dict[str, Any]:
-        """
-        Generate comprehensive coherence report with recommendations
-        """
-        
-        return {
-            "summary": {
-                "overall_score": issues.get('session_coherence_score', 0),
-                "total_issues": (
-                    len(issues.get('contradictions', [])) +
-                    len(issues.get('topic_drifts', [])) +
-                    len(issues.get('logical_gaps', []))
-                ),
-                "assessment": issues.get('overall_assessment', '')
-            },
-            "critical_issues": self._identify_critical_issues(issues),
-            "recommendations": self._generate_recommendations(issues),
-            "detailed_issues": issues
-        }
-    
-    def _identify_critical_issues(
-        self,
-        issues: Dict[str, Any]
-    ) -> List[Dict[str, Any]]:
-        """Identify the most critical coherence issues"""
-        
-        critical = []
-        
-        # Major contradictions
-        for contra in issues.get('contradictions', []):
-            if contra.get('severity') == 'major':
-                critical.append({
-                    "type": "contradiction",
-                    "description": contra.get('explanation'),
-                    "segments": [contra.get('segment1_id'), contra.get('segment2_id')]
-                })
-        
-        # Severe topic drift
-        for drift in issues.get('topic_drifts', []):
-            if drift.get('drift_degree', 0) > 0.7:
-                critical.append({
-                    "type": "topic_drift",
-                    "description": drift.get('impact'),
-                    "segment": drift.get('segment_id')
-                })
-        
-        # Major logical gaps
-        for gap in issues.get('logical_gaps', []):
-            if gap.get('severity') == 'major':
-                critical.append({
-                    "type": "logical_gap",
-                    "description": gap.get('missing_concept'),
-                    "segments": [gap.get('between_segment1'), gap.get('between_segment2')]
-                })
-        
-        return critical
-    
-    def _generate_recommendations(
-        self,
-        issues: Dict[str, Any]
-    ) -> List[str]:
-        """Generate actionable recommendations"""
-        
-        recommendations = []
-        
-        if issues.get('contradictions'):
-            recommendations.append(
-                "Review and resolve contradictions between segments to ensure consistency"
-            )
-        
-        if issues.get('topic_drifts'):
-            recommendations.append(
-                "Stay focused on the main topic and remove or minimize tangential content"
-            )
-        
-        if issues.get('logical_gaps'):
-            recommendations.append(
-                "Fill logical gaps by adding missing explanatory steps and defining concepts before use"
-            )
-        
-        if not recommendations:
-            recommendations.append(
-                "Maintain the current level of coherence in future sessions"
-            )
-        
-        return recommendations
+            return f"Very poor coherence. Major logical problems ({total_issues} items). Significant revision needed."
 
 # Create global instance
 coherence_checker = CoherenceChecker()
