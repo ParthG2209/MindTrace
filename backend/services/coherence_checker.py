@@ -27,12 +27,15 @@ class CoherenceChecker:
             Comprehensive coherence report
         """
         
-        print(f"🔍 Checking coherence across {len(segments)} segments")
+        # Filter valid segments only [FIXED]
+        valid_segments = [s for s in segments if s and s.text]
+        
+        print(f"🔍 Checking coherence across {len(valid_segments)} segments")
         
         # Check for different types of issues
-        contradictions = await self.detect_contradictions(segments)
-        topic_drifts = await self.detect_topic_drift(segments, topic)
-        logical_gaps = await self.detect_logical_gaps(segments)
+        contradictions = await self.detect_contradictions(valid_segments)
+        topic_drifts = await self.detect_topic_drift(valid_segments, topic)
+        logical_gaps = await self.detect_logical_gaps(valid_segments)
         
         # Calculate overall coherence score
         coherence_score = self._calculate_coherence_score(
@@ -67,6 +70,9 @@ class CoherenceChecker:
         Detect statements that contradict each other
         """
         
+        if not segments:
+            return []
+
         # Build combined text for analysis
         combined_text = "\n\n".join([
             f"[SEGMENT {seg.segment_id}]: {seg.text}"
@@ -130,6 +136,9 @@ Only report ACTUAL contradictions. If no contradictions found, return empty arra
         Detect when explanation drifts from the main topic
         """
         
+        if not segments:
+            return []
+
         segments_text = "\n\n".join([
             f"[SEGMENT {seg.segment_id}]: {seg.text}"
             for seg in segments
@@ -194,6 +203,9 @@ Only report significant drift (degree > 0.6 AND relevance < 0.4)."""
         Detect missing steps or unexplained jumps in logic
         """
         
+        if not segments:
+            return []
+
         segments_text = "\n\n".join([
             f"[SEGMENT {seg.segment_id}]: {seg.text}"
             for seg in segments
