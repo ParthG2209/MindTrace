@@ -4,7 +4,7 @@ from typing import Dict, Any, Optional, List
 from datetime import datetime
 import httpx
 import google.generativeai as genai
-import re  # ✅ ADDED: Missing import for regex
+import re
 from config import settings
 
 class LLMClientError(Exception):
@@ -89,13 +89,16 @@ class UnifiedLLMClient:
                 raise
                 
             except Exception as e:
+                # Log the error but don't crash yet
+                print(f"LLM attempt {attempt+1} failed ({provider}): {str(e)}")
+                
                 if attempt < max_retries - 1:
                     await asyncio.sleep(2 ** attempt)
                     continue
                     
                 # Final fallback to mock if enabled
                 if self.use_mock_fallback:
-                    print(f"LLM call failed, using mock response: {e}")
+                    print(f"All LLM calls failed, using mock response. Last error: {e}")
                     return self._generate_mock_response(task_type)
                 raise
     
@@ -123,8 +126,16 @@ class UnifiedLLMClient:
                 "temperature": temperature,
                 "topP": 0.95,
                 "topK": 40,
-                "maxOutputTokens": 2048,
-            }
+                # FIXED: Increased token limit to prevent JSON cutoff
+                "maxOutputTokens": 8192,
+            },
+            # FIXED: Added safety settings to prevent blocking valid content
+            "safetySettings": [
+                {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+                {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+                {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+                {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"}
+            ]
         }
         
         # Make request
@@ -140,7 +151,24 @@ class UnifiedLLMClient:
         data = response.json()
         
         try:
-            content = data['candidates'][0]['content']['parts'][0]['text']
+            # Enhanced safety checks for response structure
+            if 'candidates' not in data or not data['candidates']:
+                raise LLMClientError(f"Gemini returned no candidates. Possible safety block. Response: {str(data)[:200]}")
+            
+            candidate = data['candidates'][0]
+            
+            # Check for safety finish reason
+            if candidate.get('finishReason') == 'SAFETY':
+                 raise LLMClientError("Gemini generation blocked due to safety settings.")
+
+            if 'content' not in candidate:
+                raise LLMClientError(f"Gemini candidate missing content. Finish reason: {candidate.get('finishReason')}")
+                
+            content_part = candidate['content']
+            if 'parts' not in content_part or not content_part['parts']:
+                 raise LLMClientError("Gemini content missing parts text.")
+
+            content = content_part['parts'][0]['text']
             
             if response_format == 'json':
                 # Remove markdown formatting if present
@@ -165,7 +193,7 @@ class UnifiedLLMClient:
             return {'text': content}
             
         except (KeyError, IndexError) as e:
-            raise LLMClientError(f"Failed to parse Gemini response: {e}")
+            raise LLMClientError(f"Failed to parse Gemini response structure: {e}")
     
     async def _call_groq(
         self, 
@@ -175,7 +203,7 @@ class UnifiedLLMClient:
     ) -> Dict[str, Any]:
         """Call Groq API (LLaMA 3.1)"""
         
-        url = "https://api.groq.com/openai/v1/chat/completions"
+        url = "[https://api.groq.com/openai/v1/chat/completions](https://api.groq.com/openai/v1/chat/completions)"
         
         headers = {
             "Authorization": f"Bearer {self.groq_api_key}",
@@ -261,6 +289,26 @@ class UnifiedLLMClient:
                 "communication": {
                     "score": round(random.uniform(6.5, 9.0), 1),
                     "reason": "The language is engaging and appropriate. Good use of analogies and examples to illustrate points."
+                },
+                "engagement": {
+                    "score": round(random.uniform(6.0, 9.0), 1),
+                    "reason": "The teacher uses effective techniques to maintain interest, including real-world connections."
+                },
+                "examples": {
+                    "score": round(random.uniform(6.5, 9.5), 1),
+                    "reason": "Examples are relevant and help clarify concepts. A good variety of illustrations is provided."
+                },
+                "questioning": {
+                    "score": round(random.uniform(5.5, 8.5), 1),
+                    "reason": "Questions are used to check understanding, though more thought-provoking questions could enhance learning."
+                },
+                "adaptability": {
+                    "score": round(random.uniform(6.0, 8.5), 1),
+                    "reason": "The teacher adjusts explanation depth appropriately, showing awareness of complexity levels."
+                },
+                "relevance": {
+                    "score": round(random.uniform(7.0, 9.5), 1),
+                    "reason": "Content is highly relevant to the stated topic and related concepts enhance understanding effectively."
                 }
             }
         
