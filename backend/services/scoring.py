@@ -22,32 +22,47 @@ class ScoringService:
         }
     
     def compute_segment_score(self, segment_eval: SegmentEvaluation) -> float:
-        """Compute weighted score for a single segment"""
+        """Compute weighted score for a single segment - handles optional metrics"""
         score = (
             segment_eval.clarity.score * self.weights['clarity'] +
             segment_eval.structure.score * self.weights['structure'] +
             segment_eval.correctness.score * self.weights['correctness'] +
             segment_eval.pacing.score * self.weights['pacing'] +
-            segment_eval.communication.score * self.weights['communication'] +
-            segment_eval.engagement.score * self.weights['engagement'] +
-            segment_eval.examples.score * self.weights['examples'] +
-            segment_eval.questioning.score * self.weights['questioning'] +
-            segment_eval.adaptability.score * self.weights['adaptability'] +
-            segment_eval.relevance.score * self.weights['relevance']
+            segment_eval.communication.score * self.weights['communication']
         )
+        
+        # Add advanced metrics if available
+        if segment_eval.engagement:
+            score += segment_eval.engagement.score * self.weights['engagement']
+        if segment_eval.examples:
+            score += segment_eval.examples.score * self.weights['examples']
+        if segment_eval.questioning:
+            score += segment_eval.questioning.score * self.weights['questioning']
+        if segment_eval.adaptability:
+            score += segment_eval.adaptability.score * self.weights['adaptability']
+        if segment_eval.relevance:
+            score += segment_eval.relevance.score * self.weights['relevance']
+        
         return round(score, 2)
     
     def compute_overall_metrics(self, segments: List[SegmentEvaluation]) -> Metrics:
-        """Compute average metrics across all segments"""
+        """Compute average metrics across all segments - handles optional metrics"""
         if not segments:
             return Metrics(
                 clarity=0, structure=0, correctness=0,
-                pacing=0, communication=0, engagement=0,
-                examples=0, questioning=0, adaptability=0,
-                relevance=0
+                pacing=0, communication=0, engagement=None,
+                examples=None, questioning=None, adaptability=None,
+                relevance=None
             )
         
         n = len(segments)
+        
+        # Calculate advanced metrics only if present
+        engagement_scores = [s.engagement.score for s in segments if s.engagement]
+        examples_scores = [s.examples.score for s in segments if s.examples]
+        questioning_scores = [s.questioning.score for s in segments if s.questioning]
+        adaptability_scores = [s.adaptability.score for s in segments if s.adaptability]
+        relevance_scores = [s.relevance.score for s in segments if s.relevance]
         
         return Metrics(
             clarity=round(sum(s.clarity.score for s in segments) / n, 2),
@@ -55,27 +70,35 @@ class ScoringService:
             correctness=round(sum(s.correctness.score for s in segments) / n, 2),
             pacing=round(sum(s.pacing.score for s in segments) / n, 2),
             communication=round(sum(s.communication.score for s in segments) / n, 2),
-            engagement=round(sum(s.engagement.score for s in segments) / n, 2),
-            examples=round(sum(s.examples.score for s in segments) / n, 2),
-            questioning=round(sum(s.questioning.score for s in segments) / n, 2),
-            adaptability=round(sum(s.adaptability.score for s in segments) / n, 2),
-            relevance=round(sum(s.relevance.score for s in segments) / n, 2),
+            engagement=round(sum(engagement_scores) / len(engagement_scores), 2) if engagement_scores else None,
+            examples=round(sum(examples_scores) / len(examples_scores), 2) if examples_scores else None,
+            questioning=round(sum(questioning_scores) / len(questioning_scores), 2) if questioning_scores else None,
+            adaptability=round(sum(adaptability_scores) / len(adaptability_scores), 2) if adaptability_scores else None,
+            relevance=round(sum(relevance_scores) / len(relevance_scores), 2) if relevance_scores else None,
         )
     
     def compute_overall_score(self, metrics: Metrics) -> float:
-        """Compute weighted overall score from metrics"""
+        """Compute weighted overall score from metrics - handles optional metrics"""
         score = (
             metrics.clarity * self.weights['clarity'] +
             metrics.structure * self.weights['structure'] +
             metrics.correctness * self.weights['correctness'] +
             metrics.pacing * self.weights['pacing'] +
-            metrics.communication * self.weights['communication'] +
-            metrics.engagement * self.weights['engagement'] +
-            metrics.examples * self.weights['examples'] +
-            metrics.questioning * self.weights['questioning'] +
-            metrics.adaptability * self.weights['adaptability'] +
-            metrics.relevance * self.weights['relevance']
+            metrics.communication * self.weights['communication']
         )
+        
+        # Add advanced metrics if available
+        if metrics.engagement is not None:
+            score += metrics.engagement * self.weights['engagement']
+        if metrics.examples is not None:
+            score += metrics.examples * self.weights['examples']
+        if metrics.questioning is not None:
+            score += metrics.questioning * self.weights['questioning']
+        if metrics.adaptability is not None:
+            score += metrics.adaptability * self.weights['adaptability']
+        if metrics.relevance is not None:
+            score += metrics.relevance * self.weights['relevance']
+        
         return round(score, 2)
     
     def identify_strengths_and_weaknesses(
@@ -112,6 +135,8 @@ class ScoringService:
         
         for metric, name in metric_names.items():
             score = getattr(metrics, metric)
+            if score is None:  # Skip optional metrics that are missing
+                continue
             if score >= high_threshold:
                 strengths.append(f"{name} (score: {score})")
             elif score < low_threshold:
@@ -127,13 +152,24 @@ class ScoringService:
         """
         Analyze how well the session aligns with the stated topic
         """
-        relevance_scores = [s.relevance.score for s in segments]
-        avg_relevance = sum(relevance_scores) / len(relevance_scores) if relevance_scores else 0
+        relevance_scores = [s.relevance.score for s in segments if s.relevance]
+        
+        if not relevance_scores:
+            return {
+                'stated_topic': stated_topic,
+                'average_relevance': None,
+                'topic_drift_count': 0,
+                'topic_drift_segments': [],
+                'related_topics_bonus': 0.0,
+                'alignment_quality': 'Not available (older evaluation)'
+            }
+        
+        avg_relevance = sum(relevance_scores) / len(relevance_scores)
         
         # Detect topic drift
         topic_drift = []
         for i, seg in enumerate(segments):
-            if seg.relevance.score < 6.0:
+            if seg.relevance and seg.relevance.score < 6.0:
                 topic_drift.append({
                     'segment_id': i,
                     'score': seg.relevance.score,
@@ -141,7 +177,7 @@ class ScoringService:
                 })
         
         # Calculate related topics bonus
-        high_relevance_segments = [s for s in segments if s.relevance.score >= 8.0]
+        high_relevance_segments = [s for s in segments if s.relevance and s.relevance.score >= 8.0]
         related_bonus = len(high_relevance_segments) / len(segments) * getattr(settings, 'RELATED_TOPIC_BONUS', 0.5)
         
         return {

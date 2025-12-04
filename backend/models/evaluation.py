@@ -11,37 +11,37 @@ class SegmentEvaluation(BaseModel):
     segment_id: int
     text: str
     
-    # Core Metrics (Original 5)
+    # Core Metrics (Original 5) - REQUIRED
     clarity: ScoreDetail
     structure: ScoreDetail
     correctness: ScoreDetail
     pacing: ScoreDetail
     communication: ScoreDetail
     
-    # ===== NEW: Advanced Metrics =====
-    engagement: ScoreDetail  # How engaging is the content?
-    examples: ScoreDetail    # Quality of examples used
-    questioning: ScoreDetail # Use of questions to stimulate thinking
-    adaptability: ScoreDetail # Adjusting difficulty appropriately
-    relevance: ScoreDetail   # Relevance to stated/related topics
+    # ===== NEW: Advanced Metrics - OPTIONAL for backward compatibility =====
+    engagement: Optional[ScoreDetail] = None
+    examples: Optional[ScoreDetail] = None
+    questioning: Optional[ScoreDetail] = None
+    adaptability: Optional[ScoreDetail] = None
+    relevance: Optional[ScoreDetail] = None
     
     overall_segment_score: float
     topic_alignment: Optional[float] = None  # How well aligned with topic (0-1)
 
 class Metrics(BaseModel):
-    # Core Metrics
+    # Core Metrics - REQUIRED
     clarity: float
     structure: float
     correctness: float
     pacing: float
     communication: float
     
-    # ===== NEW: Advanced Metrics =====
-    engagement: float
-    examples: float
-    questioning: float
-    adaptability: float
-    relevance: float
+    # ===== NEW: Advanced Metrics - OPTIONAL =====
+    engagement: Optional[float] = None
+    examples: Optional[float] = None
+    questioning: Optional[float] = None
+    adaptability: Optional[float] = None
+    relevance: Optional[float] = None
 
 class EvaluationBase(BaseModel):
     session_id: str
