@@ -1,5 +1,3 @@
-
-
 from typing import List, Dict, Any
 from models.evaluation import SegmentEvaluation, ScoreDetail
 from utils.llm_client import llm_client
@@ -7,7 +5,7 @@ from utils.llm_client import llm_client
 class EvidenceExtractor:
     """
     Extracts specific evidence of problems from teaching segments
-    Identifies exact phrases that cause low scores
+    FIXED VERSION - Now properly extracts problematic phrases
     """
     
     def __init__(self):
@@ -23,7 +21,7 @@ class EvidenceExtractor:
         
         Args:
             segment: The segment to analyze
-            metric: The metric to extract evidence for (clarity, structure, etc.)
+            metric: The metric to extract evidence for
             
         Returns:
             List of evidence items with problematic phrases
@@ -41,24 +39,43 @@ class EvidenceExtractor:
         
         # Call LLM
         try:
+            print(f"🔍 Extracting evidence for {metric} (score: {score_detail.score})")
             response = await llm_client.call_llm(
                 prompt=prompt,
                 task_type='evidence',
-                response_format='json'
+                response_format='json',
+                temperature=0.3  # Lower temperature for more precise extraction
             )
             
             # Parse and validate evidence items
             evidence_items = response.get('evidence', [])
             
-            # Add segment context
+            # Add segment context and validate
+            valid_items = []
             for item in evidence_items:
-                item['segment_id'] = segment.segment_id
-                item['metric'] = metric
-                
-            return evidence_items
+                # Validate that the phrase actually exists in the segment
+                if 'phrase' in item and item['phrase'].lower() in segment.text.lower():
+                    item['segment_id'] = segment.segment_id
+                    item['metric'] = metric
+                    
+                    # Calculate character positions if not provided
+                    if 'char_start' not in item:
+                        try:
+                            start_pos = segment.text.lower().find(item['phrase'].lower())
+                            if start_pos != -1:
+                                item['char_start'] = start_pos
+                                item['char_end'] = start_pos + len(item['phrase'])
+                        except:
+                            item['char_start'] = 0
+                            item['char_end'] = len(item['phrase'])
+                    
+                    valid_items.append(item)
+            
+            print(f"✅ Found {len(valid_items)} valid evidence items")
+            return valid_items
             
         except Exception as e:
-            print(f"Evidence extraction failed: {e}")
+            print(f"❌ Evidence extraction failed: {e}")
             return []
     
     async def extract_all_evidence(
@@ -80,7 +97,12 @@ class EvidenceExtractor:
             'structure': [],
             'correctness': [],
             'pacing': [],
-            'communication': []
+            'communication': [],
+            'engagement': [],
+            'examples': [],
+            'questioning': [],
+            'adaptability': [],
+            'relevance': []
         }
         
         for segment in segments:
@@ -88,6 +110,7 @@ class EvidenceExtractor:
                 score = getattr(segment, metric).score
                 
                 if score < self.threshold_score:
+                    print(f"Processing segment {segment.segment_id}, metric {metric}")
                     items = await self.extract_evidence(segment, metric)
                     evidence_by_metric[metric].extend(items)
         
@@ -102,11 +125,16 @@ class EvidenceExtractor:
         """Build prompt for evidence extraction"""
         
         metric_descriptions = {
-            'clarity': 'unclear or confusing language',
-            'structure': 'poor organization or logical flow',
-            'correctness': 'technical inaccuracies or errors',
-            'pacing': 'inappropriate speed or delivery issues',
-            'communication': 'ineffective communication or engagement'
+            'clarity': 'unclear or confusing language, vague terminology, ambiguous statements',
+            'structure': 'poor organization, logical flow issues, missing transitions',
+            'correctness': 'technical inaccuracies, errors, or misleading information',
+            'pacing': 'inappropriate speed, rushed explanations, or overly slow delivery',
+            'communication': 'ineffective communication, poor word choice, or disengaging delivery',
+            'engagement': 'lack of interactive elements, monotonous delivery, missing enthusiasm',
+            'examples': 'poor quality examples, irrelevant illustrations, or unclear demonstrations',
+            'questioning': 'lack of questions, ineffective questioning, or no checks for understanding',
+            'adaptability': 'failure to adjust difficulty, inappropriate complexity, poor scaffolding',
+            'relevance': 'off-topic content, irrelevant tangents, or poorly connected concepts'
         }
         
         prompt = f"""You are analyzing a teaching segment that scored {score_detail.score}/10 on {metric}.
@@ -117,15 +145,22 @@ SEGMENT TEXT:
 EVALUATOR'S REASONING:
 {score_detail.reason}
 
-Your task: Extract SPECIFIC problematic phrases from the text that demonstrate {metric_descriptions[metric]}.
+Your task: Extract SPECIFIC problematic phrases from the text that demonstrate {metric_descriptions.get(metric, 'issues')}.
+
+CRITICAL REQUIREMENTS:
+1. Extract ONLY phrases that ACTUALLY EXIST in the segment text (copy them exactly)
+2. Each phrase must be 5-30 words long
+3. Provide the exact character positions where each phrase appears
+4. Each phrase must clearly demonstrate the problem identified
 
 For each issue found, provide:
-1. The EXACT phrase (5-20 words) that is problematic
-2. Character position in the text (start and end indices)
-3. Clear explanation of what's wrong
-4. Specific suggestion for improvement
-5. Alternative phrasing (optional)
-6. Severity: "minor", "moderate", or "major"
+- phrase: EXACT text from the segment (must exist word-for-word)
+- char_start: Starting character position in the text
+- char_end: Ending character position in the text
+- issue: Clear explanation of what's wrong
+- suggestion: Specific improvement suggestion
+- alternative_phrasing: Better way to phrase this (optional)
+- severity: "minor", "moderate", or "major"
 
 Return as JSON in this format:
 {{
@@ -143,10 +178,10 @@ Return as JSON in this format:
 }}
 
 Guidelines:
+- Extract 2-5 evidence items (focus on the most impactful)
 - Only extract phrases that ACTUALLY exist in the text
-- Focus on the most impactful issues
 - Be specific and actionable
-- Maximum 5 evidence items per segment
+- Prioritize issues by severity
 - If score is above 7.0, return empty evidence array
 
 Extract the evidence now:"""
@@ -165,7 +200,12 @@ Extract the evidence now:"""
             return {}
         
         evidence = {}
-        for metric in ['clarity', 'structure', 'correctness', 'pacing', 'communication']:
+        metrics = [
+            'clarity', 'structure', 'correctness', 'pacing', 'communication',
+            'engagement', 'examples', 'questioning', 'adaptability', 'relevance'
+        ]
+        
+        for metric in metrics:
             items = await self.extract_evidence(segment, metric)
             if items:
                 evidence[metric] = items
