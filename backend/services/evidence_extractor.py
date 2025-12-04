@@ -27,11 +27,11 @@ class EvidenceExtractor:
             List of evidence items with problematic phrases
         """
         
-        # Get the score detail for this metric
-        score_detail = getattr(segment, metric)
+        # Get the score detail for this metric safely
+        score_detail = getattr(segment, metric, None)
         
-        # Only extract evidence if score is below threshold
-        if score_detail.score >= self.threshold_score:
+        # If detail is missing or score is high, skip
+        if not score_detail or score_detail.score >= self.threshold_score:
             return []
         
         # Build prompt for evidence extraction
@@ -54,7 +54,7 @@ class EvidenceExtractor:
             valid_items = []
             for item in evidence_items:
                 # Validate that the phrase actually exists in the segment
-                if 'phrase' in item and item['phrase'].lower() in segment.text.lower():
+                if 'phrase' in item and segment.text and item['phrase'].lower() in segment.text.lower():
                     item['segment_id'] = segment.segment_id
                     item['metric'] = metric
                     
@@ -107,7 +107,9 @@ class EvidenceExtractor:
         
         for segment in segments:
             for metric in evidence_by_metric.keys():
-                score = getattr(segment, metric).score
+                # Safe access to score [FIXED]
+                metric_obj = getattr(segment, metric, None)
+                score = metric_obj.score if metric_obj else 10.0 # Default to 10 (skip) if missing
                 
                 if score < self.threshold_score:
                     print(f"Processing segment {segment.segment_id}, metric {metric}")
