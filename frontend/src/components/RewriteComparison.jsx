@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { RefreshCw, CheckCircle, ArrowRight, Loader, TrendingUp } from 'lucide-react';
-import axios from 'axios';
+import apiClient from '../api/client'; // ✅ CHANGED: Import apiClient instead of axios
 
 const RewriteComparison = ({ sessionId, evaluationId }) => {
   const [rewrites, setRewrites] = useState(null);
@@ -17,7 +17,8 @@ const RewriteComparison = ({ sessionId, evaluationId }) => {
   const fetchRewrites = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`http://localhost:8000/api/rewrites/${sessionId}`);
+      // ✅ CHANGED: Use apiClient and remove localhost URL
+      const response = await apiClient.get(`/api/rewrites/${sessionId}`);
       setRewrites(response.data);
     } catch (error) {
       if (error.response?.status === 404) {
@@ -33,12 +34,14 @@ const RewriteComparison = ({ sessionId, evaluationId }) => {
   const handleGenerateRewrites = async () => {
     try {
       setGenerating(true);
-      await axios.post(`http://localhost:8000/api/rewrites/session/${sessionId}`);
+      // ✅ CHANGED: Use apiClient and remove localhost URL
+      await apiClient.post(`/api/rewrites/session/${sessionId}`);
       
       // Poll for completion
       const pollInterval = setInterval(async () => {
         try {
-          const response = await axios.get(`http://localhost:8000/api/rewrites/${sessionId}`);
+          // ✅ CHANGED: Use apiClient
+          const response = await apiClient.get(`/api/rewrites/${sessionId}`);
           if (response.data && response.data.rewrites && response.data.rewrites.length > 0) {
             setRewrites(response.data);
             setGenerating(false);
