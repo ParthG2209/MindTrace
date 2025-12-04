@@ -5,7 +5,7 @@ from utils.llm_client import llm_client
 class ExplanationRewriter:
     """
     Rewrites unclear explanations to improve teaching quality
-    Maintains teaching goals while improving delivery
+    FIXED VERSION - Now properly generates rewrites
     """
     
     def __init__(self):
@@ -31,33 +31,52 @@ class ExplanationRewriter:
         if segment.clarity.score >= self.clarity_threshold:
             return {
                 "needs_rewrite": False,
-                "reason": "Clarity score is acceptable"
+                "reason": f"Clarity score ({segment.clarity.score}) is acceptable"
             }
         
         # Build rewrite prompt
         prompt = self._build_rewrite_prompt(segment, topic_context)
         
         try:
+            print(f"🔄 Generating rewrite for segment {segment.segment_id}")
             response = await llm_client.call_llm(
                 prompt=prompt,
                 task_type='rewrite',
                 response_format='json',
-                temperature=0.7
+                temperature=0.7  # Higher temperature for creative rewriting
             )
+            
+            # Validate response
+            if not response.get('rewritten_text'):
+                return {
+                    "needs_rewrite": True,
+                    "error": "No rewritten text generated",
+                    "original_text": segment.text
+                }
             
             # Add metadata
             response['segment_id'] = segment.segment_id
             response['original_scores'] = {
                 'clarity': segment.clarity.score,
                 'structure': segment.structure.score,
-                'communication': segment.communication.score
+                'communication': segment.communication.score,
+                'engagement': segment.engagement.score,
+                'examples': segment.examples.score
             }
             response['needs_rewrite'] = True
+            response['original_text'] = segment.text
+            
+            # Calculate word count change
+            original_words = len(segment.text.split())
+            rewritten_words = len(response['rewritten_text'].split())
+            response['word_count_change'] = rewritten_words - original_words
+            
+            print(f"✅ Rewrite generated ({original_words} → {rewritten_words} words)")
             
             return response
             
         except Exception as e:
-            print(f"Rewrite failed: {e}")
+            print(f"❌ Rewrite failed: {e}")
             return {
                 "needs_rewrite": True,
                 "error": str(e),
@@ -83,30 +102,21 @@ class ExplanationRewriter:
         rewrites = []
         
         for segment in segments:
-            if segment.clarity.score < self.clarity_threshold:
+            # Rewrite if clarity is below threshold OR multiple metrics are low
+            needs_rewrite = (
+                segment.clarity.score < self.clarity_threshold or
+                segment.engagement.score < 6.5 or
+                segment.examples.score < 6.5 or
+                segment.communication.score < 6.5
+            )
+            
+            if needs_rewrite:
+                print(f"Processing rewrite for segment {segment.segment_id}")
                 rewrite = await self.rewrite_segment(segment, topic)
-                if rewrite.get('needs_rewrite'):
+                if rewrite.get('needs_rewrite') and rewrite.get('rewritten_text'):
                     rewrites.append(rewrite)
         
         return rewrites
-    
-    def compare_versions(
-        self,
-        original: str,
-        rewritten: str
-    ) -> Dict[str, Any]:
-        """
-        Compare original and rewritten versions
-        Highlights key differences
-        """
-        
-        return {
-            "original_length": len(original.split()),
-            "rewritten_length": len(rewritten.split()),
-            "length_change": len(rewritten.split()) - len(original.split()),
-            "original_sentences": original.count('.') + original.count('!') + original.count('?'),
-            "rewritten_sentences": rewritten.count('.') + rewritten.count('!') + rewritten.count('?')
-        }
     
     def _build_rewrite_prompt(
         self,
@@ -115,44 +125,66 @@ class ExplanationRewriter:
     ) -> str:
         """Build prompt for rewriting"""
         
-        prompt = f"""You are an expert teaching consultant. A teacher explained a concept, but the explanation was unclear (clarity score: {segment.clarity.score}/10).
+        prompt = f"""You are an expert teaching consultant. A teacher explained a concept, but the explanation needs improvement.
 
-TOPIC CONTEXT: {topic_context if topic_context else "General programming/technical topic"}
+TOPIC CONTEXT: {topic_context if topic_context else "Technical/educational topic"}
 
 ORIGINAL EXPLANATION:
 "{segment.text}"
 
-CLARITY ISSUE:
-{segment.clarity.reason}
+CURRENT SCORES:
+- Clarity: {segment.clarity.score}/10 - {segment.clarity.reason}
+- Structure: {segment.structure.score}/10 - {segment.structure.reason}
+- Communication: {segment.communication.score}/10 - {segment.communication.reason}
+- Engagement: {segment.engagement.score}/10 - {segment.engagement.reason}
+- Examples: {segment.examples.score}/10 - {segment.examples.reason}
 
-STRUCTURE ISSUE:
-{segment.structure.reason}
+Your task: Rewrite this explanation to significantly improve its quality across all dimensions.
 
-Your task: Rewrite this explanation to make it MUCH clearer and more effective.
+IMPROVEMENT GOALS:
+1. **Clarity** (Target: 9+/10)
+   - Use precise, unambiguous language
+   - Define technical terms clearly
+   - Break down complex ideas into digestible parts
 
-Goals:
-1. Maintain the same teaching objective
-2. Improve clarity significantly (target: 9+/10)
-3. Better structure and flow
-4. Use concrete examples where helpful
-5. Define technical terms clearly
-6. Use analogies if appropriate
-7. Break down complex ideas step-by-step
+2. **Structure** (Target: 9+/10)
+   - Logical flow from introduction to conclusion
+   - Clear transitions between ideas
+   - Well-organized progression of concepts
+
+3. **Engagement** (Target: 9+/10)
+   - Use interesting examples or analogies
+   - Add enthusiasm and energy to the language
+   - Make connections to real-world applications
+
+4. **Examples** (Target: 9+/10)
+   - Include concrete, relevant examples
+   - Use multiple types of examples if helpful
+   - Ensure examples clearly illustrate the concept
+
+5. **Communication** (Target: 9+/10)
+   - Appropriate vocabulary level
+   - Engaging, conversational tone
+   - Maintain the teacher's voice while improving clarity
 
 Return as JSON:
 {{
-  "rewritten_text": "Your improved explanation here",
+  "rewritten_text": "Your significantly improved explanation here (aim for 20-50% longer than original)",
   "improvements": [
-    "Specific improvement 1",
-    "Specific improvement 2",
-    "Specific improvement 3"
+    "Specific improvement 1 with before/after example",
+    "Specific improvement 2 with before/after example",
+    "Specific improvement 3 with before/after example",
+    "Specific improvement 4 with before/after example"
   ],
   "key_changes": {{
     "terminology": "How terminology was improved",
     "structure": "How structure was improved",
-    "examples": "Examples added or improved"
+    "examples": "Examples added or improved",
+    "engagement": "How engagement was enhanced"
   }},
-  "estimated_clarity_improvement": 2.5,
+  "clarity_improvement": 2.5,
+  "structure_improvement": 1.8,
+  "engagement_improvement": 2.0,
   "confidence": 0.85
 }}
 
@@ -160,8 +192,10 @@ Guidelines:
 - Keep it natural and conversational
 - Don't make it too formal or academic
 - Focus on teaching effectiveness
-- Length should be similar (within 50%)
-- Maintain the teacher's voice where possible
+- Length should be 20-50% longer to add clarity
+- Maintain the core concept but improve delivery
+- Add examples if the original lacks them
+- Use analogies if they help understanding
 
 Rewrite the explanation now:"""
         
@@ -195,14 +229,28 @@ Rewrite the explanation now:"""
         Estimate how much improvement is possible
         """
         
-        current_score = segment.clarity.score
-        potential_gain = 10.0 - current_score
+        current_scores = {
+            'clarity': segment.clarity.score,
+            'structure': segment.structure.score,
+            'engagement': segment.engagement.score,
+            'communication': segment.communication.score,
+            'examples': segment.examples.score
+        }
+        
+        potential_gains = {
+            key: 10.0 - score for key, score in current_scores.items()
+        }
+        
+        avg_current = sum(current_scores.values()) / len(current_scores)
+        avg_potential = sum(potential_gains.values()) / len(potential_gains)
         
         return {
-            "current_clarity": current_score,
+            "current_scores": current_scores,
+            "potential_gains": potential_gains,
+            "current_average": round(avg_current, 2),
             "max_possible": 10.0,
-            "potential_gain": potential_gain,
-            "improvement_priority": self._get_priority_level(current_score),
+            "average_potential_gain": round(avg_potential, 2),
+            "improvement_priority": self._get_priority_level(avg_current),
             "estimated_effort": self._estimate_effort(segment)
         }
     
@@ -220,17 +268,17 @@ Rewrite the explanation now:"""
     def _estimate_effort(self, segment: SegmentEvaluation) -> str:
         """Estimate effort needed for rewrite"""
         
-        issues = []
-        if segment.clarity.score < 6.0:
-            issues.append("clarity")
-        if segment.structure.score < 6.0:
-            issues.append("structure")
-        if segment.correctness.score < 8.0:
-            issues.append("correctness")
+        low_scores = sum(1 for metric in [
+            segment.clarity.score,
+            segment.structure.score,
+            segment.engagement.score,
+            segment.communication.score,
+            segment.examples.score
+        ] if metric < 6.5)
         
-        if len(issues) >= 3:
+        if low_scores >= 4:
             return "substantial"
-        elif len(issues) == 2:
+        elif low_scores >= 2:
             return "moderate"
         else:
             return "minor"
