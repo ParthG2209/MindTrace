@@ -36,17 +36,22 @@ class Settings:
     UPLOAD_DIR = os.getenv("UPLOAD_DIR", "./uploads")
     MAX_UPLOAD_SIZE = 500 * 1024 * 1024  # 500MB
     
-    # ===== REMOVED: Old LLM Settings =====
-    # LLM_PROVIDER = os.getenv("LLM_PROVIDER", "anthropic")
-    # LLM_MODEL = os.getenv("LLM_MODEL", "claude-sonnet-4-20250514")
-    # ===== END REMOVED =====
+    # Scoring Weights - Core Metrics
+    WEIGHT_CLARITY = float(os.getenv("WEIGHT_CLARITY", "0.25"))
+    WEIGHT_STRUCTURE = float(os.getenv("WEIGHT_STRUCTURE", "0.20"))
+    WEIGHT_CORRECTNESS = float(os.getenv("WEIGHT_CORRECTNESS", "0.25"))
+    WEIGHT_PACING = float(os.getenv("WEIGHT_PACING", "0.15"))
+    WEIGHT_COMMUNICATION = float(os.getenv("WEIGHT_COMMUNICATION", "0.15"))
     
-    # Scoring Weights
-    WEIGHT_CLARITY = 0.25
-    WEIGHT_STRUCTURE = 0.20
-    WEIGHT_CORRECTNESS = 0.25
-    WEIGHT_PACING = 0.15
-    WEIGHT_COMMUNICATION = 0.15
+    # Scoring Weights - Advanced Metrics
+    WEIGHT_ENGAGEMENT = float(os.getenv("WEIGHT_ENGAGEMENT", "0.10"))
+    WEIGHT_EXAMPLES = float(os.getenv("WEIGHT_EXAMPLES", "0.10"))
+    WEIGHT_QUESTIONING = float(os.getenv("WEIGHT_QUESTIONING", "0.08"))
+    WEIGHT_ADAPTABILITY = float(os.getenv("WEIGHT_ADAPTABILITY", "0.08"))
+    WEIGHT_RELEVANCE = float(os.getenv("WEIGHT_RELEVANCE", "0.09"))
+    
+    # Topic Analysis
+    RELATED_TOPIC_BONUS = float(os.getenv("RELATED_TOPIC_BONUS", "0.5"))
 
 settings = Settings()
 
