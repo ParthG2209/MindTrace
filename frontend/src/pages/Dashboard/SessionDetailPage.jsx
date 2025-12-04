@@ -318,7 +318,7 @@ const SessionDetailPage = () => {
 
               {activeTab === 'evidence' && (
                 <EvidencePanel
-                  evaluationId={evaluation.id}
+                  evaluationId={evaluation._id || evaluation.id} // ✅ FIXED: Check both _id and id
                   sessionId={sessionId}
                 />
               )}
@@ -326,14 +326,14 @@ const SessionDetailPage = () => {
               {activeTab === 'rewrites' && (
                 <RewriteComparison
                   sessionId={sessionId}
-                  evaluationId={evaluation.id}
+                  evaluationId={evaluation._id || evaluation.id} // ✅ FIXED
                 />
               )}
 
               {activeTab === 'coherence' && (
                 <CoherenceIssuesViewer
                   sessionId={sessionId}
-                  evaluationId={evaluation.id}
+                  evaluationId={evaluation._id || evaluation.id} // ✅ FIXED
                 />
               )}
             </div>
