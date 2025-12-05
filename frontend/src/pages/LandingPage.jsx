@@ -171,7 +171,7 @@ const LandingPage = () => {
           }
         >
           <img
-            src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1400&h=720&fit=crop"
+            src="/landing-dashboard-preview.png"
             alt="dashboard preview"
             className="mx-auto rounded-2xl object-cover h-full w-full"
             draggable={false}
