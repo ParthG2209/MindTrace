@@ -334,9 +334,11 @@ function LoginPage() {
     try {
       const result = await signInWithPopup(auth, googleProvider);
       console.log("✅ Google sign-in successful!", result.user);
-      alert(`Welcome, ${result.user.displayName || result.user.email}!`);
       
-      // Redirect to dashboard
+      // FIX: Removed alert() to prevent the browser from blocking the popup close event.
+      // alert(`Welcome, ${result.user.displayName || result.user.email}!`);
+      
+      // Navigate immediately to dashboard
       navigate("/dashboard");
       
     } catch (err) {
