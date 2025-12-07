@@ -1,6 +1,6 @@
 import React from 'react';
 import { Footer } from './modern-animated-footer';
-import { Award, Linkedin, Github, Mail } from 'lucide-react';
+import { Linkedin, Github, Mail } from 'lucide-react';
 
 const MindTraceFooter = () => {
   const socialLinks = [
@@ -31,13 +31,24 @@ const MindTraceFooter = () => {
 
   return (
     <Footer
+      // 1. Solid Background for Landing Page Visibility
+      className="bg-[#0f172a] border-t border-slate-800" 
+      
       brandName="MindTrace"
       brandDescription="AI-powered mentor evaluation system for modern educators. Analyze teaching quality with explainable AI insights."
       socialLinks={socialLinks}
       navLinks={navLinks}
       creatorName="Parth Gupta"
       creatorUrl="https://www.linkedin.com/in/parth-gupta-4598b8324/"
-      brandIcon={<Award className="w-8 sm:w-10 md:w-14 h-8 sm:h-10 md:h-14 text-background dark:text-foreground drop-shadow-lg" />}
+      
+      // 2. Updated Logo to use Image instead of Icon
+      brandIcon={
+        <img 
+          src="/logo.png" 
+          alt="MindTrace Logo" 
+          className="w-full h-full object-contain drop-shadow-md" 
+        />
+      }
     />
   );
 };
