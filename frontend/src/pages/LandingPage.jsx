@@ -3,16 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { SparklesCore } from '../components/ui/sparkles';
 import { ContainerScroll } from '../components/ui/container-scroll-animation';
 import { AnimatedHero } from '../components/ui/animated-hero';
-// CHANGE 1: Import the specialized footer we created
-import MindTraceFooter from '../components/mindtrace-footer'; 
+import MindTraceFooter from '../components/ui/mindtrace-footer';
 import { CheckCircle, BarChart3, Users, Award, Sun, Moon } from 'lucide-react';
-
-const LOGO_URL = "/logo.png";
 
 const LandingPage = () => {
   const navigate = useNavigate();
-  const [darkMode, setDarkMode] = useState(true); 
+  const [darkMode, setDarkMode] = useState(true); // Default to dark mode
 
+  // Apply dark mode class to document root
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add('dark');
@@ -27,7 +25,6 @@ const LandingPage = () => {
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-black' : 'bg-white'}`} style={{ zoom: '0.95' }}>
-      
       {/* Navigation */}
       <nav className={`fixed top-0 w-full z-50 backdrop-blur-md border-b transition-colors duration-300 ${
         darkMode 
@@ -37,11 +34,7 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-2">
-              <img 
-                src={LOGO_URL} 
-                alt="MindTrace Logo" 
-                className="w-10 h-10 object-contain drop-shadow-md" 
-              />
+              <Award className={`w-6 h-6 transition-colors ${darkMode ? 'text-white' : 'text-blue-600'}`} />
               <span className={`text-xl font-bold transition-colors ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                 MindTrace
               </span>
@@ -69,6 +62,7 @@ const LandingPage = () => {
               </a>
             </div>
             <div className="flex items-center space-x-4">
+              {/* Dark Mode Toggle */}
               <button
                 onClick={toggleDarkMode}
                 className={`p-2 rounded-lg transition-colors ${
@@ -102,7 +96,7 @@ const LandingPage = () => {
         </div>
       </nav>
 
-      {/* Hero Section */}
+      {/* Hero Section with Sparkles */}
       <div className={`h-screen relative w-full flex flex-col items-center justify-center overflow-hidden transition-colors duration-300 ${
         darkMode ? 'bg-black' : 'bg-white'
       }`}>
@@ -133,7 +127,7 @@ const LandingPage = () => {
               ? 'bg-gradient-to-r from-transparent via-gray-300 to-transparent' 
               : 'bg-gradient-to-r from-transparent via-sky-500 to-transparent'
           }`} />
-          
+          {/* Core component */}
           <SparklesCore
             background="transparent"
             minSize={0.4}
@@ -142,6 +136,7 @@ const LandingPage = () => {
             className="w-full h-full"
             particleColor={darkMode ? "#FFFFFF" : "#000000"}
           />
+          {/* Radial Gradient to prevent sharp edges */}
           <div className={`absolute inset-0 w-full h-full ${
             darkMode 
               ? 'bg-black [mask-image:radial-gradient(350px_200px_at_top,transparent_20%,black)]' 
@@ -203,6 +198,7 @@ const LandingPage = () => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Feature 1 */}
             <div className={`rounded-xl p-8 hover:shadow-xl transition-all duration-300 ${
               darkMode 
                 ? 'bg-white/5 border border-white/10 hover:border-white/20' 
@@ -223,7 +219,41 @@ const LandingPage = () => {
               }`}>
                 Advanced LLM technology analyzes teaching sessions across multiple dimensions including clarity, structure, correctness, pacing, and communication.
               </p>
+              <ul className="space-y-2">
+                <li className="flex items-start">
+                  <CheckCircle className={`w-5 h-5 mr-2 mt-0.5 flex-shrink-0 ${
+                    darkMode ? 'text-green-400' : 'text-green-600'
+                  }`} />
+                  <span className={`transition-colors duration-300 ${
+                    darkMode ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
+                    Segment-by-segment evaluation
+                  </span>
+                </li>
+                <li className="flex items-start">
+                  <CheckCircle className={`w-5 h-5 mr-2 mt-0.5 flex-shrink-0 ${
+                    darkMode ? 'text-green-400' : 'text-green-600'
+                  }`} />
+                  <span className={`transition-colors duration-300 ${
+                    darkMode ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
+                    Detailed scoring metrics
+                  </span>
+                </li>
+                <li className="flex items-start">
+                  <CheckCircle className={`w-5 h-5 mr-2 mt-0.5 flex-shrink-0 ${
+                    darkMode ? 'text-green-400' : 'text-green-600'
+                  }`} />
+                  <span className={`transition-colors duration-300 ${
+                    darkMode ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
+                    Explainable feedback
+                  </span>
+                </li>
+              </ul>
             </div>
+
+            {/* Feature 2 */}
             <div className={`rounded-xl p-8 hover:shadow-xl transition-all duration-300 ${
               darkMode 
                 ? 'bg-white/5 border border-white/10 hover:border-white/20' 
@@ -244,7 +274,41 @@ const LandingPage = () => {
               }`}>
                 Comprehensive dashboard to manage mentors, track their performance over time, and identify trends in teaching quality.
               </p>
+              <ul className="space-y-2">
+                <li className="flex items-start">
+                  <CheckCircle className={`w-5 h-5 mr-2 mt-0.5 flex-shrink-0 ${
+                    darkMode ? 'text-green-400' : 'text-green-600'
+                  }`} />
+                  <span className={`transition-colors duration-300 ${
+                    darkMode ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
+                    Performance tracking
+                  </span>
+                </li>
+                <li className="flex items-start">
+                  <CheckCircle className={`w-5 h-5 mr-2 mt-0.5 flex-shrink-0 ${
+                    darkMode ? 'text-green-400' : 'text-green-600'
+                  }`} />
+                  <span className={`transition-colors duration-300 ${
+                    darkMode ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
+                    Trend analysis
+                  </span>
+                </li>
+                <li className="flex items-start">
+                  <CheckCircle className={`w-5 h-5 mr-2 mt-0.5 flex-shrink-0 ${
+                    darkMode ? 'text-green-400' : 'text-green-600'
+                  }`} />
+                  <span className={`transition-colors duration-300 ${
+                    darkMode ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
+                    Individual insights
+                  </span>
+                </li>
+              </ul>
             </div>
+
+            {/* Feature 3 */}
             <div className={`rounded-xl p-8 hover:shadow-xl transition-all duration-300 ${
               darkMode 
                 ? 'bg-white/5 border border-white/10 hover:border-white/20' 
@@ -265,6 +329,38 @@ const LandingPage = () => {
               }`}>
                 Interactive visualizations help you understand teaching flow, identify strengths, and pinpoint areas for improvement at a glance.
               </p>
+              <ul className="space-y-2">
+                <li className="flex items-start">
+                  <CheckCircle className={`w-5 h-5 mr-2 mt-0.5 flex-shrink-0 ${
+                    darkMode ? 'text-green-400' : 'text-green-600'
+                  }`} />
+                  <span className={`transition-colors duration-300 ${
+                    darkMode ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
+                    Flow visualizations
+                  </span>
+                </li>
+                <li className="flex items-start">
+                  <CheckCircle className={`w-5 h-5 mr-2 mt-0.5 flex-shrink-0 ${
+                    darkMode ? 'text-green-400' : 'text-green-600'
+                  }`} />
+                  <span className={`transition-colors duration-300 ${
+                    darkMode ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
+                    Performance charts
+                  </span>
+                </li>
+                <li className="flex items-start">
+                  <CheckCircle className={`w-5 h-5 mr-2 mt-0.5 flex-shrink-0 ${
+                    darkMode ? 'text-green-400' : 'text-green-600'
+                  }`} />
+                  <span className={`transition-colors duration-300 ${
+                    darkMode ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
+                    Actionable feedback
+                  </span>
+                </li>
+              </ul>
             </div>
           </div>
         </div>
@@ -287,45 +383,92 @@ const LandingPage = () => {
               Simple workflow, powerful results
             </p>
           </div>
+
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="text-center">
               <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold transition-colors duration-300 ${
                 darkMode ? 'bg-white text-black' : 'bg-blue-600 text-white'
-              }`}>1</div>
-              <h3 className={`text-xl font-bold mb-2 transition-colors duration-300 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Upload Video</h3>
-              <p className={`transition-colors duration-300 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Upload your teaching session video to the platform</p>
+              }`}>
+                1
+              </div>
+              <h3 className={`text-xl font-bold mb-2 transition-colors duration-300 ${
+                darkMode ? 'text-white' : 'text-gray-900'
+              }`}>
+                Upload Video
+              </h3>
+              <p className={`transition-colors duration-300 ${
+                darkMode ? 'text-gray-300' : 'text-gray-600'
+              }`}>
+                Upload your teaching session video to the platform
+              </p>
             </div>
+
             <div className="text-center">
               <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold transition-colors duration-300 ${
                 darkMode ? 'bg-white text-black' : 'bg-purple-600 text-white'
-              }`}>2</div>
-              <h3 className={`text-xl font-bold mb-2 transition-colors duration-300 ${darkMode ? 'text-white' : 'text-gray-900'}`}>AI Transcription</h3>
-              <p className={`transition-colors duration-300 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Automatic transcription with timestamp precision</p>
+              }`}>
+                2
+              </div>
+              <h3 className={`text-xl font-bold mb-2 transition-colors duration-300 ${
+                darkMode ? 'text-white' : 'text-gray-900'
+              }`}>
+                AI Transcription
+              </h3>
+              <p className={`transition-colors duration-300 ${
+                darkMode ? 'text-gray-300' : 'text-gray-600'
+              }`}>
+                Automatic transcription with timestamp precision
+              </p>
             </div>
+
             <div className="text-center">
               <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold transition-colors duration-300 ${
                 darkMode ? 'bg-white text-black' : 'bg-green-600 text-white'
-              }`}>3</div>
-              <h3 className={`text-xl font-bold mb-2 transition-colors duration-300 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Smart Analysis</h3>
-              <p className={`transition-colors duration-300 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>AI evaluates teaching quality across multiple metrics</p>
+              }`}>
+                3
+              </div>
+              <h3 className={`text-xl font-bold mb-2 transition-colors duration-300 ${
+                darkMode ? 'text-white' : 'text-gray-900'
+              }`}>
+                Smart Analysis
+              </h3>
+              <p className={`transition-colors duration-300 ${
+                darkMode ? 'text-gray-300' : 'text-gray-600'
+              }`}>
+                AI evaluates teaching quality across multiple metrics
+              </p>
             </div>
+
             <div className="text-center">
               <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold transition-colors duration-300 ${
                 darkMode ? 'bg-white text-black' : 'bg-yellow-500 text-white'
-              }`}>4</div>
-              <h3 className={`text-xl font-bold mb-2 transition-colors duration-300 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Get Insights</h3>
-              <p className={`transition-colors duration-300 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Receive detailed feedback and actionable recommendations</p>
+              }`}>
+                4
+              </div>
+              <h3 className={`text-xl font-bold mb-2 transition-colors duration-300 ${
+                darkMode ? 'text-white' : 'text-gray-900'
+              }`}>
+                Get Insights
+              </h3>
+              <p className={`transition-colors duration-300 ${
+                darkMode ? 'text-gray-300' : 'text-gray-600'
+              }`}>
+                Receive detailed feedback and actionable recommendations
+              </p>
             </div>
           </div>
         </div>
       </div>
 
+      {/* CTA Section - Animated Hero */}
       <div className={darkMode ? 'dark' : ''}>
         <AnimatedHero />
       </div>
 
-      {/* CHANGE 2: Use the specialized footer component */}
-      <MindTraceFooter />
+      {/* Footer */}
+      <div className={darkMode ? 'dark' : ''}>
+        <MindTraceFooter />
+      </div>
     </div>
   );
 };
