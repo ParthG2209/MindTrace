@@ -6,7 +6,7 @@ import { AnimatedHero } from '../components/ui/animated-hero';
 import { Footer } from '../components/ui/modern-animated-footer';
 import { CheckCircle, BarChart3, Users, Award, Sun, Moon } from 'lucide-react';
 
-const LOGO_URL = "/logo.svg";
+const LOGO_URL = "/logo.png";
 
 const LandingPage = () => {
   const navigate = useNavigate();

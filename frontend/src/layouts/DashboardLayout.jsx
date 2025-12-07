@@ -65,7 +65,7 @@ const DashboardLayout = () => {
   ];
 
   // LOGO PATH
-  const logoUrl = "/logo.svg";
+  const logoUrl = "/logo.png";
 
   return (
     <div className="min-h-screen bg-black relative">
