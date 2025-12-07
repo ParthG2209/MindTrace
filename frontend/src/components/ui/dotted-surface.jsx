@@ -124,7 +124,7 @@ export function DottedSurface({ className, darkMode = true, ...props }) {
 
           positionAttribute.needsUpdate = true;
           renderer.render(scene, camera);
-          count += 0.1;
+          count += 0.05;
         };
 
         // Handle resize
