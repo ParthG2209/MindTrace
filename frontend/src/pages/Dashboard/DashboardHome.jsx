@@ -48,7 +48,7 @@ const DashboardHome = () => {
       ]);
 
       const mentors = mentorsRes.data;
-      const sessions = sessionsRes.data; // Assuming this is an array of session objects
+      const sessions = sessionsRes.data;
       
       const completedSessions = sessions.filter(s => s.status === 'completed');
       const analyzingSessions = sessions.filter(s => ['analyzing', 'transcribing'].includes(s.status));
@@ -68,10 +68,10 @@ const DashboardHome = () => {
 
       // Update Chart Data
       setActiveUsersData([
-        { category: 'Mentors', value: mentors.length, color: '#3b82f6' }, // Blue
-        { category: 'Sessions', value: sessions.length, color: '#8b5cf6' }, // Purple
-        { category: 'Completed', value: completedSessions.length, color: '#10b981' }, // Emerald
-        { category: 'Processing', value: analyzingSessions.length, color: '#f59e0b' } // Amber
+        { category: 'Mentors', value: mentors.length, color: '#3b82f6' },
+        { category: 'Sessions', value: sessions.length, color: '#8b5cf6' },
+        { category: 'Completed', value: completedSessions.length, color: '#10b981' },
+        { category: 'Processing', value: analyzingSessions.length, color: '#f59e0b' }
       ]);
 
       // Sort by date (newest first) and take top 5
@@ -87,7 +87,6 @@ const DashboardHome = () => {
     }
   };
 
-  // Helper for Status Colors in Recent Sessions
   const getStatusColor = (status) => {
     switch (status) {
       case 'completed': return 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20';
@@ -106,9 +105,7 @@ const DashboardHome = () => {
 
   const StatCard = ({ title, value, icon: Icon, trend, trendValue, colorClass }) => (
     <GlassCard className="relative overflow-hidden group hover:bg-white/10 transition-colors">
-      <div className={`absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity ${colorClass}`}>
-        <Icon className="w-16 h-16" />
-      </div>
+      {/* Removed the large faded background icon div from here */}
       <div className="relative z-10">
         <div className="flex items-center gap-3 mb-2">
           <div className={`p-2 rounded-lg bg-white/5 ${colorClass}`}>
