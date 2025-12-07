@@ -1,13 +1,12 @@
-// src/pages/Dashboard/DashboardHome.jsx - FIXED VERSION
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  TrendingUp, Users, Video, Award, ArrowRight,
-  CheckCircle, Activity
+  Users, Video, Award, CheckCircle, Activity
 } from 'lucide-react';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
-import { mentorApi, sessionApi, evaluationApi } from '../../api/client';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { mentorApi, sessionApi } from '../../api/client';
 import { auth } from '../../lib/firebase';
+import { GlowEffect } from '../../components/ui/glow-effect';
 
 const DashboardHome = () => {
   const navigate = useNavigate();
@@ -75,26 +74,22 @@ const DashboardHome = () => {
     }
   };
 
-  const StatCard = ({ title, value, percentage, icon: Icon, trend = 'up', color = 'blue' }) => {
-    const colorClasses = {
-      blue: 'from-blue-500 to-blue-600',
-      purple: 'from-purple-500 to-purple-600',
-      green: 'from-green-500 to-green-600',
-      orange: 'from-orange-500 to-orange-600'
-    };
-
+  // The new Glow Card Component replacing the old StatCard
+  const GlowStatCard = ({ title, value, percentage, icon: Icon, trend = 'up' }) => {
     return (
-      <div className="relative bg-gradient-to-br from-gray-900 to-black rounded-2xl p-6 border border-white/10 overflow-hidden group hover:border-white/20 transition-all">
-        {/* Background Glow */}
-        <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${colorClasses[color]} opacity-10 rounded-full blur-3xl group-hover:opacity-20 transition-opacity`}></div>
-        
-        <div className="relative z-10">
+      <div className='relative h-full w-full'>
+        <GlowEffect
+          colors={['#0894FF', '#C959DD', '#FF2E54', '#FF9004']}
+          mode='static'
+          blur='medium'
+        />
+        <div className='relative h-full w-full rounded-2xl bg-black/90 p-6 text-white border border-white/10'>
           <div className="flex items-start justify-between mb-4">
             <div className="flex-1">
               <p className="text-gray-400 text-sm font-medium mb-1">{title}</p>
               <h3 className="text-3xl font-bold text-white">{value}</h3>
             </div>
-            <div className={`p-3 rounded-xl bg-gradient-to-br ${colorClasses[color]} shadow-lg`}>
+            <div className="p-3 rounded-xl bg-white/10">
               <Icon className="w-6 h-6 text-white" />
             </div>
           </div>
@@ -128,161 +123,147 @@ const DashboardHome = () => {
         </div>
       </div>
 
-      {/* Stats Grid */}
+      {/* Stats Grid - Using new Glow Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard
+        <GlowStatCard
           title="Total Mentors"
           value={stats.totalMentors}
           percentage="5"
           icon={Users}
-          color="blue"
         />
-        <StatCard
+        <GlowStatCard
           title="Total Sessions"
           value={stats.totalSessions}
           percentage="4"
           icon={Video}
-          color="purple"
         />
-        <StatCard
+        <GlowStatCard
           title="Completed"
           value={stats.completedSessions}
           percentage="14"
           icon={CheckCircle}
-          color="green"
         />
-        <StatCard
+        <GlowStatCard
           title="Avg Score"
           value={stats.averageScore.toFixed(1)}
           percentage="8"
           icon={Award}
-          color="orange"
         />
       </div>
 
-      {/* Charts Row */}
+      {/* Charts Row - Replaced Welcome Card with Glow Container for Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Welcome Card */}
-        <div className="lg:col-span-2 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 rounded-2xl p-8 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
-          <div className="relative z-10">
-            <h2 className="text-2xl font-bold text-white mb-2">
-              Welcome back,
-            </h2>
-            <h3 className="text-3xl font-bold text-white mb-3">
-              {user?.displayName || 'User'}
-            </h3>
-            <p className="text-white/80 mb-6 max-w-md">
-              Glad to see you again!<br />
-              Ready to analyze teaching sessions?
-            </p>
-            <button
-              onClick={() => navigate('/dashboard/sessions')}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-white text-purple-600 rounded-xl font-semibold hover:bg-white/90 transition-all shadow-lg"
-            >
-              View Sessions
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </div>
-          {/* Decorative Brain Image Placeholder */}
-          <div className="absolute bottom-0 right-0 w-64 h-64 opacity-30">
-            <div className="w-full h-full bg-gradient-to-tr from-white/20 to-transparent rounded-full"></div>
+        
+        {/* Satisfaction Rate - Wrapped in Glow Effect */}
+        <div className="lg:col-span-1 relative h-full w-full">
+          <GlowEffect
+            colors={['#0894FF', '#C959DD', '#FF2E54', '#FF9004']}
+            mode='static'
+            blur='medium'
+          />
+          <div className="relative h-full w-full rounded-2xl bg-black/90 p-6 border border-white/10">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-white">Satisfaction Rate</h3>
+            </div>
+            <p className="text-gray-400 text-sm mb-8">From all evaluations</p>
+            
+            <div className="flex items-center justify-center mb-6">
+              <div className="relative w-48 h-48">
+                {/* Circular Progress */}
+                <svg className="w-full h-full transform -rotate-90">
+                  <circle
+                    cx="96"
+                    cy="96"
+                    r="80"
+                    stroke="rgba(255,255,255,0.1)"
+                    strokeWidth="12"
+                    fill="none"
+                  />
+                  <circle
+                    cx="96"
+                    cy="96"
+                    r="80"
+                    stroke="url(#gradient)"
+                    strokeWidth="12"
+                    fill="none"
+                    strokeDasharray={`${2 * Math.PI * 80 * 0.95} ${2 * Math.PI * 80}`}
+                    strokeLinecap="round"
+                  />
+                  <defs>
+                    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#3b82f6" />
+                      <stop offset="100%" stopColor="#8b5cf6" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <Activity className="w-8 h-8 text-blue-400 mb-2" />
+                  <span className="text-4xl font-bold text-white">95%</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-400">0%</span>
+              <span className="text-gray-400">100%</span>
+            </div>
           </div>
         </div>
 
-        {/* Satisfaction Rate */}
-        <div className="bg-gradient-to-br from-gray-900 to-black rounded-2xl p-6 border border-white/10">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold text-white">Satisfaction Rate</h3>
-          </div>
-          <p className="text-gray-400 text-sm mb-8">From all evaluations</p>
-          
-          <div className="flex items-center justify-center mb-6">
-            <div className="relative w-48 h-48">
-              {/* Circular Progress */}
-              <svg className="w-full h-full transform -rotate-90">
-                <circle
-                  cx="96"
-                  cy="96"
-                  r="80"
-                  stroke="rgba(255,255,255,0.1)"
-                  strokeWidth="12"
-                  fill="none"
-                />
-                <circle
-                  cx="96"
-                  cy="96"
-                  r="80"
-                  stroke="url(#gradient)"
-                  strokeWidth="12"
-                  fill="none"
-                  strokeDasharray={`${2 * Math.PI * 80 * 0.95} ${2 * Math.PI * 80}`}
-                  strokeLinecap="round"
-                />
-                <defs>
-                  <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#3b82f6" />
-                    <stop offset="100%" stopColor="#8b5cf6" />
-                  </linearGradient>
-                </defs>
-              </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <Activity className="w-8 h-8 text-blue-400 mb-2" />
-                <span className="text-4xl font-bold text-white">95%</span>
+        {/* Active Stats - Wrapped in Glow Effect - Expanded to col-span-2 to fill the gap left by Welcome Card */}
+        <div className="lg:col-span-2 relative h-full w-full">
+          <GlowEffect
+            colors={['#0894FF', '#C959DD', '#FF2E54', '#FF9004']}
+            mode='static'
+            blur='medium'
+          />
+          <div className="relative h-full w-full rounded-2xl bg-black/90 p-6 border border-white/10">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-lg font-bold text-white mb-1">Platform Statistics</h3>
+                <p className="text-green-400 text-sm font-medium">Overall performance metrics</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Bar Chart */}
+              <div style={{ width: '100%', height: 200 }}>
+                <ResponsiveContainer>
+                  <BarChart data={activeUsersData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                    <XAxis dataKey="category" stroke="rgba(255,255,255,0.3)" />
+                    <YAxis stroke="rgba(255,255,255,0.3)" />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'rgba(0,0,0,0.9)',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        borderRadius: '8px',
+                        color: '#fff'
+                      }}
+                    />
+                    <Bar dataKey="value" fill="#3b82f6" radius={[8, 8, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Stats Grid */}
+              <div className="grid grid-cols-2 gap-4">
+                {activeUsersData.map((item, index) => (
+                  <div key={index} className="bg-white/5 rounded-xl p-4 border border-white/10">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                      <span className="text-sm text-gray-400">{item.category}</span>
+                    </div>
+                    <p className="text-2xl font-bold text-white">
+                      {item.value.toLocaleString()}
+                    </p>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
-
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-400">0%</span>
-            <span className="text-gray-400">100%</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Active Stats */}
-      <div className="bg-gradient-to-br from-gray-900 to-black rounded-2xl p-6 border border-white/10">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h3 className="text-lg font-bold text-white mb-1">Platform Statistics</h3>
-            <p className="text-green-400 text-sm font-medium">Overall performance metrics</p>
-          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Bar Chart */}
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={activeUsersData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-              <XAxis dataKey="category" stroke="rgba(255,255,255,0.3)" />
-              <YAxis stroke="rgba(255,255,255,0.3)" />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'rgba(0,0,0,0.9)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: '8px',
-                  color: '#fff'
-                }}
-              />
-              <Bar dataKey="value" fill="#3b82f6" radius={[8, 8, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-
-          {/* Stats Grid */}
-          <div className="grid grid-cols-2 gap-4">
-            {activeUsersData.map((item, index) => (
-              <div key={index} className="bg-white/5 rounded-xl p-4 border border-white/10">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                  <span className="text-sm text-gray-400">{item.category}</span>
-                </div>
-                <p className="text-2xl font-bold text-white">
-                  {item.value.toLocaleString()}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
     </div>
   );
