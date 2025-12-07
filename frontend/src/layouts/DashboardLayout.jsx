@@ -1,4 +1,4 @@
-// src/layouts/DashboardLayout.jsx - WITH DOTTED SURFACE BACKGROUND
+// src/layouts/DashboardLayout.jsx - WITH PROPER Z-INDEX
 import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { 
@@ -50,12 +50,12 @@ const DashboardLayout = () => {
 
   return (
     <div className="min-h-screen bg-black relative">
-      {/* ✅ DOTTED SURFACE BACKGROUND */}
-      <DottedSurface darkMode={true} className="fixed inset-0 -z-10" />
+      {/* ✅ DOTTED SURFACE BACKGROUND - Z-INDEX 0 */}
+      <DottedSurface darkMode={true} />
       
-      {/* Sidebar */}
+      {/* Sidebar - Z-INDEX 40 */}
       <aside
-        className={`fixed top-0 left-0 h-full bg-gradient-to-b from-gray-900/95 via-black/95 to-black/95 backdrop-blur-xl border-r border-white/10 transition-all duration-300 z-40 ${
+        className={`fixed top-0 left-0 h-full bg-gradient-to-b from-gray-900/98 via-black/98 to-black/98 backdrop-blur-xl border-r border-white/10 transition-all duration-300 z-40 ${
           sidebarOpen ? 'w-64' : 'w-20'
         }`}
       >
@@ -163,14 +163,14 @@ const DashboardLayout = () => {
         </div>
       </aside>
 
-      {/* Main Content */}
+      {/* Main Content - Z-INDEX 10 */}
       <div
-        className={`transition-all duration-300 ${
+        className={`transition-all duration-300 relative z-10 ${
           sidebarOpen ? 'ml-64' : 'ml-20'
         }`}
       >
-        {/* Top Navbar */}
-        <header className="sticky top-0 z-30 bg-gradient-to-r from-gray-900/95 to-black/95 backdrop-blur-xl border-b border-white/10">
+        {/* Top Navbar - Z-INDEX 30 */}
+        <header className="sticky top-0 z-30 bg-gradient-to-r from-gray-900/98 to-black/98 backdrop-blur-xl border-b border-white/10">
           <div className="flex items-center justify-between px-6 py-4">
             {/* Current Page Title */}
             <div className="flex items-center gap-2">
@@ -193,15 +193,17 @@ const DashboardLayout = () => {
         </header>
 
         {/* Page Content */}
-        <main className="p-6 min-h-screen relative">
+        <main className="p-6 min-h-screen relative z-10">
           <Outlet />
         </main>
 
         {/* Footer */}
-        <MindTraceFooter />
+        <div className="relative z-10">
+          <MindTraceFooter />
+        </div>
       </div>
 
-      {/* Mobile Overlay */}
+      {/* Mobile Overlay - Z-INDEX 30 */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-30 lg:hidden"
