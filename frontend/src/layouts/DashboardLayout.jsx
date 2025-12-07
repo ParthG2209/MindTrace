@@ -75,24 +75,27 @@ const DashboardLayout = () => {
       {/* Top Navigation Bar - Z-INDEX 50 */}
       <div className="fixed top-0 left-0 right-0 z-50 flex items-center px-6 py-4 bg-gradient-to-r from-gray-900/95 via-black/95 to-black/95 backdrop-blur-xl border-b border-white/10">
         {/* Left: PillNav 
-            Note: Since PillNav uses absolute positioning from the prompt code, 
-            it will position itself relative to this fixed container or the window. 
-            We keep it here to render, but it removes itself from flex flow.
+            Positioned absolutely via the component's internal styles, 
+            but integrated here with specific color props for the requested Black->White effect.
         */}
         <PillNav
           logo={logoDataUrl}
           logoAlt="MindTrace Logo"
           items={navItems}
           activeHref={location.pathname}
+          // The baseColor dictates the "Hover Circle" color (White)
           baseColor="#ffffff"
-          pillColor="#1f2937"
-          hoveredPillTextColor="#ffffff"
+          // The pillColor dictates the "Resting Pill" background (Black)
+          pillColor="#000000"
+          // The hovered text color (Black)
+          hoveredPillTextColor="#000000"
+          // The resting text color (White)
           pillTextColor="#ffffff"
           ease="power3.out"
           initialLoadAnimation={true}
         />
 
-        {/* Right: User Menu - Added ml-auto to force it to the right since PillNav is absolute */}
+        {/* Right: User Menu - Added ml-auto to force it to the right */}
         {user && (
           <div className="relative ml-auto">
             <button
