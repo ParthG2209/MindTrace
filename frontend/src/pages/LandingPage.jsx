@@ -3,14 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { SparklesCore } from '../components/ui/sparkles';
 import { ContainerScroll } from '../components/ui/container-scroll-animation';
 import { AnimatedHero } from '../components/ui/animated-hero';
-import { Footer } from '../components/ui/modern-animated-footer';
+// CHANGE 1: Import the specialized footer we created
+import MindTraceFooter from '../components/mindtrace-footer'; 
 import { CheckCircle, BarChart3, Users, Award, Sun, Moon } from 'lucide-react';
 
 const LOGO_URL = "/logo.png";
 
 const LandingPage = () => {
   const navigate = useNavigate();
-  const [darkMode, setDarkMode] = useState(true); // Default to dark mode
+  const [darkMode, setDarkMode] = useState(true); 
 
   useEffect(() => {
     if (darkMode) {
@@ -27,7 +28,7 @@ const LandingPage = () => {
   return (
     <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-black' : 'bg-white'}`} style={{ zoom: '0.95' }}>
       
-      {/* Navigation - Logo is on the TOP LEFT here */}
+      {/* Navigation */}
       <nav className={`fixed top-0 w-full z-50 backdrop-blur-md border-b transition-colors duration-300 ${
         darkMode 
           ? 'bg-black/80 border-white/20' 
@@ -36,7 +37,6 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-2">
-              {/* Replaced Icon with Logo Image */}
               <img 
                 src={LOGO_URL} 
                 alt="MindTrace Logo" 
@@ -102,7 +102,7 @@ const LandingPage = () => {
         </div>
       </nav>
 
-      {/* Hero Section with Sparkles */}
+      {/* Hero Section */}
       <div className={`h-screen relative w-full flex flex-col items-center justify-center overflow-hidden transition-colors duration-300 ${
         darkMode ? 'bg-black' : 'bg-white'
       }`}>
@@ -112,6 +112,7 @@ const LandingPage = () => {
           MindTrace
         </h1>
         <div className="w-[40rem] h-40 relative">
+          {/* Gradients */}
           <div className={`absolute inset-x-20 top-0 h-[2px] w-3/4 blur-sm ${
             darkMode 
               ? 'bg-gradient-to-r from-transparent via-white to-transparent' 
@@ -132,6 +133,7 @@ const LandingPage = () => {
               ? 'bg-gradient-to-r from-transparent via-gray-300 to-transparent' 
               : 'bg-gradient-to-r from-transparent via-sky-500 to-transparent'
           }`} />
+          
           <SparklesCore
             background="transparent"
             minSize={0.4}
@@ -322,15 +324,8 @@ const LandingPage = () => {
         <AnimatedHero />
       </div>
 
-      <div className={darkMode ? 'dark' : ''}>
-        <Footer 
-          brandName="MindTrace"
-          brandDescription="AI-Powered Mentor Evaluation & Analytics"
-          brandIcon={
-            <img src={LOGO_URL} alt="MindTrace Logo" className="w-full h-full object-cover" />
-          }
-        />
-      </div>
+      {/* CHANGE 2: Use the specialized footer component */}
+      <MindTraceFooter />
     </div>
   );
 };
