@@ -1,4 +1,4 @@
-// src/layouts/DashboardLayout.jsx - FIXED VERSION
+// src/layouts/DashboardLayout.jsx - WITH DOTTED SURFACE BACKGROUND
 import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { 
@@ -8,6 +8,7 @@ import {
 import { auth } from '../lib/firebase';
 import { signOut } from 'firebase/auth';
 import MindTraceFooter from '../components/ui/mindtrace-footer';
+import { DottedSurface } from '../components/ui/dotted-surface';
 
 const DashboardLayout = () => {
   const navigate = useNavigate();
@@ -48,10 +49,13 @@ const DashboardLayout = () => {
   const isActivePath = (path) => location.pathname === path;
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-black relative">
+      {/* ✅ DOTTED SURFACE BACKGROUND */}
+      <DottedSurface darkMode={true} className="fixed inset-0 -z-10" />
+      
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 h-full bg-gradient-to-b from-gray-900 via-black to-black border-r border-white/10 transition-all duration-300 z-40 ${
+        className={`fixed top-0 left-0 h-full bg-gradient-to-b from-gray-900/95 via-black/95 to-black/95 backdrop-blur-xl border-r border-white/10 transition-all duration-300 z-40 ${
           sidebarOpen ? 'w-64' : 'w-20'
         }`}
       >
@@ -189,7 +193,7 @@ const DashboardLayout = () => {
         </header>
 
         {/* Page Content */}
-        <main className="p-6 min-h-screen">
+        <main className="p-6 min-h-screen relative">
           <Outlet />
         </main>
 
