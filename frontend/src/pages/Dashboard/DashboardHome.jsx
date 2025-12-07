@@ -74,22 +74,25 @@ const DashboardHome = () => {
     }
   };
 
-  // The new Glow Card Component replacing the old StatCard
+  // The new Glow Card Component with minimal settings
   const GlowStatCard = ({ title, value, percentage, icon: Icon, trend = 'up' }) => {
     return (
       <div className='relative h-full w-full'>
         <GlowEffect
           colors={['#0894FF', '#C959DD', '#FF2E54', '#FF9004']}
           mode='static'
-          blur='medium'
+          blur='soft'
+          scale={0.95}
+          duration={3}
+          className="opacity-25" // Minimal glow intensity
         />
-        <div className='relative h-full w-full rounded-2xl bg-black/90 p-6 text-white border border-white/10'>
+        <div className='relative h-full w-full rounded-2xl bg-black/50 backdrop-blur-md p-6 text-white border border-white/10'>
           <div className="flex items-start justify-between mb-4">
             <div className="flex-1">
               <p className="text-gray-400 text-sm font-medium mb-1">{title}</p>
               <h3 className="text-3xl font-bold text-white">{value}</h3>
             </div>
-            <div className="p-3 rounded-xl bg-white/10">
+            <div className="p-3 rounded-xl bg-white/5 border border-white/10">
               <Icon className="w-6 h-6 text-white" />
             </div>
           </div>
@@ -123,7 +126,7 @@ const DashboardHome = () => {
         </div>
       </div>
 
-      {/* Stats Grid - Using new Glow Cards */}
+      {/* Stats Grid - Using new Minimal Glow Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <GlowStatCard
           title="Total Mentors"
@@ -151,17 +154,20 @@ const DashboardHome = () => {
         />
       </div>
 
-      {/* Charts Row - Replaced Welcome Card with Glow Container for Charts */}
+      {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* Satisfaction Rate - Wrapped in Glow Effect */}
+        {/* Satisfaction Rate - Wrapped in Minimal Glow Effect */}
         <div className="lg:col-span-1 relative h-full w-full">
           <GlowEffect
             colors={['#0894FF', '#C959DD', '#FF2E54', '#FF9004']}
             mode='static'
-            blur='medium'
+            blur='soft'
+            scale={0.95}
+            duration={3}
+            className="opacity-25"
           />
-          <div className="relative h-full w-full rounded-2xl bg-black/90 p-6 border border-white/10">
+          <div className="relative h-full w-full rounded-2xl bg-black/50 backdrop-blur-md p-6 border border-white/10">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-white">Satisfaction Rate</h3>
             </div>
@@ -210,14 +216,17 @@ const DashboardHome = () => {
           </div>
         </div>
 
-        {/* Active Stats - Wrapped in Glow Effect - Expanded to col-span-2 to fill the gap left by Welcome Card */}
+        {/* Active Stats - Wrapped in Minimal Glow Effect */}
         <div className="lg:col-span-2 relative h-full w-full">
           <GlowEffect
             colors={['#0894FF', '#C959DD', '#FF2E54', '#FF9004']}
             mode='static'
-            blur='medium'
+            blur='soft'
+            scale={0.95}
+            duration={3}
+            className="opacity-25"
           />
-          <div className="relative h-full w-full rounded-2xl bg-black/90 p-6 border border-white/10">
+          <div className="relative h-full w-full rounded-2xl bg-black/50 backdrop-blur-md p-6 border border-white/10">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h3 className="text-lg font-bold text-white mb-1">Platform Statistics</h3>
