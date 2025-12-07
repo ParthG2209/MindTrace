@@ -14,7 +14,8 @@ export const Footer = ({
 }) => {
   return (
     <section className={cn("relative w-full mt-0 overflow-hidden", className)}>
-      <footer className="border-t bg-transparent border-gray-200 dark:border-white/20 mt-20 relative transition-colors duration-300">
+      {/* Removed border-t and border colors to eliminate the top line */}
+      <footer className="bg-transparent mt-20 relative transition-colors duration-300">
         <div className="max-w-7xl flex flex-col justify-between mx-auto min-h-[30rem] sm:min-h-[35rem] md:min-h-[40rem] relative p-4 py-10">
           <div className="flex flex-col mb-12 sm:mb-20 md:mb-0 w-full">
             <div className="w-full flex flex-col items-center">
@@ -79,6 +80,7 @@ export const Footer = ({
             )}
           </div>
         </div>
+        
         {/* Large background text */}
         <div 
           className="bg-gradient-to-b from-foreground/20 dark:from-white/20 via-foreground/10 dark:via-white/10 to-transparent bg-clip-text text-transparent leading-none absolute left-1/2 -translate-x-1/2 bottom-40 md:bottom-32 font-extrabold tracking-tighter pointer-events-none select-none text-center px-4 transition-colors duration-300"
@@ -89,6 +91,7 @@ export const Footer = ({
         >
           {brandName.toUpperCase()}
         </div>
+
         {/* Bottom logo */}
         <div className="absolute hover:border-foreground dark:hover:border-white duration-400 drop-shadow-[0_0px_20px_rgba(0,0,0,0.5)] dark:drop-shadow-[0_0px_20px_rgba(255,255,255,0.3)] bottom-24 md:bottom-20 backdrop-blur-sm rounded-3xl bg-background/60 dark:bg-black/60 left-1/2 border-2 border-border dark:border-white/20 flex items-center justify-center p-3 -translate-x-1/2 z-10 transition-colors duration-300">
           <div className="w-12 sm:w-16 md:w-24 h-12 sm:h-16 md:h-24 bg-gradient-to-br from-foreground dark:from-white to-foreground/80 dark:to-white/80 rounded-2xl flex items-center justify-center shadow-lg transition-colors duration-300">
@@ -97,9 +100,8 @@ export const Footer = ({
             )}
           </div>
         </div>
-        {/* Bottom line */}
-        <div className="absolute bottom-32 sm:bottom-34 backdrop-blur-sm h-1 bg-gradient-to-r from-transparent via-border dark:via-white/20 to-transparent w-full left-1/2 -translate-x-1/2 transition-colors duration-300"></div>
-        {/* Bottom shadow removed to prevent obscuring the dashboard background */}
+
+        {/* Removed the bottom decorative line div entirely */}
       </footer>
     </section>
   );
