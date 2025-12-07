@@ -32,6 +32,7 @@ const PillNav = ({
     const layout = () => {
       circleRefs.current.forEach(circle => {
         if (!circle?.parentElement) return;
+
         const pill = circle.parentElement;
         const rect = pill.getBoundingClientRect();
         const { width: w, height: h } = rect;
@@ -39,39 +40,51 @@ const PillNav = ({
         const D = Math.ceil(2 * R) + 2;
         const delta = Math.ceil(R - Math.sqrt(Math.max(0, R * R - (w * w) / 4))) + 1;
         const originY = D - delta;
+
         circle.style.width = `${D}px`;
         circle.style.height = `${D}px`;
         circle.style.bottom = `-${delta}px`;
+
         gsap.set(circle, {
           xPercent: -50,
           scale: 0,
           transformOrigin: `50% ${originY}px`
         });
+
         const label = pill.querySelector('.pill-label');
         const white = pill.querySelector('.pill-label-hover');
+
         if (label) gsap.set(label, { y: 0 });
         if (white) gsap.set(white, { y: h + 12, opacity: 0 });
+
         const index = circleRefs.current.indexOf(circle);
         if (index === -1) return;
-        tlRefs.current[index]?.kill(); // Added optional chaining
+
+        tlRefs.current[index]?.kill();
         const tl = gsap.timeline({ paused: true });
+
         tl.to(circle, { scale: 1.2, xPercent: -50, duration: 2, ease, overwrite: 'auto' }, 0);
+
         if (label) {
           tl.to(label, { y: -(h + 8), duration: 2, ease, overwrite: 'auto' }, 0);
         }
+
         if (white) {
           gsap.set(white, { y: Math.ceil(h + 100), opacity: 0 });
           tl.to(white, { y: 0, opacity: 1, duration: 2, ease, overwrite: 'auto' }, 0);
         }
+
         tlRefs.current[index] = tl;
       });
     };
 
     layout();
+
     const onResize = () => layout();
     window.addEventListener('resize', onResize);
+
     if (document.fonts?.ready) {
-      document.fonts.ready.then(layout).catch(() => { });
+      document.fonts.ready.then(layout).catch(() => {});
     }
 
     const menu = mobileMenuRef.current;
@@ -82,6 +95,7 @@ const PillNav = ({
     if (initialLoadAnimation) {
       const logo = logoRef.current;
       const navItems = navItemsRef.current;
+
       if (logo) {
         gsap.set(logo, { scale: 0 });
         gsap.to(logo, {
@@ -90,6 +104,7 @@ const PillNav = ({
           ease
         });
       }
+
       if (navItems) {
         gsap.set(navItems, { width: 0, overflow: 'hidden' });
         gsap.to(navItems, {
@@ -141,8 +156,10 @@ const PillNav = ({
   const toggleMobileMenu = () => {
     const newState = !isMobileMenuOpen;
     setIsMobileMenuOpen(newState);
+
     const hamburger = hamburgerRef.current;
     const menu = mobileMenuRef.current;
+
     if (hamburger) {
       const lines = hamburger.querySelectorAll('.hamburger-line');
       if (newState) {
@@ -153,6 +170,7 @@ const PillNav = ({
         gsap.to(lines[1], { rotation: 0, y: 0, duration: 0.3, ease });
       }
     }
+
     if (menu) {
       if (newState) {
         gsap.set(menu, { visibility: 'visible' });
@@ -182,6 +200,7 @@ const PillNav = ({
         });
       }
     }
+
     onMobileMenuClick?.();
   };
 
@@ -207,10 +226,9 @@ const PillNav = ({
   };
 
   return (
-    <div className="relative z-[1000] w-full md:w-auto">
+    <div className="absolute top-[1em] z-[1000] w-full left-0 md:w-auto md:left-auto">
       <nav
-        // Removed w-max to allow full width on mobile
-        className={`w-full flex items-center justify-between md:justify-start box-border ${className}`}
+        className={`w-full md:w-max flex items-center justify-between md:justify-start box-border px-4 md:px-0 ${className}`}
         aria-label="Primary"
         style={cssVars}
       >
@@ -233,7 +251,6 @@ const PillNav = ({
             <img src={logo} alt={logoAlt} ref={logoImgRef} className="w-full h-full object-cover block" />
           </Link>
         ) : (
-          // FIXED: Added missing <a tag and closing >
           <a
             href={items?.[0]?.href || '#'}
             aria-label="Home"
@@ -251,6 +268,7 @@ const PillNav = ({
             <img src={logo} alt={logoAlt} ref={logoImgRef} className="w-full h-full object-cover block" />
           </a>
         )}
+
         <div
           ref={navItemsRef}
           className="relative items-center rounded-full hidden md:flex ml-2"
@@ -266,12 +284,14 @@ const PillNav = ({
           >
             {items.map((item, i) => {
               const isActive = activeHref === item.href;
+
               const pillStyle = {
                 background: 'var(--pill-bg, #fff)',
                 color: 'var(--pill-text, var(--base, #000))',
                 paddingLeft: 'var(--pill-pad-x)',
                 paddingRight: 'var(--pill-pad-x)'
               };
+
               const PillContent = (
                 <>
                   <span
@@ -312,8 +332,10 @@ const PillNav = ({
                   )}
                 </>
               );
+
               const basePillClasses =
                 'relative overflow-hidden inline-flex items-center justify-center h-full no-underline rounded-full box-border font-semibold text-[16px] leading-[0] uppercase tracking-[0.2px] whitespace-nowrap cursor-pointer px-0';
+
               return (
                 <li key={item.href} role="none" className="flex h-full">
                   {isRouterLink(item.href) ? (
@@ -329,7 +351,6 @@ const PillNav = ({
                       {PillContent}
                     </Link>
                   ) : (
-                    // FIXED: Added missing <a tag and closing >
                     <a
                       role="menuitem"
                       href={item.href}
@@ -347,6 +368,7 @@ const PillNav = ({
             })}
           </ul>
         </div>
+
         <button
           ref={hamburgerRef}
           onClick={toggleMobileMenu}
@@ -368,11 +390,11 @@ const PillNav = ({
             style={{ background: 'var(--pill-bg, #fff)' }}
           />
         </button>
-      </nav >
+      </nav>
+
       <div
         ref={mobileMenuRef}
-        // FIXED: Changed top position and added w-full/max-w-md and overflow-hidden
-        className="md:hidden absolute top-[calc(var(--nav-h)+8px)] left-0 right-0 w-full max-w-md mx-auto rounded-[27px] shadow-[0_8px_32px_rgba(0,0,0,0.12)] z-[998] origin-top overflow-hidden"
+        className="md:hidden absolute top-[3em] left-4 right-4 rounded-[27px] shadow-[0_8px_32px_rgba(0,0,0,0.12)] z-[998] origin-top"
         style={{
           ...cssVars,
           background: 'var(--base, #f0f0f0)'
@@ -392,8 +414,10 @@ const PillNav = ({
               e.currentTarget.style.background = 'var(--pill-bg, #fff)';
               e.currentTarget.style.color = 'var(--pill-text, #fff)';
             };
+
             const linkClasses =
               'block py-3 px-4 text-[16px] font-medium rounded-[50px] transition-all duration-200 ease-[cubic-bezier(0.25,0.1,0.25,1)]';
+
             return (
               <li key={item.href}>
                 {isRouterLink(item.href) ? (
@@ -408,7 +432,6 @@ const PillNav = ({
                     {item.label}
                   </Link>
                 ) : (
-                  // FIXED: Added missing <a tag and closing >
                   <a
                     href={item.href}
                     className={linkClasses}
@@ -424,8 +447,8 @@ const PillNav = ({
             );
           })}
         </ul>
-      </div >
-    </div >
+      </div>
+    </div>
   );
 };
 

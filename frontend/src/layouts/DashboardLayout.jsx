@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { 
   Award, Users, Video, BarChart3, LogOut, 
-  User as UserIcon, Home
+  User as UserIcon, Home, Settings
 } from 'lucide-react';
 import { auth } from '../lib/firebase';
 import { signOut } from 'firebase/auth';
@@ -43,19 +43,19 @@ const DashboardLayout = () => {
       ariaLabel: 'Go to Dashboard'
     },
     { 
-      href: '/dashboard/mentors', 
-      label: 'Mentors',
-      ariaLabel: 'View Mentors'
-    },
-    { 
       href: '/dashboard/sessions', 
       label: 'Sessions',
       ariaLabel: 'View Sessions'
     },
     { 
-      href: '/dashboard/analytics', 
-      label: 'Analytics',
-      ariaLabel: 'View Analytics'
+      href: '/dashboard/mentors', 
+      label: 'Mentors',
+      ariaLabel: 'View Mentors'
+    },
+    { 
+      href: '/dashboard/settings', 
+      label: 'Settings',
+      ariaLabel: 'View Settings'
     },
     { 
       href: '/dashboard/profile', 
@@ -73,26 +73,28 @@ const DashboardLayout = () => {
       <DottedSurface darkMode={true} />
       
       {/* Top Navigation Bar - Z-INDEX 50 */}
-      <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 bg-gradient-to-r from-gray-900/95 via-black/95 to-black/95 backdrop-blur-xl border-b border-white/10">
-        {/* Left: PillNav */}
-        <div className="flex-1">
-          <PillNav
-            logo={logoDataUrl}
-            logoAlt="MindTrace Logo"
-            items={navItems}
-            activeHref={location.pathname}
-            baseColor="#ffffff"
-            pillColor="#1f2937"
-            hoveredPillTextColor="#ffffff"
-            pillTextColor="#ffffff"
-            ease="power3.out"
-            initialLoadAnimation={true}
-          />
-        </div>
+      <div className="fixed top-0 left-0 right-0 z-50 flex items-center px-6 py-4 bg-gradient-to-r from-gray-900/95 via-black/95 to-black/95 backdrop-blur-xl border-b border-white/10">
+        {/* Left: PillNav 
+            Note: Since PillNav uses absolute positioning from the prompt code, 
+            it will position itself relative to this fixed container or the window. 
+            We keep it here to render, but it removes itself from flex flow.
+        */}
+        <PillNav
+          logo={logoDataUrl}
+          logoAlt="MindTrace Logo"
+          items={navItems}
+          activeHref={location.pathname}
+          baseColor="#ffffff"
+          pillColor="#1f2937"
+          hoveredPillTextColor="#ffffff"
+          pillTextColor="#ffffff"
+          ease="power3.out"
+          initialLoadAnimation={true}
+        />
 
-        {/* Right: User Menu */}
+        {/* Right: User Menu - Added ml-auto to force it to the right since PillNav is absolute */}
         {user && (
-          <div className="relative ml-4">
+          <div className="relative ml-auto">
             <button
               onClick={() => setShowUserMenu(!showUserMenu)}
               className="flex items-center gap-3 px-4 py-2 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all"
