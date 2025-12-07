@@ -14,7 +14,7 @@ export const Footer = ({
 }) => {
   return (
     <section className={cn("relative w-full mt-0 overflow-hidden", className)}>
-      <footer className="border-t bg-background dark:bg-black border-gray-200 dark:border-white/20 mt-20 relative transition-colors duration-300">
+      <footer className="border-t bg-transparent border-gray-200 dark:border-white/20 mt-20 relative transition-colors duration-300">
         <div className="max-w-7xl flex flex-col justify-between mx-auto min-h-[30rem] sm:min-h-[35rem] md:min-h-[40rem] relative p-4 py-10">
           <div className="flex flex-col mb-12 sm:mb-20 md:mb-0 w-full">
             <div className="w-full flex flex-col items-center">
@@ -99,8 +99,7 @@ export const Footer = ({
         </div>
         {/* Bottom line */}
         <div className="absolute bottom-32 sm:bottom-34 backdrop-blur-sm h-1 bg-gradient-to-r from-transparent via-border dark:via-white/20 to-transparent w-full left-1/2 -translate-x-1/2 transition-colors duration-300"></div>
-        {/* Bottom shadow */}
-        <div className="bg-gradient-to-t from-background dark:from-black via-background/80 dark:via-black/80 blur-[1em] to-background/40 dark:to-black/40 absolute bottom-28 w-full h-24 transition-colors duration-300"></div>
+        {/* Bottom shadow removed to prevent obscuring the dashboard background */}
       </footer>
     </section>
   );
