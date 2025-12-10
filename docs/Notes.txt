@@ -1,0 +1,50 @@
+Here are the detailed evaluation notes for the **MindTrace** system, documenting the metrics, algorithms, and configuration logic found in the codebase.
+
+### **MindTrace Evaluation System Notes**
+
+#### **1. Metric Definitions**
+The system evaluates teaching sessions on **10 distinct dimensions**, divided into "Core" and "Advanced" tiers. Each metric is scored on a 1-10 scale by the LLM.
+
+**Core Teaching Metrics (Foundation)**
+* **Clarity (25%):** Measures how clearly concepts are explained. Focuses on precise terminology, logical flow, and avoidance of unexplained jargon.
+* **Structural Coherence (20%):** Evaluates the organization of the explanation. Looks for a clear introduction, body, and conclusion with effective transitions.
+* **Technical Correctness (25%):** Checks for factual accuracy and proper use of terminology. Ensures no misleading information is presented.
+* **Pacing & Delivery (15%):** Assesses if the speed matches the complexity of the material and if there is adequate time for understanding.
+* **Communication Quality (15%):** Evaluates engagement, tone, vocabulary level, and articulation.
+
+**Advanced Teaching Metrics (Pedagogical Depth)**
+* **Engagement (10%):** Usage of interactive elements, storytelling, and enthusiasm to maintain attention.
+* **Examples & Illustrations (10%):** Quality, relevance, and variety of examples provided to clarify concepts.
+* **Questioning Technique (8%):** Use of thought-provoking questions to check for understanding and stimulate critical thinking.
+* **Adaptability (8%):** Adjustment of complexity based on content difficulty (scaffolding).
+* **Topic Relevance (9%):** Connections to the stated topic. **Note:** The system explicitly values related topics that enhance understanding (scored 8-10) and only penalizes completely unrelated tangents.
+
+#### **2. Algorithmic Logic**
+
+**A. Evaluation Strategy (Hybrid LLM)**
+* **Prompting:** The system uses a strict JSON-enforced prompt to prevent hallucination. It injects the "Stated Topic", "Teaching Segment", and "Full Session Context" into the prompt context.
+* **Validation:** The `LLMEvaluator` validates that all 10 metric keys exist in the response. If the LLM fails or returns malformed JSON, the system falls back to a mock evaluation to prevent crashing.
+
+**B. Evidence Extraction (The "Why")**
+* **Trigger:** Evidence is only extracted for metrics where the score is **< 7.0**.
+* **Precision:** The extractor identifies specific phrases (5-30 words) that demonstrate the issue (e.g., "vague terminology").
+* **Verification:** It calculates specific character start/end positions (`char_start`, `char_end`) and validates that the extracted phrase *actually exists* in the source text word-for-word, mitigating LLM hallucinations.
+
+**C. Explanation Rewriting (Generative Feedback)**
+* **Trigger:** A rewrite is generated if the **Clarity** score is **< 7.0**.
+* **Goal:** The prompt instructs the LLM to increase the word count by **20-50%**. This expansion is intentional to force the model to "unpack" dense or unclear concepts rather than just summarizing them.
+* **Output:** The system provides a "Before vs. After" comparison, specific "Key Changes" (e.g., terminology improvements), and a confidence score.
+
+**D. Coherence Checking (Session-Wide)**
+* **Scope:** Unlike the segment-level evaluator, this service analyzes the *entire* session transcript at once.
+* **Detection Types:**
+    * **Contradictions:** "Statement A vs. Statement B" conflicts.
+    * **Topic Drift:** Calculated as `drift_degree` (0.0-1.0) vs `relevance_score`. High drift with low relevance incurs penalties.
+    * **Logical Gaps:** Identifies missing intermediate steps in an explanation.
+
+#### **3. Configuration & Weights**
+* **Weights:** Configurable via environment variables in `config.py`. Current default puts heaviest emphasis on **Clarity (25%)** and **Correctness (25%)**.
+* **Models:**
+    * **Primary:** Google Gemini 2.5 Flash (for speed/multimodal).
+    * **Secondary:** Groq LLaMA 3.3 70B (for complex reasoning).
+    * **Strategy:** "Hybrid" mode allows routing based on availability or task type.
