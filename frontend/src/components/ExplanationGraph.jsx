@@ -136,8 +136,6 @@ const ExplanationGraph = ({ segments, sessionId, coherenceData: initialCoherence
         node.y = prev.y;
         node.vx = prev.vx;
         node.vy = prev.vy;
-        node.fx = prev.fx;
-        node.fy = prev.fy;
       }
       return node;
     });
@@ -257,97 +255,13 @@ const ExplanationGraph = ({ segments, sessionId, coherenceData: initialCoherence
         .append('path').attr('d','M0,-5L10,0L0,5').attr('fill','#6b7280');
     }
 
-    // Tree layout algorithm
-    const nodeMap = new Map();
-    const layoutTree = () => {
-      const nodes = graphData.nodes;
-      const links = graphData.links;
-      
-      // Build tree structure
-      nodeMap.clear();
-      nodes.forEach(n => nodeMap.set(n.id, { ...n, children: [], depth: 0, branch: 'main' }));
-      const sequentialLinks = links.filter(l => l.type !== 'contradiction');
-      const contradictionLinks = links.filter(l => l.type === 'contradiction');
-      
-      // Assign depths and branches
-      let mainPathNodes = [nodeMap.get(0)];
-      let currentDepth = 0;
-      let branchCounter = 0;
-      
-      sequentialLinks.forEach(link => {
-        const source = nodeMap.get(link.source);
-        const target = nodeMap.get(link.target);
-        
-        if (!source || !target) return;
-        
-        // Determine if this is a branch or main path
-        if (link.type === 'backbone' && target.id === source.id + 1) {
-          // Main path continuation
-          target.depth = currentDepth++;
-          target.branch = 'main';
-          target.x = target.depth * 150;
-          target.y = 0;
-          mainPathNodes.push(target);
-        } else {
-          // Branch (error, weak, drift, etc.)
-          branchCounter++;
-          target.depth = source.depth + 0.5;
-          target.branch = `branch-${branchCounter}`;
-          target.x = source.x + 100;
-          
-          // Alternate branches above and below
-          const branchOffset = 150 + (link.type === 'error' ? 50 : 0);
-          target.y = (branchCounter % 2 === 0 ? 1 : -1) * branchOffset;
-          
-          // Topic drift branches go further
-          if (link.type === 'drift') {
-            target.y *= 1.5;
-          }
-          
-          // Dead ends branch even further
-          if (target.isDeadEnd) {
-            target.y *= 1.3;
-          }
-        }
-        
-        source.children.push(target);
-      });
-      
-      // Position contradiction nodes even further out
-      contradictionLinks.forEach(link => {
-        const source = nodeMap.get(link.source);
-        const target = nodeMap.get(link.target);
-        
-        if (!source || !target) return;
-        
-        // Place contradiction targets in their own branch layer
-        if (!target.x) {
-          target.x = Math.max(source.x, target.id * 150);
-        }
-        target.y = (target.y || 0) + ((target.id % 2 === 0 ? 1 : -1) * 250);
-      });
-      
-      // Apply positions
-      nodes.forEach(node => {
-        const treeNode = nodeMap.get(node.id);
-        if (treeNode.x !== undefined) {
-          node.x = treeNode.x;
-          node.y = treeNode.y;
-          node.fx = treeNode.x; // Fix position
-          node.fy = treeNode.y;
-        }
-      });
-    };
-
-    // Apply tree layout
-    layoutTree();
-    
-    // Use minimal simulation for smooth transitions only
+    // Use force simulation for layout
     if (!simulationRef.current) {
       simulationRef.current = d3.forceSimulation()
-        .force('link', d3.forceLink().id(d => d.id).distance(80).strength(0.1))
-        .force('collision', d3.forceCollide().radius(d => d.radius + 10).strength(0.3))
-        .alphaDecay(0.05);
+        .force('link', d3.forceLink().id(d => d.id).distance(120).strength(0.4))
+        .force('charge', d3.forceManyBody().strength(-300))
+        .force('center', d3.forceCenter(width / 2, height / 2))
+        .force('collision', d3.forceCollide().radius(d => d.radius + 20));
     }
     
     const simulation = simulationRef.current;
@@ -482,65 +396,24 @@ const ExplanationGraph = ({ segments, sessionId, coherenceData: initialCoherence
 
     node.on('click', (e, d) => { e.stopPropagation(); setSelectedNode(d); });
 
-    // Update cluster positions (as branch backgrounds in tree)
-    function updateClusters() {
-      cluster
-        .attr('x', (clusterNodes, i) => {
-          const minX = d3.min(clusterNodes, n => n.x - n.radius);
-          return minX || 0;
-        })
-        .attr('y', (clusterNodes, i) => {
-          const centerY = d3.mean(clusterNodes, n => n.y);
-          return (centerY || 0) - 40;
-        });
-    }
 
     // Tick function
     simulation.on('tick', () => {
-      link.attr('d', d => {
-        // For tree layout, use orthogonal (stepped) paths
-        const dx = d.target.x - d.source.x;
-        const dy = d.target.y - d.source.y;
-        
-        if (d.type === 'contradiction') {
-          // Large curved arc for contradictions
-          const dr = Math.sqrt(dx*dx + dy*dy) * 2;
-          return `M${d.source.x},${d.source.y}A${dr},${dr} 0 0,1 ${d.target.x},${d.target.y}`;
-        }
-        
-        if (d.type === 'backbone') {
-          // Straight horizontal for main path
-          return `M${d.source.x},${d.source.y}L${d.target.x},${d.target.y}`;
-        }
-        
-        // Stepped path for branches (L-shaped)
-        const midX = d.source.x + dx * 0.5;
-        return `M${d.source.x},${d.source.y}L${midX},${d.source.y}L${midX},${d.target.y}L${d.target.x},${d.target.y}`;
-      });
-      
+      link.attr('d', d => `M${d.source.x},${d.source.y}L${d.target.x},${d.target.y}`);
       node.attr('transform', d => `translate(${d.x},${d.y})`);
-      updateClusters();
     });
 
     function dragstart(e, d) {
       if (!e.active) simulation.alphaTarget(0.1).restart();
-      // Don't fix position - allow dragging but tree will restore
-      d.fx = d.x;
-      d.fy = d.y;
     }
-    
+
     function dragging(e, d) {
-      d.fx = e.x;
-      d.fy = e.y;
+      d.x = e.x;
+      d.y = e.y;
     }
-    
+
     function dragend(e, d) {
       if (!e.active) simulation.alphaTarget(0);
-      // Release fixed position so tree layout can take over
-      setTimeout(() => {
-        d.fx = nodeMap?.get(d.id)?.x ?? d.fx;
-        d.fy = nodeMap?.get(d.id)?.y ?? d.fy;
-      }, 100);
     }
 
     return () => simulation.on('tick', null);
