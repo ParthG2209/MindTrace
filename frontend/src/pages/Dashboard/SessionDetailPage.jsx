@@ -1,4 +1,4 @@
-// src/pages/Dashboard/SessionDetailPage.jsx
+// src/pages/Dashboard/SessionDetailPage.jsx - GLASSMORPHISM UPDATED
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
@@ -100,6 +100,12 @@ const SessionDetailPage = () => {
     return colors[status] || colors.uploaded;
   };
 
+  const GlassCard = ({ children, className = "" }) => (
+    <div className={`bg-white/5 border border-white/10 backdrop-blur-sm rounded-2xl p-6 ${className}`}>
+      {children}
+    </div>
+  );
+
   const tabs = [
     { id: 'overview', label: 'Overview', show: true },
     { id: 'segments', label: 'Segments', show: evaluation },
@@ -119,33 +125,33 @@ const SessionDetailPage = () => {
   if (!session) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="text-center">
+        <GlassCard className="text-center p-12">
           <Video className="w-16 h-16 mx-auto text-gray-600 mb-4" />
           <h3 className="text-xl font-bold text-white mb-2">Session not found</h3>
           <button
             onClick={() => navigate('/dashboard/sessions')}
-            className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
+            className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors mt-4"
           >
             Back to Sessions
           </button>
-        </div>
+        </GlassCard>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-7xl mx-auto pb-10">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-4 flex-1">
           <button
             onClick={() => navigate(`/dashboard/sessions?mentor=${session.mentor_id}`)}
-            className="p-2 hover:bg-white/5 rounded-lg transition-colors mt-1"
+            className="p-2 hover:bg-white/5 rounded-lg transition-colors mt-1 backdrop-blur-sm"
           >
             <ArrowLeft className="w-5 h-5 text-gray-400 hover:text-white" />
           </button>
           <div className="flex-1">
-            <h1 className="text-3xl font-bold text-white mb-2">{session.title}</h1>
+            <h1 className="text-3xl font-bold text-white tracking-tight mb-2">{session.title}</h1>
             <div className="flex flex-wrap items-center gap-4 text-sm text-gray-400">
               <div className="flex items-center gap-2">
                 <Video className="w-4 h-4" />
@@ -181,7 +187,7 @@ const SessionDetailPage = () => {
 
       {/* Evaluation Action */}
       {session.status === 'uploaded' && !evaluation && (
-        <div className="bg-gradient-to-r from-blue-500/20 to-purple-600/20 border border-blue-500/30 rounded-2xl p-6">
+        <div className="bg-blue-500/10 border border-blue-500/20 backdrop-blur-sm rounded-2xl p-6 hover:bg-blue-500/20 hover:border-blue-500/30 transition-all">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-bold text-white mb-1">Ready for Evaluation</h3>
@@ -190,7 +196,7 @@ const SessionDetailPage = () => {
             <button
               onClick={handleStartEvaluation}
               disabled={evaluating}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-semibold hover:from-blue-600 hover:to-purple-700 transition-all shadow-lg disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-semibold transition-all shadow-lg disabled:opacity-50"
             >
               {evaluating ? (
                 <>
@@ -210,7 +216,7 @@ const SessionDetailPage = () => {
 
       {/* Processing Status */}
       {['transcribing', 'analyzing'].includes(session.status) && (
-        <div className="bg-gradient-to-r from-blue-500/20 to-purple-600/20 border border-blue-500/30 rounded-2xl p-6">
+        <div className="bg-blue-500/10 border border-blue-500/20 backdrop-blur-sm rounded-2xl p-6 hover:bg-blue-500/20 hover:border-blue-500/30 transition-all">
           <div className="flex items-center gap-4">
             <Loader className="w-8 h-8 text-blue-400 animate-spin" />
             <div>
@@ -254,7 +260,7 @@ const SessionDetailPage = () => {
           </div>
 
           {/* Tabs */}
-          <div className="bg-gradient-to-br from-gray-900 to-black rounded-2xl border border-white/10 overflow-hidden">
+          <div className="bg-white/5 border border-white/10 backdrop-blur-sm rounded-2xl overflow-hidden hover:bg-white/10 hover:border-white/20 transition-all">
             {/* Tab Headers */}
             <div className="flex border-b border-white/10 overflow-x-auto">
               {tabs.filter(tab => tab.show).map((tab) => (
@@ -280,7 +286,7 @@ const SessionDetailPage = () => {
                   
                   {/* Strengths & Weaknesses */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-6">
+                    <div className="bg-green-500/10 border border-green-500/20 backdrop-blur-sm rounded-xl p-6 hover:bg-green-500/20 hover:border-green-500/30 transition-all">
                       <h3 className="text-lg font-bold text-green-400 mb-4">Strengths</h3>
                       <ul className="space-y-2">
                         {evaluation.segments
@@ -294,7 +300,7 @@ const SessionDetailPage = () => {
                           ))}
                       </ul>
                     </div>
-                    <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-6">
+                    <div className="bg-yellow-500/10 border border-yellow-500/20 backdrop-blur-sm rounded-xl p-6 hover:bg-yellow-500/20 hover:border-yellow-500/30 transition-all">
                       <h3 className="text-lg font-bold text-yellow-400 mb-4">Areas for Improvement</h3>
                       <ul className="space-y-2">
                         {evaluation.segments
@@ -318,7 +324,7 @@ const SessionDetailPage = () => {
 
               {activeTab === 'evidence' && (
                 <EvidencePanel
-                  evaluationId={evaluation._id || evaluation.id} // ✅ FIXED: Check both _id and id
+                  evaluationId={evaluation._id || evaluation.id}
                   sessionId={sessionId}
                 />
               )}
@@ -326,14 +332,14 @@ const SessionDetailPage = () => {
               {activeTab === 'rewrites' && (
                 <RewriteComparison
                   sessionId={sessionId}
-                  evaluationId={evaluation._id || evaluation.id} // ✅ FIXED
+                  evaluationId={evaluation._id || evaluation.id}
                 />
               )}
 
               {activeTab === 'coherence' && (
                 <CoherenceIssuesViewer
                   sessionId={sessionId}
-                  evaluationId={evaluation._id || evaluation.id} // ✅ FIXED
+                  evaluationId={evaluation._id || evaluation.id}
                 />
               )}
             </div>
