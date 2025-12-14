@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { slide as Menu } from 'react-burger-menu';
 import { 
   LogOut, 
   User as UserIcon,
@@ -14,16 +15,14 @@ import { auth } from '../lib/firebase';
 import { signOut } from 'firebase/auth';
 import MindTraceFooter from '../components/ui/mindtrace-footer';
 import { DottedSurface } from '../components/ui/dotted-surface';
-import { Sidebar, SidebarBody, SidebarLink } from '../components/ui/sidebar';
-import { motion } from 'framer-motion';
-import { cn } from '../lib/utils';
+import '../styles/burger-menu.css';
 
 const DashboardLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [user, setUser] = useState(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [open, setOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((currentUser) => {
@@ -44,172 +43,156 @@ const DashboardLayout = () => {
     }
   };
 
-  const links = [
+  const handleStateChange = (state) => {
+    setMenuOpen(state.isOpen);
+  };
+
+  const closeMenu = () => {
+    setMenuOpen(false);
+  };
+
+  const handleNavigation = (path) => {
+    navigate(path);
+    closeMenu();
+  };
+
+  const menuItems = [
     {
       label: 'Dashboard',
       href: '/dashboard',
-      icon: (
-        <LayoutDashboard className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
-      ),
+      icon: LayoutDashboard,
     },
     {
       label: 'Sessions',
       href: '/dashboard/sessions',
-      icon: (
-        <Video className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
-      ),
+      icon: Video,
     },
     {
       label: 'Mentors',
       href: '/dashboard/mentors',
-      icon: (
-        <Users className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
-      ),
+      icon: Users,
     },
     {
       label: 'Analytics',
       href: '/dashboard/analytics',
-      icon: (
-        <BarChart3 className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
-      ),
+      icon: BarChart3,
     },
     {
       label: 'Settings',
       href: '/dashboard/settings',
-      icon: (
-        <SettingsIcon className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
-      ),
+      icon: SettingsIcon,
     },
     {
       label: 'Profile',
       href: '/dashboard/profile',
-      icon: (
-        <UserIcon className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
-      ),
+      icon: UserIcon,
     },
   ];
 
-  const Logo = () => {
-    return (
-      <div
-        onClick={() => navigate('/dashboard')}
-        className="font-normal flex space-x-2 items-center text-sm text-black dark:text-white py-1 relative z-20 cursor-pointer"
-      >
-        <Award className="h-6 w-6 text-white dark:text-white flex-shrink-0" />
-        <motion.span
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="font-bold text-white dark:text-white whitespace-pre text-lg"
-        >
-          MindTrace
-        </motion.span>
-      </div>
-    );
-  };
-
-  const LogoIcon = () => {
-    return (
-      <div
-        onClick={() => navigate('/dashboard')}
-        className="font-normal flex space-x-2 items-center text-sm text-black dark:text-white py-1 relative z-20 cursor-pointer"
-      >
-        <Award className="h-6 w-6 text-white dark:text-white flex-shrink-0" />
-      </div>
-    );
+  const isActive = (path) => {
+    return location.pathname === path;
   };
 
   return (
     <div className="min-h-screen bg-black relative">
-      {/* Dotted Surface Background - Z-INDEX 0 */}
+      {/* Dotted Surface Background */}
       <DottedSurface darkMode={true} />
       
-      {/* Main Layout Container */}
-      <div
-        className={cn(
-          "flex flex-col md:flex-row w-full flex-1 mx-auto border-neutral-200 dark:border-neutral-700 overflow-hidden",
-          "min-h-screen"
-        )}
+      {/* Burger Menu */}
+      <Menu
+        isOpen={menuOpen}
+        onStateChange={handleStateChange}
+        width={'280px'}
+        customBurgerIcon={
+          <div className="flex flex-col gap-[6px]">
+            <div className="w-full h-[3px] bg-white rounded transition-all"></div>
+            <div className="w-full h-[3px] bg-white rounded transition-all"></div>
+            <div className="w-full h-[3px] bg-white rounded transition-all"></div>
+          </div>
+        }
       >
-        <Sidebar open={open} setOpen={setOpen}>
-          <SidebarBody className="justify-between gap-10 bg-gradient-to-b from-gray-900/95 to-black/95 border-r border-white/10">
-            <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
-              {open ? <Logo /> : <LogoIcon />}
-              <div className="mt-8 flex flex-col gap-2">
-                {links.map((link, idx) => (
-                  <SidebarLink key={idx} link={link} />
-                ))}
+        {/* Logo */}
+        <div className="menu-logo" onClick={() => handleNavigation('/dashboard')}>
+          <Award />
+          <span>MindTrace</span>
+        </div>
+
+        {/* Menu Items */}
+        <div className="flex flex-col gap-2">
+          {menuItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <div
+                key={item.href}
+                onClick={() => handleNavigation(item.href)}
+                className={`menu-item ${isActive(item.href) ? 'active' : ''}`}
+              >
+                <Icon />
+                <span>{item.label}</span>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* User Profile Section */}
+        {user && (
+          <div className="menu-user-profile">
+            {showUserMenu && (
+              <>
+                <div 
+                  className="fixed inset-0 z-40"
+                  onClick={() => setShowUserMenu(false)}
+                />
+                <div className="user-dropdown">
+                  <div
+                    onClick={() => {
+                      handleNavigation('/dashboard/profile');
+                      setShowUserMenu(false);
+                    }}
+                    className="user-dropdown-item"
+                  >
+                    <UserIcon />
+                    <span>View Profile</span>
+                  </div>
+                  <div
+                    onClick={() => {
+                      handleLogout();
+                      setShowUserMenu(false);
+                    }}
+                    className="user-dropdown-item logout"
+                  >
+                    <LogOut />
+                    <span>Logout</span>
+                  </div>
+                </div>
+              </>
+            )}
+            
+            <div
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              className="user-profile-button"
+            >
+              <div className="user-avatar">
+                <UserIcon />
+              </div>
+              <div className="user-info">
+                <p className="user-name">
+                  {user.displayName || user.email?.split('@')[0]}
+                </p>
+                <p className="user-email">{user.email}</p>
               </div>
             </div>
-            
-            {/* User Profile Section */}
-            <div>
-              {user && (
-                <div className="relative">
-                  <div
-                    onClick={() => setShowUserMenu(!showUserMenu)}
-                    className="flex items-center gap-2 p-2 hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
-                  >
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0">
-                      <UserIcon className="w-4 h-4 text-white" />
-                    </div>
-                    <motion.div
-                      animate={{
-                        display: open ? "block" : "none",
-                        opacity: open ? 1 : 0,
-                      }}
-                      className="flex-1 min-w-0"
-                    >
-                      <p className="text-sm font-semibold text-white truncate">
-                        {user.displayName || user.email?.split('@')[0]}
-                      </p>
-                      <p className="text-xs text-gray-400 truncate">{user.email}</p>
-                    </motion.div>
-                  </div>
-
-                  {/* Dropdown Menu */}
-                  {showUserMenu && open && (
-                    <>
-                      <div 
-                        className="fixed inset-0 z-40"
-                        onClick={() => setShowUserMenu(false)}
-                      />
-                      <div className="absolute bottom-full left-0 right-0 mb-2 bg-gradient-to-br from-gray-900 to-black rounded-xl border border-white/10 shadow-2xl z-50 overflow-hidden">
-                        <div className="p-2">
-                          <button
-                            onClick={() => {
-                              navigate('/dashboard/profile');
-                              setShowUserMenu(false);
-                            }}
-                            className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-all"
-                          >
-                            <UserIcon className="w-4 h-4" />
-                            View Profile
-                          </button>
-                          <button
-                            onClick={handleLogout}
-                            className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-all mt-1"
-                          >
-                            <LogOut className="w-4 h-4" />
-                            Logout
-                          </button>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
-          </SidebarBody>
-        </Sidebar>
-        
-        {/* Main Content */}
-        <div className="flex flex-1 flex-col w-full">
-          <main className="p-6 flex-1 relative z-10 overflow-auto">
-            <Outlet />
-          </main>
-          <div className="relative z-10">
-            <MindTraceFooter />
           </div>
+        )}
+      </Menu>
+
+      {/* Main Content */}
+      <div className="flex flex-1 flex-col w-full">
+        <main className="p-6 flex-1 relative z-10 overflow-auto">
+          <Outlet />
+        </main>
+        <div className="relative z-10">
+          <MindTraceFooter />
         </div>
       </div>
     </div>
