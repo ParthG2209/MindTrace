@@ -1,4 +1,4 @@
-// src/pages/Dashboard/ProfilePage.jsx
+// src/pages/Dashboard/ProfilePage.jsx - GLASSMORPHISM UPDATED
 import React, { useState, useEffect } from 'react';
 import { 
   User, Mail, Calendar, Award, Video, TrendingUp,
@@ -103,6 +103,12 @@ const ProfilePage = () => {
     });
   };
 
+  const GlassCard = ({ children, className = "" }) => (
+    <div className={`bg-white/5 border border-white/10 backdrop-blur-sm rounded-2xl p-6 ${className}`}>
+      {children}
+    </div>
+  );
+
   if (!user) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -112,16 +118,16 @@ const ProfilePage = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-7xl mx-auto pb-10">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-white mb-2">Profile</h1>
+        <h1 className="text-3xl font-bold text-white tracking-tight mb-2">Profile</h1>
         <p className="text-gray-400">Manage your account information and preferences</p>
       </div>
 
       {/* Profile Card */}
-      <div className="bg-gradient-to-br from-gray-900 to-black rounded-2xl border border-white/10 overflow-hidden">
-        {/* Header Section */}
+      <div className="bg-white/5 border border-white/10 backdrop-blur-sm rounded-2xl overflow-hidden hover:bg-white/10 hover:border-white/20 transition-all">
+        {/* Header Section with Gradient */}
         <div className="relative h-32 bg-gradient-to-r from-blue-500 to-purple-600">
           <div className="absolute inset-0 bg-black/20"></div>
         </div>
@@ -147,7 +153,7 @@ const ProfilePage = () => {
                 <button
                   onClick={handleCancel}
                   disabled={loading}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-all disabled:opacity-50"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-all disabled:opacity-50 backdrop-blur-sm"
                 >
                   <X className="w-4 h-4" />
                   Cancel
@@ -155,7 +161,7 @@ const ProfilePage = () => {
                 <button
                   onClick={handleSaveProfile}
                   disabled={loading}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all shadow-lg disabled:opacity-50"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all shadow-lg disabled:opacity-50"
                 >
                   <Save className="w-4 h-4" />
                   {loading ? 'Saving...' : 'Save Changes'}
@@ -164,7 +170,7 @@ const ProfilePage = () => {
             ) : (
               <button
                 onClick={() => setEditing(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-all"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-all backdrop-blur-sm"
               >
                 <Edit2 className="w-4 h-4" />
                 Edit Profile
@@ -185,11 +191,11 @@ const ProfilePage = () => {
                     type="text"
                     value={formData.displayName}
                     onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
-                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
+                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all backdrop-blur-sm"
                     placeholder="Enter your name"
                   />
                 ) : (
-                  <div className="flex items-center gap-2 px-4 py-3 bg-white/5 border border-white/10 rounded-xl">
+                  <div className="flex items-center gap-2 px-4 py-3 bg-white/5 border border-white/10 rounded-xl backdrop-blur-sm">
                     <User className="w-5 h-5 text-gray-400" />
                     <span className="text-white">{user.displayName || 'Not set'}</span>
                   </div>
@@ -206,11 +212,11 @@ const ProfilePage = () => {
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
+                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all backdrop-blur-sm"
                     placeholder="Enter your email"
                   />
                 ) : (
-                  <div className="flex items-center gap-2 px-4 py-3 bg-white/5 border border-white/10 rounded-xl">
+                  <div className="flex items-center gap-2 px-4 py-3 bg-white/5 border border-white/10 rounded-xl backdrop-blur-sm">
                     <Mail className="w-5 h-5 text-gray-400" />
                     <span className="text-white">{user.email}</span>
                   </div>
@@ -222,7 +228,7 @@ const ProfilePage = () => {
                 <label className="block text-sm font-medium text-gray-400 mb-2">
                   Member Since
                 </label>
-                <div className="flex items-center gap-2 px-4 py-3 bg-white/5 border border-white/10 rounded-xl">
+                <div className="flex items-center gap-2 px-4 py-3 bg-white/5 border border-white/10 rounded-xl backdrop-blur-sm">
                   <Calendar className="w-5 h-5 text-gray-400" />
                   <span className="text-white">{formatDate(stats.joinDate)}</span>
                 </div>
@@ -233,7 +239,7 @@ const ProfilePage = () => {
                 <label className="block text-sm font-medium text-gray-400 mb-2">
                   Email Status
                 </label>
-                <div className="flex items-center gap-2 px-4 py-3 bg-white/5 border border-white/10 rounded-xl">
+                <div className="flex items-center gap-2 px-4 py-3 bg-white/5 border border-white/10 rounded-xl backdrop-blur-sm">
                   {user.emailVerified ? (
                     <>
                       <div className="w-2 h-2 rounded-full bg-green-400"></div>
@@ -254,39 +260,39 @@ const ProfilePage = () => {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-gradient-to-br from-gray-900 to-black rounded-2xl p-6 border border-white/10">
+        <GlassCard className="hover:bg-white/10 hover:border-white/20 transition-all">
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-blue-500/20 rounded-lg">
+            <div className="p-2 bg-blue-500/20 rounded-lg backdrop-blur-sm">
               <Video className="w-5 h-5 text-blue-400" />
             </div>
             <p className="text-sm text-gray-400">Total Sessions</p>
           </div>
           <p className="text-3xl font-bold text-white">{stats.totalSessions}</p>
-        </div>
+        </GlassCard>
 
-        <div className="bg-gradient-to-br from-gray-900 to-black rounded-2xl p-6 border border-white/10">
+        <GlassCard className="hover:bg-white/10 hover:border-white/20 transition-all">
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-green-500/20 rounded-lg">
+            <div className="p-2 bg-green-500/20 rounded-lg backdrop-blur-sm">
               <Award className="w-5 h-5 text-green-400" />
             </div>
             <p className="text-sm text-gray-400">Average Score</p>
           </div>
           <p className="text-3xl font-bold text-white">{stats.averageScore.toFixed(1)}</p>
-        </div>
+        </GlassCard>
 
-        <div className="bg-gradient-to-br from-gray-900 to-black rounded-2xl p-6 border border-white/10">
+        <GlassCard className="hover:bg-white/10 hover:border-white/20 transition-all">
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-purple-500/20 rounded-lg">
+            <div className="p-2 bg-purple-500/20 rounded-lg backdrop-blur-sm">
               <TrendingUp className="w-5 h-5 text-purple-400" />
             </div>
             <p className="text-sm text-gray-400">Evaluations</p>
           </div>
           <p className="text-3xl font-bold text-white">{stats.totalEvaluations}</p>
-        </div>
+        </GlassCard>
 
-        <div className="bg-gradient-to-br from-gray-900 to-black rounded-2xl p-6 border border-white/10">
+        <GlassCard className="hover:bg-white/10 hover:border-white/20 transition-all">
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-orange-500/20 rounded-lg">
+            <div className="p-2 bg-orange-500/20 rounded-lg backdrop-blur-sm">
               <Calendar className="w-5 h-5 text-orange-400" />
             </div>
             <p className="text-sm text-gray-400">Days Active</p>
@@ -294,13 +300,13 @@ const ProfilePage = () => {
           <p className="text-3xl font-bold text-white">
             {stats.joinDate ? Math.floor((new Date() - new Date(stats.joinDate)) / (1000 * 60 * 60 * 24)) : 0}
           </p>
-        </div>
+        </GlassCard>
       </div>
 
       {/* Additional Info */}
-      <div className="bg-gradient-to-br from-blue-500/20 to-purple-600/20 border border-blue-500/30 rounded-2xl p-6">
+      <div className="bg-blue-500/10 border border-blue-500/20 backdrop-blur-sm rounded-2xl p-6 hover:bg-blue-500/20 hover:border-blue-500/30 transition-all">
         <div className="flex items-start gap-4">
-          <div className="p-3 bg-blue-500/20 rounded-xl">
+          <div className="p-3 bg-blue-500/20 rounded-xl backdrop-blur-sm">
             <Award className="w-6 h-6 text-blue-400" />
           </div>
           <div>
@@ -310,13 +316,13 @@ const ProfilePage = () => {
               Keep your profile updated to personalize your experience.
             </p>
             <div className="flex flex-wrap gap-2">
-              <span className="px-3 py-1 bg-blue-500/20 border border-blue-500/30 rounded-full text-sm text-blue-400">
+              <span className="px-3 py-1 bg-blue-500/20 border border-blue-500/30 rounded-full text-sm text-blue-400 backdrop-blur-sm">
                 Premium Features
               </span>
-              <span className="px-3 py-1 bg-green-500/20 border border-green-500/30 rounded-full text-sm text-green-400">
+              <span className="px-3 py-1 bg-green-500/20 border border-green-500/30 rounded-full text-sm text-green-400 backdrop-blur-sm">
                 Unlimited Sessions
               </span>
-              <span className="px-3 py-1 bg-purple-500/20 border border-purple-500/30 rounded-full text-sm text-purple-400">
+              <span className="px-3 py-1 bg-purple-500/20 border border-purple-500/30 rounded-full text-sm text-purple-400 backdrop-blur-sm">
                 AI Analysis
               </span>
             </div>
