@@ -1,42 +1,39 @@
-// src/pages/Dashboard/SettingsPage.jsx - FIXED VERSION (API Section Removed)
+// src/pages/Dashboard/SettingsPage.jsx - GLASSMORPHISM UPDATED
 import React, { useState } from 'react';
 import { 
-  Bell, Shield, Palette,
-  Globe, Save, Moon, Sun
+  Bell, Shield, Palette, Globe, Save, Moon, Sun
 } from 'lucide-react';
 
 const SettingsPage = () => {
   const [settings, setSettings] = useState({
-    // Appearance
     theme: 'dark',
     compactMode: false,
-    
-    // Notifications
     emailNotifications: true,
     pushNotifications: false,
     sessionCompleted: true,
     weeklyReport: true,
-    
-    // Privacy
     publicProfile: false,
     shareAnalytics: true,
-    
-    // Language
     language: 'en',
   });
 
   const [saved, setSaved] = useState(false);
 
   const handleSave = () => {
-    // Save settings logic here
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   };
 
+  const GlassCard = ({ children, className = "" }) => (
+    <div className={`bg-white/5 border border-white/10 backdrop-blur-sm rounded-2xl p-6 hover:bg-white/10 hover:border-white/20 transition-all ${className}`}>
+      {children}
+    </div>
+  );
+
   const Section = ({ title, description, icon: Icon, children }) => (
-    <div className="bg-gradient-to-br from-gray-900 to-black rounded-2xl p-6 border border-white/10">
+    <GlassCard>
       <div className="flex items-start gap-4 mb-6">
-        <div className="p-3 bg-blue-500/20 rounded-xl">
+        <div className="p-3 bg-blue-500/20 rounded-xl backdrop-blur-sm">
           <Icon className="w-6 h-6 text-blue-400" />
         </div>
         <div className="flex-1">
@@ -47,7 +44,7 @@ const SettingsPage = () => {
       <div className="space-y-4">
         {children}
       </div>
-    </div>
+    </GlassCard>
   );
 
   const SettingItem = ({ label, description, children }) => (
@@ -80,11 +77,11 @@ const SettingsPage = () => {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-7xl mx-auto pb-10">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Settings</h1>
+          <h1 className="text-3xl font-bold text-white tracking-tight mb-2">Settings</h1>
           <p className="text-gray-400">Manage your application preferences and account settings</p>
         </div>
         <button
@@ -92,7 +89,7 @@ const SettingsPage = () => {
           className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all shadow-lg ${
             saved
               ? 'bg-green-600 text-white'
-              : 'bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700'
+              : 'bg-blue-600 hover:bg-blue-500 text-white'
           }`}
         >
           <Save className="w-5 h-5" />
@@ -113,7 +110,7 @@ const SettingsPage = () => {
           <div className="flex gap-2">
             <button
               onClick={() => setSettings({ ...settings, theme: 'dark' })}
-              className={`p-3 rounded-xl border transition-all ${
+              className={`p-3 rounded-xl border transition-all backdrop-blur-sm ${
                 settings.theme === 'dark'
                   ? 'bg-blue-500/20 border-blue-500/50'
                   : 'bg-white/5 border-white/10 hover:border-white/20'
@@ -123,7 +120,7 @@ const SettingsPage = () => {
             </button>
             <button
               onClick={() => setSettings({ ...settings, theme: 'light' })}
-              className={`p-3 rounded-xl border transition-all ${
+              className={`p-3 rounded-xl border transition-all backdrop-blur-sm ${
                 settings.theme === 'light'
                   ? 'bg-blue-500/20 border-blue-500/50'
                   : 'bg-white/5 border-white/10 hover:border-white/20'
@@ -222,7 +219,7 @@ const SettingsPage = () => {
           label="Two-Factor Authentication"
           description="Add an extra layer of security"
         >
-          <button className="px-4 py-2 bg-white/5 border border-white/10 text-white rounded-lg hover:bg-white/10 transition-all text-sm">
+          <button className="px-4 py-2 bg-white/5 border border-white/10 text-white rounded-lg hover:bg-white/10 transition-all text-sm backdrop-blur-sm">
             Enable 2FA
           </button>
         </SettingItem>
@@ -241,7 +238,7 @@ const SettingsPage = () => {
           <select
             value={settings.language}
             onChange={(e) => setSettings({ ...settings, language: e.target.value })}
-            className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
+            className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all backdrop-blur-sm"
           >
             <option value="en">English</option>
             <option value="es">Español</option>
@@ -256,7 +253,7 @@ const SettingsPage = () => {
           description="Set your local time zone"
         >
           <select
-            className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
+            className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all backdrop-blur-sm"
           >
             <option>UTC (GMT+0:00)</option>
             <option>EST (GMT-5:00)</option>
@@ -268,9 +265,9 @@ const SettingsPage = () => {
       </Section>
 
       {/* Danger Zone */}
-      <div className="bg-gradient-to-br from-red-900/20 to-red-950/20 rounded-2xl p-6 border border-red-500/30">
+      <div className="bg-red-500/10 border border-red-500/20 backdrop-blur-sm rounded-2xl p-6 hover:bg-red-500/20 hover:border-red-500/30 transition-all">
         <div className="flex items-start gap-4 mb-6">
-          <div className="p-3 bg-red-500/20 rounded-xl">
+          <div className="p-3 bg-red-500/20 rounded-xl backdrop-blur-sm">
             <Shield className="w-6 h-6 text-red-400" />
           </div>
           <div className="flex-1">
@@ -279,11 +276,11 @@ const SettingsPage = () => {
           </div>
         </div>
         <div className="space-y-3">
-          <button className="w-full px-4 py-3 bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl hover:bg-red-500/20 transition-all text-left">
+          <button className="w-full px-4 py-3 bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl hover:bg-red-500/20 transition-all text-left backdrop-blur-sm">
             <p className="font-medium">Delete All Sessions</p>
             <p className="text-sm text-gray-400 mt-1">Permanently delete all your teaching sessions</p>
           </button>
-          <button className="w-full px-4 py-3 bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl hover:bg-red-500/20 transition-all text-left">
+          <button className="w-full px-4 py-3 bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl hover:bg-red-500/20 transition-all text-left backdrop-blur-sm">
             <p className="font-medium">Delete Account</p>
             <p className="text-sm text-gray-400 mt-1">Permanently delete your account and all data</p>
           </button>
