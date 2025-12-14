@@ -258,12 +258,14 @@ const ExplanationGraph = ({ segments, sessionId, coherenceData: initialCoherence
     }
 
     // Tree layout algorithm
+    const nodeMap = new Map();
     const layoutTree = () => {
       const nodes = graphData.nodes;
       const links = graphData.links;
       
       // Build tree structure
-      const nodeMap = new Map(nodes.map(n => [n.id, { ...n, children: [], depth: 0, branch: 'main' }]));
+      nodeMap.clear();
+      nodes.forEach(n => nodeMap.set(n.id, { ...n, children: [], depth: 0, branch: 'main' }));
       const sequentialLinks = links.filter(l => l.type !== 'contradiction');
       const contradictionLinks = links.filter(l => l.type === 'contradiction');
       
