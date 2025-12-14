@@ -2,19 +2,28 @@ import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { 
   LogOut, 
-  User as UserIcon 
+  User as UserIcon,
+  LayoutDashboard,
+  Video,
+  Users,
+  Settings as SettingsIcon,
+  BarChart3,
+  Award
 } from 'lucide-react';
 import { auth } from '../lib/firebase';
 import { signOut } from 'firebase/auth';
 import MindTraceFooter from '../components/ui/mindtrace-footer';
 import { DottedSurface } from '../components/ui/dotted-surface';
-import PillNav from '../components/ui/PillNav';
+import { Sidebar, SidebarBody, SidebarLink } from '../components/ui/sidebar';
+import { motion } from 'framer-motion';
+import { cn } from '../lib/utils';
 
 const DashboardLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [user, setUser] = useState(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((currentUser) => {
@@ -35,129 +44,172 @@ const DashboardLayout = () => {
     }
   };
 
-  // Navigation items for PillNav
-  const navItems = [
-    { 
-      href: '/dashboard', 
+  const links = [
+    {
       label: 'Dashboard',
-      ariaLabel: 'Go to Dashboard'
+      href: '/dashboard',
+      icon: (
+        <LayoutDashboard className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
+      ),
     },
-    { 
-      href: '/dashboard/sessions', 
+    {
       label: 'Sessions',
-      ariaLabel: 'View Sessions'
+      href: '/dashboard/sessions',
+      icon: (
+        <Video className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
+      ),
     },
-    { 
-      href: '/dashboard/mentors', 
+    {
       label: 'Mentors',
-      ariaLabel: 'View Mentors'
+      href: '/dashboard/mentors',
+      icon: (
+        <Users className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
+      ),
     },
-    { 
-      href: '/dashboard/settings', 
+    {
+      label: 'Analytics',
+      href: '/dashboard/analytics',
+      icon: (
+        <BarChart3 className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
+      ),
+    },
+    {
       label: 'Settings',
-      ariaLabel: 'View Settings'
+      href: '/dashboard/settings',
+      icon: (
+        <SettingsIcon className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
+      ),
     },
-    { 
-      href: '/dashboard/profile', 
+    {
       label: 'Profile',
-      ariaLabel: 'View Profile'
-    }
+      href: '/dashboard/profile',
+      icon: (
+        <UserIcon className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
+      ),
+    },
   ];
 
-  // LOGO PATH
-  const logoUrl = "/logo.png";
+  const Logo = () => {
+    return (
+      <div
+        onClick={() => navigate('/dashboard')}
+        className="font-normal flex space-x-2 items-center text-sm text-black dark:text-white py-1 relative z-20 cursor-pointer"
+      >
+        <Award className="h-6 w-6 text-white dark:text-white flex-shrink-0" />
+        <motion.span
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="font-bold text-white dark:text-white whitespace-pre text-lg"
+        >
+          MindTrace
+        </motion.span>
+      </div>
+    );
+  };
+
+  const LogoIcon = () => {
+    return (
+      <div
+        onClick={() => navigate('/dashboard')}
+        className="font-normal flex space-x-2 items-center text-sm text-black dark:text-white py-1 relative z-20 cursor-pointer"
+      >
+        <Award className="h-6 w-6 text-white dark:text-white flex-shrink-0" />
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-black relative">
       {/* Dotted Surface Background - Z-INDEX 0 */}
       <DottedSurface darkMode={true} />
       
-      {/* Top Navigation Bar - Z-INDEX 50 */}
-      <div className="fixed top-0 left-0 right-0 z-50 flex items-center px-6 py-4 bg-gradient-to-r from-gray-900/95 via-black/95 to-black/95 backdrop-blur-xl border-b border-white/10">
-        
-        {/* Left: PillNav (Contains the Logo on the Top Left) */}
-        <PillNav
-          logo={logoUrl}
-          logoAlt="MindTrace"
-          items={navItems}
-          activeHref={location.pathname}
-          baseColor="#ffffff"
-          pillColor="#000000"
-          hoveredPillTextColor="#000000"
-          pillTextColor="#ffffff"
-          ease="power3.out"
-          initialLoadAnimation={true}
-        />
-
-        {/* Right Side Container (Logo Removed) */}
-        <div className="relative ml-auto flex items-center gap-6">
-          
-          {/* User Menu */}
-          {user && (
-            <div className="relative">
-              <button
-                onClick={() => setShowUserMenu(!showUserMenu)}
-                className="flex items-center gap-3 px-4 py-2 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all"
-              >
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                  <UserIcon className="w-4 h-4 text-white" />
-                </div>
-                <div className="hidden md:block text-left">
-                  <p className="text-sm font-semibold text-white truncate max-w-[150px]">
-                    {user.displayName || user.email?.split('@')[0]}
-                  </p>
-                  <p className="text-xs text-gray-400 truncate max-w-[150px]">{user.email}</p>
-                </div>
-              </button>
-
-              {/* Dropdown Menu */}
-              {showUserMenu && (
-                <>
-                  <div 
-                    className="fixed inset-0 z-40"
-                    onClick={() => setShowUserMenu(false)}
-                  />
-                  <div className="absolute right-0 mt-2 w-64 bg-gradient-to-br from-gray-900 to-black rounded-xl border border-white/10 shadow-2xl z-50 overflow-hidden">
-                    <div className="p-4 border-b border-white/10">
+      {/* Main Layout Container */}
+      <div
+        className={cn(
+          "flex flex-col md:flex-row w-full flex-1 mx-auto border-neutral-200 dark:border-neutral-700 overflow-hidden",
+          "min-h-screen"
+        )}
+      >
+        <Sidebar open={open} setOpen={setOpen}>
+          <SidebarBody className="justify-between gap-10 bg-gradient-to-b from-gray-900/95 to-black/95 border-r border-white/10">
+            <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
+              {open ? <Logo /> : <LogoIcon />}
+              <div className="mt-8 flex flex-col gap-2">
+                {links.map((link, idx) => (
+                  <SidebarLink key={idx} link={link} />
+                ))}
+              </div>
+            </div>
+            
+            {/* User Profile Section */}
+            <div>
+              {user && (
+                <div className="relative">
+                  <div
+                    onClick={() => setShowUserMenu(!showUserMenu)}
+                    className="flex items-center gap-2 p-2 hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0">
+                      <UserIcon className="w-4 h-4 text-white" />
+                    </div>
+                    <motion.div
+                      animate={{
+                        display: open ? "block" : "none",
+                        opacity: open ? 1 : 0,
+                      }}
+                      className="flex-1 min-w-0"
+                    >
                       <p className="text-sm font-semibold text-white truncate">
-                        {user.displayName || 'User'}
+                        {user.displayName || user.email?.split('@')[0]}
                       </p>
                       <p className="text-xs text-gray-400 truncate">{user.email}</p>
-                    </div>
-                    <div className="p-2">
-                      <button
-                        onClick={() => {
-                          navigate('/dashboard/profile');
-                          setShowUserMenu(false);
-                        }}
-                        className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-all"
-                      >
-                        <UserIcon className="w-4 h-4" />
-                        View Profile
-                      </button>
-                      <button
-                        onClick={handleLogout}
-                        className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-all mt-1"
-                      >
-                        <LogOut className="w-4 h-4" />
-                        Logout
-                      </button>
-                    </div>
+                    </motion.div>
                   </div>
-                </>
+
+                  {/* Dropdown Menu */}
+                  {showUserMenu && open && (
+                    <>
+                      <div 
+                        className="fixed inset-0 z-40"
+                        onClick={() => setShowUserMenu(false)}
+                      />
+                      <div className="absolute bottom-full left-0 right-0 mb-2 bg-gradient-to-br from-gray-900 to-black rounded-xl border border-white/10 shadow-2xl z-50 overflow-hidden">
+                        <div className="p-2">
+                          <button
+                            onClick={() => {
+                              navigate('/dashboard/profile');
+                              setShowUserMenu(false);
+                            }}
+                            className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-all"
+                          >
+                            <UserIcon className="w-4 h-4" />
+                            View Profile
+                          </button>
+                          <button
+                            onClick={handleLogout}
+                            className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-all mt-1"
+                          >
+                            <LogOut className="w-4 h-4" />
+                            Logout
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
               )}
             </div>
-          )}
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="relative z-10 pt-20">
-        <main className="p-6 min-h-screen relative z-10">
-          <Outlet />
-        </main>
-        <div className="relative z-10">
-          <MindTraceFooter />
+          </SidebarBody>
+        </Sidebar>
+        
+        {/* Main Content */}
+        <div className="flex flex-1 flex-col w-full">
+          <main className="p-6 flex-1 relative z-10 overflow-auto">
+            <Outlet />
+          </main>
+          <div className="relative z-10">
+            <MindTraceFooter />
+          </div>
         </div>
       </div>
     </div>
