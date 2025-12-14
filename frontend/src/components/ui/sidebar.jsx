@@ -21,6 +21,7 @@ export const SidebarProvider = ({
   animate = true,
 }) => {
   const [openState, setOpenState] = useState(false);
+
   const open = openProp !== undefined ? openProp : openState;
   const setOpen = setOpenProp !== undefined ? setOpenProp : setOpenState;
 
@@ -59,7 +60,6 @@ export const DesktopSidebar = ({
   ...props
 }) => {
   const { open, setOpen, animate } = useSidebar();
-  
   return (
     <motion.div
       className={cn(
@@ -84,7 +84,6 @@ export const MobileSidebar = ({
   ...props
 }) => {
   const { open, setOpen } = useSidebar();
-  
   return (
     <>
       <div
@@ -135,7 +134,6 @@ export const SidebarLink = ({
   ...props
 }) => {
   const { open, animate } = useSidebar();
-  
   return (
     <Link
       to={link.href}
