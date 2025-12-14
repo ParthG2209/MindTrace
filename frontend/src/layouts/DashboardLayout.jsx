@@ -15,7 +15,7 @@ import { auth } from '../lib/firebase';
 import { signOut } from 'firebase/auth';
 import MindTraceFooter from '../components/ui/mindtrace-footer';
 import { DottedSurface } from '../components/ui/dotted-surface';
-import MenuBarToggle from './menu-bar-toggle'; // Make sure this path is correct
+import MenuBarToggle from '../components/ui/menu-toggle-icon';
 import '../styles/burger-menu.css';
 
 const DashboardLayout = () => {
