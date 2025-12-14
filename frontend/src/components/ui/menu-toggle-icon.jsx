@@ -1,6 +1,6 @@
 import React from 'react';
 import { cn } from '../../lib/utils';
-import 'frontend/src/styles/burger-menu.css';
+import '../../styles/burger-menu.css';
 
 export function MenuToggleIcon({
   open,
