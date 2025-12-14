@@ -1,4 +1,5 @@
-// src/pages/Dashboard/SessionDetailPage.jsx - GLASSMORPHISM UPDATED
+// parthg2209/mindtrace/MindTrace-454002ad537de541ce806a44cdbebf379fec4615/frontend/src/pages/Dashboard/SessionDetailPage.jsx
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
@@ -6,6 +7,7 @@ import {
   TrendingUp, Play, Loader, CheckCircle
 } from 'lucide-react';
 import { sessionApi, evaluationApi, mentorApi } from '../../api/client';
+import apiClient from '../../api/client'; // Added generic client for coherence
 import MetricCard from '../../components/MetricCard';
 import SegmentList from '../../components/SegmentList';
 import ExplanationGraph from '../../components/ExplanationGraph';
@@ -18,6 +20,7 @@ const SessionDetailPage = () => {
   const navigate = useNavigate();
   const [session, setSession] = useState(null);
   const [evaluation, setEvaluation] = useState(null);
+  const [coherence, setCoherence] = useState(null); // New State
   const [mentor, setMentor] = useState(null);
   const [loading, setLoading] = useState(true);
   const [evaluating, setEvaluating] = useState(false);
@@ -47,6 +50,15 @@ const SessionDetailPage = () => {
         try {
           const evalRes = await evaluationApi.getBySessionId(sessionId);
           setEvaluation(evalRes.data);
+          
+          // Fetch Coherence Data for Graph
+          try {
+            const cohRes = await apiClient.get(`/api/coherence/${sessionId}`);
+            setCoherence(cohRes.data);
+          } catch (e) {
+            console.log("Coherence data not available yet");
+          }
+
         } catch (error) {
           console.error('Evaluation not found:', error);
         }
@@ -282,7 +294,11 @@ const SessionDetailPage = () => {
             <div className="p-6">
               {activeTab === 'overview' && (
                 <div className="space-y-6">
-                  <ExplanationGraph segments={evaluation.segments} />
+                  <ExplanationGraph 
+                    segments={evaluation.segments} 
+                    sessionId={sessionId}
+                    coherenceData={coherence} 
+                  />
                   
                   {/* Strengths & Weaknesses */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
