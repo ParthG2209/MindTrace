@@ -1,4 +1,4 @@
-// src/pages/Dashboard/MentorsPage.jsx
+// src/pages/Dashboard/MentorsPage.jsx - GLASSMORPHISM VERSION
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, User, TrendingUp, TrendingDown, Minus, Search, Filter } from 'lucide-react';
@@ -88,10 +88,16 @@ const MentorsPage = () => {
     mentor.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const GlassCard = ({ children, className = "" }) => (
+    <div className={`bg-white/5 border border-white/10 backdrop-blur-sm rounded-2xl p-6 ${className}`}>
+      {children}
+    </div>
+  );
+
   const MentorCard = ({ mentor, stats }) => (
     <div
       onClick={() => navigate(`/dashboard/sessions?mentor=${mentor.id}`)}
-      className="group bg-gradient-to-br from-gray-900 to-black rounded-2xl p-6 border border-white/10 hover:border-white/20 transition-all cursor-pointer relative overflow-hidden"
+      className="group bg-white/5 border border-white/10 backdrop-blur-sm rounded-2xl p-6 hover:bg-white/10 transition-all cursor-pointer relative overflow-hidden"
     >
       {/* Background Glow Effect */}
       <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/10 to-purple-600/10 rounded-full blur-3xl group-hover:opacity-100 opacity-0 transition-opacity"></div>
@@ -173,16 +179,16 @@ const MentorsPage = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-7xl mx-auto pb-10">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Mentors</h1>
-          <p className="text-gray-400">Manage and track mentor performance</p>
+          <h1 className="text-3xl font-bold text-white tracking-tight">Mentors</h1>
+          <p className="text-gray-400 mt-1">Manage and track mentor performance</p>
         </div>
         <button
           onClick={() => setShowAddModal(true)}
-          className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-semibold hover:from-blue-600 hover:to-purple-700 transition-all shadow-lg"
+          className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium transition-colors text-sm"
         >
           <Plus className="w-5 h-5" />
           Add Mentor
@@ -190,18 +196,18 @@ const MentorsPage = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-gradient-to-br from-gray-900 to-black rounded-2xl p-6 border border-white/10">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <GlassCard>
           <p className="text-sm text-gray-400 mb-2">Total Mentors</p>
           <p className="text-4xl font-bold text-white">{mentors.length}</p>
-        </div>
-        <div className="bg-gradient-to-br from-gray-900 to-black rounded-2xl p-6 border border-white/10">
+        </GlassCard>
+        <GlassCard>
           <p className="text-sm text-gray-400 mb-2">Total Sessions</p>
           <p className="text-4xl font-bold text-white">
             {mentors.reduce((sum, m) => sum + (m.total_sessions || 0), 0)}
           </p>
-        </div>
-        <div className="bg-gradient-to-br from-gray-900 to-black rounded-2xl p-6 border border-white/10">
+        </GlassCard>
+        <GlassCard>
           <p className="text-sm text-gray-400 mb-2">Average Score</p>
           <p className="text-4xl font-bold text-white">
             {mentors.filter((m) => m.average_score).length > 0
@@ -213,7 +219,7 @@ const MentorsPage = () => {
                 ).toFixed(1)
               : 'N/A'}
           </p>
-        </div>
+        </GlassCard>
       </div>
 
       {/* Search and Filter */}
@@ -225,17 +231,17 @@ const MentorsPage = () => {
             placeholder="Search mentors..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
+            className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all backdrop-blur-sm"
           />
         </div>
-        <button className="p-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-colors">
+        <button className="p-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-colors backdrop-blur-sm">
           <Filter className="w-5 h-5 text-gray-400" />
         </button>
       </div>
 
       {/* Mentors Grid */}
       {filteredMentors.length === 0 ? (
-        <div className="bg-gradient-to-br from-gray-900 to-black rounded-2xl p-12 text-center border border-white/10">
+        <GlassCard className="p-12 text-center">
           <User className="w-16 h-16 mx-auto text-gray-600 mb-4" />
           <h3 className="text-xl font-bold text-white mb-2">No mentors found</h3>
           <p className="text-gray-400 mb-6">
@@ -244,13 +250,13 @@ const MentorsPage = () => {
           {!searchQuery && (
             <button
               onClick={() => setShowAddModal(true)}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-semibold hover:from-blue-600 hover:to-purple-700 transition-all shadow-lg"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium transition-colors"
             >
               <Plus className="w-5 h-5" />
               Add Mentor
             </button>
           )}
-        </div>
+        </GlassCard>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredMentors.map((mentor) => (
@@ -266,7 +272,7 @@ const MentorsPage = () => {
       {/* Add Mentor Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-gradient-to-br from-gray-900 to-black rounded-2xl border border-white/10 max-w-md w-full p-8 shadow-2xl">
+          <div className="bg-white/5 border border-white/10 backdrop-blur-md rounded-2xl max-w-md w-full p-8 shadow-2xl">
             <h2 className="text-2xl font-bold text-white mb-6">Add New Mentor</h2>
             <form onSubmit={handleAddMentor} className="space-y-4">
               <div>
@@ -278,7 +284,7 @@ const MentorsPage = () => {
                   required
                   value={newMentor.name}
                   onChange={(e) => setNewMentor({ ...newMentor, name: e.target.value })}
-                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
+                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all backdrop-blur-sm"
                   placeholder="Enter mentor name"
                 />
               </div>
@@ -291,7 +297,7 @@ const MentorsPage = () => {
                   required
                   value={newMentor.email}
                   onChange={(e) => setNewMentor({ ...newMentor, email: e.target.value })}
-                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
+                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all backdrop-blur-sm"
                   placeholder="mentor@example.com"
                 />
               </div>
@@ -304,7 +310,7 @@ const MentorsPage = () => {
                   value={newMentor.expertise}
                   onChange={(e) => setNewMentor({ ...newMentor, expertise: e.target.value })}
                   placeholder="Python, Machine Learning, Data Science"
-                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
+                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all backdrop-blur-sm"
                 />
               </div>
               <div>
@@ -316,20 +322,20 @@ const MentorsPage = () => {
                   onChange={(e) => setNewMentor({ ...newMentor, bio: e.target.value })}
                   rows="3"
                   placeholder="Tell us about this mentor..."
-                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all resize-none"
+                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all resize-none backdrop-blur-sm"
                 />
               </div>
               <div className="flex gap-3 mt-6">
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="flex-1 px-6 py-3 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-all font-medium"
+                  className="flex-1 px-6 py-3 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-all font-medium backdrop-blur-sm"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all font-medium shadow-lg"
+                  className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all font-medium shadow-lg"
                 >
                   Add Mentor
                 </button>
