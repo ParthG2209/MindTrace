@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { slide as Menu } from 'react-burger-menu';
-import { 
-  LogOut, 
+import {
+  LogOut,
   User as UserIcon,
   LayoutDashboard,
   Video,
@@ -15,7 +15,7 @@ import { auth } from '../lib/firebase';
 import { signOut } from 'firebase/auth';
 import MindTraceFooter from '../components/ui/mindtrace-footer';
 import { DottedSurface } from '../components/ui/dotted-surface';
-import MenuBarToggle from '../components/ui/menu-toggle-icon';
+import { MenuToggleIcon } from '../components/ui/menu-toggle-icon';
 import '../styles/burger-menu.css';
 
 const DashboardLayout = () => {
@@ -104,15 +104,16 @@ const DashboardLayout = () => {
     <div className="min-h-screen bg-black relative">
       {/* Dotted Surface Background */}
       <DottedSurface darkMode={true} />
-      
+
       {/* CUSTOM TOGGLE BUTTON 
         Placed manually to ensure your custom component and animations work 
         independently of the library's default button wrapper.
       */}
       <div className="fixed top-6 left-6 z-[1100]">
-        <MenuBarToggle 
-          isOpen={menuOpen} 
-          toggle={toggleMenu} 
+        <MenuToggleIcon
+          open={menuOpen}
+          onClick={toggleMenu}
+          className="w-8 h-8 text-white"
         />
       </div>
 
@@ -152,7 +153,7 @@ const DashboardLayout = () => {
           <div className="menu-user-profile">
             {showUserMenu && (
               <>
-                <div 
+                <div
                   className="fixed inset-0 z-40"
                   onClick={() => setShowUserMenu(false)}
                 />
@@ -180,7 +181,7 @@ const DashboardLayout = () => {
                 </div>
               </>
             )}
-            
+
             <div
               onClick={() => setShowUserMenu(!showUserMenu)}
               className="user-profile-button"
