@@ -15,6 +15,7 @@ import { auth } from '../lib/firebase';
 import { signOut } from 'firebase/auth';
 import MindTraceFooter from '../components/ui/mindtrace-footer';
 import { DottedSurface } from '../components/ui/dotted-surface';
+import MenuBarToggle from './menu-bar-toggle'; // Make sure this path is correct
 import '../styles/burger-menu.css';
 
 const DashboardLayout = () => {
@@ -43,12 +44,18 @@ const DashboardLayout = () => {
     }
   };
 
+  // Syncs the library's internal state with our local state
   const handleStateChange = (state) => {
     setMenuOpen(state.isOpen);
   };
 
   const closeMenu = () => {
     setMenuOpen(false);
+  };
+
+  // Manually toggle the menu
+  const toggleMenu = () => {
+    setMenuOpen(!menuOpen);
   };
 
   const handleNavigation = (path) => {
@@ -98,18 +105,24 @@ const DashboardLayout = () => {
       {/* Dotted Surface Background */}
       <DottedSurface darkMode={true} />
       
-      {/* Burger Menu */}
+      {/* CUSTOM TOGGLE BUTTON 
+        Placed manually to ensure your custom component and animations work 
+        independently of the library's default button wrapper.
+      */}
+      <div className="fixed top-6 left-6 z-[1100]">
+        <MenuBarToggle 
+          isOpen={menuOpen} 
+          toggle={toggleMenu} 
+        />
+      </div>
+
+      {/* Burger Menu Sidebar */}
       <Menu
         isOpen={menuOpen}
         onStateChange={handleStateChange}
         width={'280px'}
-        customBurgerIcon={
-          <div className="flex flex-col gap-[6px]">
-            <div className="w-full h-[3px] bg-white rounded transition-all"></div>
-            <div className="w-full h-[3px] bg-white rounded transition-all"></div>
-            <div className="w-full h-[3px] bg-white rounded transition-all"></div>
-          </div>
-        }
+        customBurgerIcon={false} /* We disable the default icon to use our own above */
+        customCrossIcon={false}  /* Optional: disable default close X if you want to use the toggle to close too */
       >
         {/* Logo */}
         <div className="menu-logo" onClick={() => handleNavigation('/dashboard')}>

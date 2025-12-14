@@ -1,4 +1,4 @@
-/* Position and sizing of burger button */
+/* Position and sizing of burger button (Legacy - we are using custom placement now but keeping for safety) */
 .bm-burger-button {
   position: fixed;
   width: 36px;
@@ -276,4 +276,60 @@
 
 .bm-menu::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.3);
+}
+
+/* ============================================================ */
+/* NEW STYLES: Custom Menu Bar Toggle Icon (from MenuBarToggle) */
+/* ============================================================ */
+
+/* The clickable button container */
+.burger-icon {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  /* Removed z-index here because it's handled in the Layout parent div */
+}
+
+/* The container for the lines */
+.burger-lines {
+  width: 2rem;    /* 32px width */
+  height: 1.5rem; /* 24px height */
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+/* The actual lines (white bars) */
+.burger-lines span {
+  display: block;
+  width: 100%;
+  height: 3px;    /* Thickness of the lines */
+  background-color: white; /* Color of the lines */
+  border-radius: 10px;
+  transition: all 0.3s ease-in-out;
+  transform-origin: 1px;
+}
+
+/* --- ANIMATION STATES (When 'open' class is added) --- */
+
+/* Top line rotation */
+.burger-lines.open span:first-child {
+  transform: rotate(45deg);
+}
+
+/* Middle line fade out */
+.burger-lines.open span:nth-child(2) {
+  opacity: 0;
+  transform: translateX(20px);
+}
+
+/* Bottom line rotation */
+.burger-lines.open span:nth-child(3) {
+  transform: rotate(-45deg);
 }
