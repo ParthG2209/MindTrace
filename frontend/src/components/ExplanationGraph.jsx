@@ -15,7 +15,7 @@ const useDeepCompareMemo = (factory, deps) => {
   return ref.current.value;
 };
 
-const AdvancedExplanationGraph = ({ segments, sessionId, coherenceData: initialCoherenceData }) => {
+const ExplanationGraph = ({ segments, sessionId, coherenceData: initialCoherenceData }) => {
   const svgRef = useRef();
   const containerRef = useRef();
   const simulationRef = useRef();
@@ -233,7 +233,7 @@ const AdvancedExplanationGraph = ({ segments, sessionId, coherenceData: initialC
         .on('zoom', (event) => mainGroup.attr('transform', event.transform));
       
       svg.call(zoom)
-         .call(zoom.transform, d3.zoomIdentity.translate(width/2, height/2).scale(0.8));
+         .call(zoom.transform, d3.zoomIdentity.translate(100, height/2).scale(0.7));
 
       // Arrow markers
       const defs = svg.append('defs');
@@ -257,49 +257,113 @@ const AdvancedExplanationGraph = ({ segments, sessionId, coherenceData: initialC
         .append('path').attr('d','M0,-5L10,0L0,5').attr('fill','#6b7280');
     }
 
-    // Initialize simulation
+    // Tree layout algorithm
+    const layoutTree = () => {
+      const nodes = graphData.nodes;
+      const links = graphData.links;
+      
+      // Build tree structure
+      const nodeMap = new Map(nodes.map(n => [n.id, { ...n, children: [], depth: 0, branch: 'main' }]));
+      const sequentialLinks = links.filter(l => l.type !== 'contradiction');
+      const contradictionLinks = links.filter(l => l.type === 'contradiction');
+      
+      // Assign depths and branches
+      let mainPathNodes = [nodeMap.get(0)];
+      let currentDepth = 0;
+      let branchCounter = 0;
+      
+      sequentialLinks.forEach(link => {
+        const source = nodeMap.get(link.source);
+        const target = nodeMap.get(link.target);
+        
+        if (!source || !target) return;
+        
+        // Determine if this is a branch or main path
+        if (link.type === 'backbone' && target.id === source.id + 1) {
+          // Main path continuation
+          target.depth = currentDepth++;
+          target.branch = 'main';
+          target.x = target.depth * 150;
+          target.y = 0;
+          mainPathNodes.push(target);
+        } else {
+          // Branch (error, weak, drift, etc.)
+          branchCounter++;
+          target.depth = source.depth + 0.5;
+          target.branch = `branch-${branchCounter}`;
+          target.x = source.x + 100;
+          
+          // Alternate branches above and below
+          const branchOffset = 150 + (link.type === 'error' ? 50 : 0);
+          target.y = (branchCounter % 2 === 0 ? 1 : -1) * branchOffset;
+          
+          // Topic drift branches go further
+          if (link.type === 'drift') {
+            target.y *= 1.5;
+          }
+          
+          // Dead ends branch even further
+          if (target.isDeadEnd) {
+            target.y *= 1.3;
+          }
+        }
+        
+        source.children.push(target);
+      });
+      
+      // Position contradiction nodes even further out
+      contradictionLinks.forEach(link => {
+        const source = nodeMap.get(link.source);
+        const target = nodeMap.get(link.target);
+        
+        if (!source || !target) return;
+        
+        // Place contradiction targets in their own branch layer
+        if (!target.x) {
+          target.x = Math.max(source.x, target.id * 150);
+        }
+        target.y = (target.y || 0) + ((target.id % 2 === 0 ? 1 : -1) * 250);
+      });
+      
+      // Apply positions
+      nodes.forEach(node => {
+        const treeNode = nodeMap.get(node.id);
+        if (treeNode.x !== undefined) {
+          node.x = treeNode.x;
+          node.y = treeNode.y;
+          node.fx = treeNode.x; // Fix position
+          node.fy = treeNode.y;
+        }
+      });
+    };
+
+    // Apply tree layout
+    layoutTree();
+    
+    // Use minimal simulation for smooth transitions only
     if (!simulationRef.current) {
       simulationRef.current = d3.forceSimulation()
-        .force('link', d3.forceLink().id(d => d.id).distance(d => {
-          // Backbone: shorter distance, branches: longer
-          if (d.type === 'backbone') return 80;
-          if (d.type === 'error') return 120;
-          if (d.type === 'weak') return 150;
-          if (d.type === 'contradiction') return 200;
-          return 100;
-        }))
-        .force('charge', d3.forceManyBody().strength(d => {
-          // Stronger repulsion for error/anomaly nodes
-          return d.role === 'anomaly' ? -400 : -300;
-        }))
-        .force('collide', d3.forceCollide().radius(d => d.radius + 15))
-        .force('x', d3.forceX(d => {
-          // Horizontal positioning based on segment order
-          return (d.id * 100) - (graphData.nodes.length * 50);
-        }).strength(0.5))
-        .force('y', d3.forceY(d => {
-          // Vertical positioning: drift nodes go up/down
-          if (d.isDrift) return d.driftDegree * 150 * (d.id % 2 ? 1 : -1);
-          if (d.role === 'anomaly') return 200;
-          return 0;
-        }).strength(0.4));
+        .force('link', d3.forceLink().id(d => d.id).distance(80).strength(0.1))
+        .force('collision', d3.forceCollide().radius(d => d.radius + 10).strength(0.3))
+        .alphaDecay(0.05);
     }
     
     const simulation = simulationRef.current;
     simulation.nodes(graphData.nodes);
     simulation.force('link').links(graphData.links);
-    simulation.alpha(0.3).restart();
+    simulation.alpha(0.1).restart();
 
-    // Draw cluster backgrounds
+    // Draw cluster backgrounds (as branch backgrounds)
     const clusterGroup = mainGroup.select('g.clusters');
-    const cluster = clusterGroup.selectAll('ellipse.cluster')
+    const cluster = clusterGroup.selectAll('rect.cluster')
       .data(graphData.clusters, (d, i) => i)
-      .join('ellipse')
+      .join('rect')
       .attr('class', 'cluster')
-      .attr('rx', d => d.length * 40)
-      .attr('ry', 60)
-      .attr('fill', 'rgba(59, 130, 246, 0.05)')
-      .attr('stroke', 'rgba(59, 130, 246, 0.2)')
+      .attr('width', d => d.length * 140)
+      .attr('height', 80)
+      .attr('rx', 12)
+      .attr('fill', 'rgba(59, 130, 246, 0.03)')
+      .attr('stroke', 'rgba(59, 130, 246, 0.15)')
       .attr('stroke-width', 1);
 
     // Draw links
@@ -364,13 +428,22 @@ const AdvancedExplanationGraph = ({ segments, sessionId, coherenceData: initialC
               return '#3b82f6';
             });
           
-          // Dead end indicator
-          g.filter(d => d.isDeadEnd).append('path')
+          // Dead end indicator (X mark at end of branch)
+          g.filter(d => d.isDeadEnd).append('g')
             .attr('class', 'dead-end')
-            .attr('d', 'M-6,-6 L6,6 M6,-6 L-6,6')
-            .attr('stroke', '#ef4444')
-            .attr('stroke-width', 2)
-            .attr('transform', d => `translate(${d.radius * 0.7}, ${d.radius * 0.7})`);
+            .attr('transform', d => `translate(${d.radius + 8}, 0)`)
+            .call(g => {
+              g.append('circle')
+                .attr('r', 8)
+                .attr('fill', '#fee2e2')
+                .attr('stroke', '#ef4444')
+                .attr('stroke-width', 2);
+              g.append('path')
+                .attr('d', 'M-4,-4 L4,4 M4,-4 L-4,4')
+                .attr('stroke', '#ef4444')
+                .attr('stroke-width', 2)
+                .attr('stroke-linecap', 'round');
+            });
           
           // Label
           g.append('text')
@@ -407,32 +480,40 @@ const AdvancedExplanationGraph = ({ segments, sessionId, coherenceData: initialC
 
     node.on('click', (e, d) => { e.stopPropagation(); setSelectedNode(d); });
 
-    // Update cluster positions
+    // Update cluster positions (as branch backgrounds in tree)
     function updateClusters() {
-      cluster.attr('cx', (clusterNodes, i) => {
-        const cx = d3.mean(clusterNodes, n => n.x);
-        return cx || 0;
-      })
-      .attr('cy', (clusterNodes, i) => {
-        const cy = d3.mean(clusterNodes, n => n.y);
-        return cy || 0;
-      });
+      cluster
+        .attr('x', (clusterNodes, i) => {
+          const minX = d3.min(clusterNodes, n => n.x - n.radius);
+          return minX || 0;
+        })
+        .attr('y', (clusterNodes, i) => {
+          const centerY = d3.mean(clusterNodes, n => n.y);
+          return (centerY || 0) - 40;
+        });
     }
 
     // Tick function
     simulation.on('tick', () => {
       link.attr('d', d => {
+        // For tree layout, use orthogonal (stepped) paths
         const dx = d.target.x - d.source.x;
         const dy = d.target.y - d.source.y;
         
         if (d.type === 'contradiction') {
-          // Curved path for contradictions
-          const dr = Math.sqrt(dx*dx + dy*dy) * 1.5;
+          // Large curved arc for contradictions
+          const dr = Math.sqrt(dx*dx + dy*dy) * 2;
           return `M${d.source.x},${d.source.y}A${dr},${dr} 0 0,1 ${d.target.x},${d.target.y}`;
         }
         
-        // Straight line for others
-        return `M${d.source.x},${d.source.y}L${d.target.x},${d.target.y}`;
+        if (d.type === 'backbone') {
+          // Straight horizontal for main path
+          return `M${d.source.x},${d.source.y}L${d.target.x},${d.target.y}`;
+        }
+        
+        // Stepped path for branches (L-shaped)
+        const midX = d.source.x + dx * 0.5;
+        return `M${d.source.x},${d.source.y}L${midX},${d.source.y}L${midX},${d.target.y}L${d.target.x},${d.target.y}`;
       });
       
       node.attr('transform', d => `translate(${d.x},${d.y})`);
@@ -440,7 +521,8 @@ const AdvancedExplanationGraph = ({ segments, sessionId, coherenceData: initialC
     });
 
     function dragstart(e, d) {
-      if (!e.active) simulation.alphaTarget(0.3).restart();
+      if (!e.active) simulation.alphaTarget(0.1).restart();
+      // Don't fix position - allow dragging but tree will restore
       d.fx = d.x;
       d.fy = d.y;
     }
@@ -452,8 +534,11 @@ const AdvancedExplanationGraph = ({ segments, sessionId, coherenceData: initialC
     
     function dragend(e, d) {
       if (!e.active) simulation.alphaTarget(0);
-      d.fx = null;
-      d.fy = null;
+      // Release fixed position so tree layout can take over
+      setTimeout(() => {
+        d.fx = nodeMap?.get(d.id)?.x ?? d.fx;
+        d.fy = nodeMap?.get(d.id)?.y ?? d.fy;
+      }, 100);
     }
 
     return () => simulation.on('tick', null);
@@ -475,7 +560,7 @@ const AdvancedExplanationGraph = ({ segments, sessionId, coherenceData: initialC
     const height = isFullscreen ? window.innerHeight - 100 : 600;
     svg.transition().call(
       d3.zoom().transform,
-      d3.zoomIdentity.translate(width/2, height/2).scale(0.8)
+      d3.zoomIdentity.translate(100, height/2).scale(0.7)
     );
   };
 
@@ -587,4 +672,4 @@ const AdvancedExplanationGraph = ({ segments, sessionId, coherenceData: initialC
   );
 };
 
-export default AdvancedExplanationGraph;
+export default ExplanationGraph;
