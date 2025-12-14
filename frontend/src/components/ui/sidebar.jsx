@@ -2,7 +2,7 @@ import { cn } from "../../lib/utils";
 import { Link } from "react-router-dom";
 import React, { useState, createContext, useContext } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Menu, X } from "lucide-react";
+import { MenuToggleIcon } from "./menu-toggle-icon"; 
 
 const SidebarContext = createContext(undefined);
 
@@ -92,11 +92,13 @@ export const MobileSidebar = ({
         )}
         {...props}
       >
-        <div className="flex justify-end z-20 w-full">
-          <Menu
-            className="text-neutral-800 dark:text-neutral-200 cursor-pointer"
-            onClick={() => setOpen(!open)}
-          />
+        <div className="flex justify-end z-[102] w-full relative">
+          <button onClick={() => setOpen(!open)} className="outline-none">
+             <MenuToggleIcon 
+                open={open} 
+                className="w-8 h-8 text-neutral-800 dark:text-neutral-200"
+             />
+          </button>
         </div>
         <AnimatePresence>
           {open && (
@@ -113,13 +115,10 @@ export const MobileSidebar = ({
                 className
               )}
             >
-              <div
-                className="absolute right-10 top-10 z-50 text-neutral-800 dark:text-neutral-200 cursor-pointer"
-                onClick={() => setOpen(!open)}
-              >
-                <X />
+              {/* Close button removed as the MenuToggleIcon now serves as the toggle */}
+              <div className="mt-8">
+                  {children}
               </div>
-              {children}
             </motion.div>
           )}
         </AnimatePresence>
