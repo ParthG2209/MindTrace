@@ -40,20 +40,30 @@ class LLMEvaluator:
             )
             
             print(f"✅ LLM evaluation successful")
+            print(f"DEBUG: LLM Response keys: {list(result.keys())}")
             
-            # Validate response structure - ALL 13 metrics
+            # Validate response structure - ALL 10 metrics (5 core + 5 advanced)
             required_keys = [
                 'clarity', 'structure', 'correctness', 'pacing', 'communication',
-                'engagement', 'examples', 'questioning', 'adaptability', 'relevance',
-                'student_interaction', 'off_topic_management', 'classroom_control'
+                'engagement', 'examples', 'questioning', 'adaptability', 'relevance'
             ]
             
+            # Check which keys are missing
+            missing_keys = [key for key in required_keys if key not in result]
+            
+            if missing_keys:
+                print(f"⚠️  Missing keys in LLM response: {missing_keys}")
+                print(f"⚠️  Received keys: {list(result.keys())}")
+                print(f"⚠️  Using fallback evaluation due to missing keys")
+                return self._mock_evaluation()
+            
+            # Validate each key has proper structure
             for key in required_keys:
-                if key not in result:
-                    print(f"⚠️  Missing key in LLM response: {key}")
+                if not isinstance(result[key], dict):
+                    print(f"⚠️  Invalid structure for {key}: not a dict")
                     return self._mock_evaluation()
                 if 'score' not in result[key] or 'reason' not in result[key]:
-                    print(f"⚠️  Invalid structure for {key} in LLM response")
+                    print(f"⚠️  Invalid structure for {key}: missing score or reason")
                     return self._mock_evaluation()
             
             # Create ScoreDetail objects
@@ -74,7 +84,7 @@ class LLMEvaluator:
         topic: str,
         full_context: str
     ) -> str:
-        """Build the enhanced evaluation prompt with 13 metrics"""
+        """Build the enhanced evaluation prompt with 10 metrics"""
         
         return f"""You are an expert educational evaluator analyzing a mentor's teaching quality with a focus on real classroom dynamics.
 
@@ -85,9 +95,14 @@ TEACHING SEGMENT:
 
 {f"FULL SESSION CONTEXT (for reference): {full_context[:500]}..." if full_context else ""}
 
+**CRITICAL INSTRUCTION**: You MUST evaluate ALL 10 metrics listed below. Each metric must have:
+1. A "score" field (number between 1-10)
+2. A "reason" field (string explaining the score)
+3. An optional "evidence" field (list of specific examples)
+
 Evaluate the following aspects of this teaching segment (score 1-10 each with detailed justification):
 
-**CORE TEACHING METRICS:**
+**CORE TEACHING METRICS (REQUIRED):**
 
 1. **Clarity**: How clearly is the concept explained? Are ideas articulated in an understandable way?
    - Clear terminology and definitions
@@ -114,7 +129,7 @@ Evaluate the following aspects of this teaching segment (score 1-10 each with de
    - Engaging tone
    - Clear pronunciation/articulation
 
-**ADVANCED TEACHING METRICS:**
+**ADVANCED TEACHING METRICS (REQUIRED):**
 
 6. **Engagement**: Does the teacher use techniques to keep students engaged and interested?
    - Interactive elements
@@ -150,59 +165,29 @@ Evaluate the following aspects of this teaching segment (score 1-10 each with de
     - Score 4-5: Moderate off-topic content (20-30%) with some value
     - Score 1-3: Excessive off-topic content (>30%) with minimal educational benefit
 
-**NEW: CLASSROOM DYNAMICS METRICS:**
-
-11. **Student Interaction**: How well does the teacher engage with and respond to students?
-    - Acknowledges student contributions
-    - Responds to questions effectively
-    - Creates interactive learning environment
-    - Encourages participation
-    - Note: Score based on evidence of interaction attempts, even if students aren't visible
-
-12. **Off-Topic Management**: How effectively does the teacher handle off-topic discussions?
-    - **KEY PRINCIPLE**: Brief off-topic moments (<15% total) are NORMAL and should score 7-9
-    - Allows valuable tangents that enhance learning
-    - Redirects excessive off-topic discussions appropriately
-    - Balances structure with natural conversation flow
-    - Score 8-10: Perfect balance - allows enriching tangents, redirects when needed
-    - Score 6-7: Mostly good balance with minor issues
-    - Score 4-5: Too rigid (no beneficial tangents) OR too loose (>30% off-topic)
-    - Score 1-3: Complete loss of focus OR overly strict suppression of valuable discussion
-
-13. **Classroom Control**: Does the teacher maintain appropriate focus and learning environment?
-    - Maintains respectful learning atmosphere
-    - Manages time effectively
-    - Keeps students on task without being overly rigid
-    - Creates safe space for questions and discussion
-    - Note: Score based on teacher's behavior and management style evident in the segment
-
 **SCORING GUIDELINES:**
 - Real classrooms have natural deviations - this is NORMAL and HEALTHY
-- Off-topic content <15%: Should NOT be penalized (score 7-9 for relevance and management)
-- Off-topic content 15-30%: Minor penalty only if lacks educational value
-- Off-topic content >30%: Significant penalty if not educationally justified
-- Teacher humor, anecdotes, and context-setting are VALUABLE, not problems
+- Off-topic content <15%: Should NOT be penalized (score 7-9 for relevance)
 - Perfect 10s should be rare but achievable for excellent teaching
 - Scores 1-3 should be reserved for serious issues
 
-Return your evaluation in the following JSON format:
+**CRITICAL: You MUST return JSON with ALL 10 metrics. Missing ANY metric will cause system failure.**
+
+Return your evaluation in the following JSON format (NO markdown, NO code blocks, ONLY pure JSON):
 {{
-  "clarity": {{"score": <1-10>, "reason": "<detailed explanation>", "evidence": ["specific example 1", "specific example 2"]}},
-  "structure": {{"score": <1-10>, "reason": "<detailed explanation>", "evidence": []}},
-  "correctness": {{"score": <1-10>, "reason": "<detailed explanation>", "evidence": []}},
-  "pacing": {{"score": <1-10>, "reason": "<detailed explanation>", "evidence": []}},
-  "communication": {{"score": <1-10>, "reason": "<detailed explanation>", "evidence": []}},
-  "engagement": {{"score": <1-10>, "reason": "<detailed explanation>", "evidence": []}},
-  "examples": {{"score": <1-10>, "reason": "<detailed explanation>", "evidence": []}},
-  "questioning": {{"score": <1-10>, "reason": "<detailed explanation>", "evidence": []}},
-  "adaptability": {{"score": <1-10>, "reason": "<detailed explanation>", "evidence": []}},
-  "relevance": {{"score": <1-10>, "reason": "<detailed explanation including off-topic analysis>", "evidence": []}},
-  "student_interaction": {{"score": <1-10>, "reason": "<detailed explanation>", "evidence": []}},
-  "off_topic_management": {{"score": <1-10>, "reason": "<detailed explanation with percentage estimate>", "evidence": []}},
-  "classroom_control": {{"score": <1-10>, "reason": "<detailed explanation>", "evidence": []}}
+  "clarity": {{"score": 8.5, "reason": "Clear explanation with good examples", "evidence": ["specific example 1"]}},
+  "structure": {{"score": 7.0, "reason": "Logical flow with minor gaps", "evidence": []}},
+  "correctness": {{"score": 9.0, "reason": "Technically accurate throughout", "evidence": []}},
+  "pacing": {{"score": 7.5, "reason": "Appropriate speed for content", "evidence": []}},
+  "communication": {{"score": 8.0, "reason": "Engaging and clear delivery", "evidence": []}},
+  "engagement": {{"score": 7.5, "reason": "Uses interactive elements effectively", "evidence": []}},
+  "examples": {{"score": 8.5, "reason": "Relevant and clear examples provided", "evidence": []}},
+  "questioning": {{"score": 6.5, "reason": "Some questions but could be more thought-provoking", "evidence": []}},
+  "adaptability": {{"score": 7.0, "reason": "Adjusts complexity appropriately", "evidence": []}},
+  "relevance": {{"score": 8.5, "reason": "Highly relevant with valuable context", "evidence": []}}
 }}
 
-Provide ONLY the JSON response, no additional text."""
+**REMINDER: Return ONLY valid JSON. Do NOT include any markdown formatting, code blocks, or explanatory text outside the JSON.**"""
     
     def _mock_evaluation(self) -> Dict[str, ScoreDetail]:
         """Mock evaluation for demo purposes or when LLM fails"""
@@ -221,9 +206,6 @@ Provide ONLY the JSON response, no additional text."""
             'questioning': random.uniform(5.5, 8.5),
             'adaptability': random.uniform(6.0, 8.5),
             'relevance': random.uniform(7.0, 9.5),
-            'student_interaction': random.uniform(6.0, 8.5),
-            'off_topic_management': random.uniform(7.0, 9.0),
-            'classroom_control': random.uniform(6.5, 9.0),
         }
         
         reasons = {
@@ -237,9 +219,6 @@ Provide ONLY the JSON response, no additional text."""
             'questioning': "Questions are used to check understanding, though more thought-provoking questions could enhance learning.",
             'adaptability': "The teacher adjusts explanation depth appropriately, showing awareness of complexity levels.",
             'relevance': "Content is highly relevant to the stated topic. Brief tangents enhance understanding and are appropriate.",
-            'student_interaction': "Teacher demonstrates engagement with students through responsive teaching and encouragement.",
-            'off_topic_management': "Off-topic discussions are minimal and educationally valuable. Good balance between structure and flexibility.",
-            'classroom_control': "Maintains effective learning environment while allowing natural discussion flow."
         }
         
         return {

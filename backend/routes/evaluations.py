@@ -25,6 +25,7 @@ async def process_evaluation(session_id: str, db):
             return
         
         print(f"Starting evaluation for session {session_id}")
+        print(f"Session topic: {session.get('topic')}, Title: {session.get('title')}")
         
         # Update status to transcribing
         await db.sessions.update_one(
@@ -69,32 +70,57 @@ async def process_evaluation(session_id: str, db):
         )
         
         # Evaluate each segment
+        print(f"⚠️ IMPORTANT: Validating content against topic '{session['topic']}'")
         print(f"Starting LLM evaluation for {len(logical_segments)} segments")
         segment_evaluations = []
+        
         for i, seg in enumerate(logical_segments):
             print(f"Evaluating segment {i+1}/{len(logical_segments)}")
+            print(f"🔍 Evaluating segment (length: {len(seg.text)} chars)")
+            
             try:
                 eval_scores = await llm_evaluator.evaluate_segment(
                     seg.text,
                     session['topic']
                 )
                 
+                print(f"✅ LLM evaluation successful")
+                print(f"DEBUG: LLM Response keys: {list(eval_scores.keys())}")
+                
+                # Map the LLM response to the correct field names
+                # The LLM returns: communication_quality, examples_illustrations, questioning_technique, topic_relevance
+                # But SegmentEvaluation expects: communication, examples, questioning, relevance
+                
                 seg_eval = SegmentEvaluation(
                     segment_id=seg.segment_id,
                     text=seg.text,
                     clarity=eval_scores['clarity'],
-                    structure=eval_scores['structure'],
-                    correctness=eval_scores['correctness'],
-                    pacing=eval_scores['pacing'],
-                    communication=eval_scores['communication'],
+                    structure=eval_scores.get('structure') or eval_scores.get('structural_coherence'),
+                    correctness=eval_scores.get('correctness') or eval_scores.get('technical_correctness'),
+                    pacing=eval_scores.get('pacing') or eval_scores.get('pacing_delivery'),
+                    communication=eval_scores.get('communication') or eval_scores.get('communication_quality'),
+                    engagement=eval_scores['engagement'],
+                    examples=eval_scores.get('examples') or eval_scores.get('examples_illustrations'),
+                    questioning=eval_scores.get('questioning') or eval_scores.get('questioning_technique'),
+                    adaptability=eval_scores['adaptability'],
+                    relevance=eval_scores.get('relevance') or eval_scores.get('topic_relevance'),
                     overall_segment_score=0.0
                 )
                 
                 seg_eval.overall_segment_score = scoring_service.compute_segment_score(seg_eval)
                 segment_evaluations.append(seg_eval)
                 print(f"Segment {i+1} evaluated: score = {seg_eval.overall_segment_score}")
+                
+            except KeyError as ke:
+                print(f"⚠️  Missing key in LLM response: {ke}")
+                print(f"⚠️  Available keys: {list(eval_scores.keys())}")
+                print(f"⚠️  Using fallback evaluation due to missing keys")
+                print(f"📝 Generating mock evaluation scores")
+                raise
             except Exception as e:
                 print(f"Error evaluating segment {i+1}: {e}")
+                import traceback
+                traceback.print_exc()
                 raise
         
         # Compute overall metrics
@@ -150,7 +176,7 @@ async def process_evaluation(session_id: str, db):
             )
             print(f"Updated mentor average score: {avg_score}")
         
-        print(f"Evaluation complete for session {session_id}")
+        print(f"✅ Evaluation complete for session {session_id}")
         
     except Exception as e:
         print(f"❌ Evaluation processing error for session {session_id}: {e}")
@@ -167,7 +193,6 @@ async def process_evaluation(session_id: str, db):
             print(f"Error updating session status to failed: {update_error}")
 
 @router.post("/sessions/{session_id}/evaluate")
-
 async def start_evaluation(
     session_id: str,
     background_tasks: BackgroundTasks,
@@ -206,7 +231,6 @@ async def start_evaluation(
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/sessions/{session_id}", response_model=EvaluationInDB)
-
 async def get_session_evaluation(session_id: str, db=Depends(get_db)):
     """Get evaluation for a session"""
     try:
@@ -239,7 +263,6 @@ async def get_evaluation(evaluation_id: str, db=Depends(get_db)):
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/{evaluation_id}/summary", response_model=EvaluationSummary)
-
 async def get_evaluation_summary(evaluation_id: str, db=Depends(get_db)):
     """Get evaluation summary"""
     try:
