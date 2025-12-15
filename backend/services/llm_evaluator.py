@@ -40,30 +40,19 @@ class LLMEvaluator:
             )
             
             print(f"✅ LLM evaluation successful")
-            print(f"DEBUG: LLM Response keys: {list(result.keys())}")
             
-            # Validate response structure - ALL 10 metrics (5 core + 5 advanced)
+            # Validate response structure - now with 10 metrics
             required_keys = [
                 'clarity', 'structure', 'correctness', 'pacing', 'communication',
                 'engagement', 'examples', 'questioning', 'adaptability', 'relevance'
             ]
             
-            # Check which keys are missing
-            missing_keys = [key for key in required_keys if key not in result]
-            
-            if missing_keys:
-                print(f"⚠️  Missing keys in LLM response: {missing_keys}")
-                print(f"⚠️  Received keys: {list(result.keys())}")
-                print(f"⚠️  Using fallback evaluation due to missing keys")
-                return self._mock_evaluation()
-            
-            # Validate each key has proper structure
             for key in required_keys:
-                if not isinstance(result[key], dict):
-                    print(f"⚠️  Invalid structure for {key}: not a dict")
+                if key not in result:
+                    print(f"⚠️  Missing key in LLM response: {key}")
                     return self._mock_evaluation()
                 if 'score' not in result[key] or 'reason' not in result[key]:
-                    print(f"⚠️  Invalid structure for {key}: missing score or reason")
+                    print(f"⚠️  Invalid structure for {key} in LLM response")
                     return self._mock_evaluation()
             
             # Create ScoreDetail objects
@@ -86,8 +75,7 @@ class LLMEvaluator:
     ) -> str:
         """Build the enhanced evaluation prompt with 10 metrics"""
         
-        # FIX: Added double braces {{ }} around the JSON example in point 3 below
-        return f"""You are an expert educational evaluator analyzing a mentor's teaching quality with a focus on real classroom dynamics.
+        return f"""You are an expert educational evaluator analyzing a mentor's teaching quality.
 
 STATED TOPIC: {topic}
 
@@ -96,14 +84,9 @@ TEACHING SEGMENT:
 
 {f"FULL SESSION CONTEXT (for reference): {full_context[:500]}..." if full_context else ""}
 
-**CRITICAL INSTRUCTION**: You MUST evaluate ALL 10 metrics listed below. Each metric must have:
-1. A "score" field (number between 1-10)
-2. A "reason" field (string explaining the score)
-3. An optional "evidence" field (list of specific examples)
-
 Evaluate the following aspects of this teaching segment (score 1-10 each with detailed justification):
 
-**CORE TEACHING METRICS (REQUIRED):**
+**CORE TEACHING METRICS:**
 
 1. **Clarity**: How clearly is the concept explained? Are ideas articulated in an understandable way?
    - Clear terminology and definitions
@@ -130,7 +113,7 @@ Evaluate the following aspects of this teaching segment (score 1-10 each with de
    - Engaging tone
    - Clear pronunciation/articulation
 
-**ADVANCED TEACHING METRICS (REQUIRED):**
+**ADVANCED TEACHING METRICS:**
 
 6. **Engagement**: Does the teacher use techniques to keep students engaged and interested?
    - Interactive elements
@@ -156,56 +139,34 @@ Evaluate the following aspects of this teaching segment (score 1-10 each with de
    - Provides scaffolding
    - Meets learner needs
 
-10. **Topic Relevance**: How relevant is this segment to the stated topic?
-    - **CRITICAL EVALUATION PRINCIPLE**: Some off-topic content is NORMAL and ACCEPTABLE in real classrooms
-    - Brief tangents (10-15% of content) that provide context, analogies, or real-world connections should score 7-9
-    - Related examples from adjacent topics that enhance understanding should score 7-9
-    - Only penalize if content is EXCESSIVELY off-topic (>30%) with NO educational value
-    - Score 8-10: Directly on-topic OR valuable related content
-    - Score 6-7: Brief acceptable deviations with educational merit
-    - Score 4-5: Moderate off-topic content (20-30%) with some value
-    - Score 1-3: Excessive off-topic content (>30%) with minimal educational benefit
+10. **Topic Relevance**: How relevant is this segment to the stated topic or meaningfully related topics?
+    - IMPORTANT: Related topics that enhance understanding are VALUED, not penalized
+    - Connections to stated topic
+    - Value of tangential content
+    - Educational merit of examples
+    - Overall contribution to learning goals
 
-**SCORING GUIDELINES:**
-- Real classrooms have natural deviations - this is NORMAL and HEALTHY
-- Off-topic content <15%: Should NOT be penalized (score 7-9 for relevance)
-- Perfect 10s should be rare but achievable for excellent teaching
-- Scores 1-3 should be reserved for serious issues
+**CRITICAL INSTRUCTION FOR RELEVANCE:**
+- If the segment discusses a related topic that helps explain or contextualize the main topic, score it HIGH (8-10)
+- Only penalize if the content is completely unrelated with no educational value
+- Examples from adjacent topics that illustrate concepts should score 7-9
+- Brief tangents that maintain engagement are acceptable (6-8)
 
-**CRITICAL: You MUST return JSON with ALL 10 metrics. Missing ANY metric will cause system failure.**
-
-Return your evaluation in the following JSON format (NO markdown, NO code blocks, ONLY pure JSON):
+Return your evaluation in the following JSON format:
 {{
-  "clarity": {{"score": 8.5, "reason": "Clear explanation with good examples", "evidence": ["specific example 1"]}},
-  "structure": {{"score": 7.0, "reason": "Logical flow with minor gaps", "evidence": []}},
-  "correctness": {{"score": 9.0, "reason": "Technically accurate throughout", "evidence": []}},
-  "pacing": {{"score": 7.5, "reason": "Appropriate speed for content", "evidence": []}},
-  "communication": {{"score": 8.0, "reason": "Engaging and clear delivery", "evidence": []}},
-  "engagement": {{"score": 7.5, "reason": "Uses interactive elements effectively", "evidence": []}},
-  "examples": {{"score": 8.5, "reason": "Relevant and clear examples provided", "evidence": []}},
-  "questioning": {{"score": 6.5, "reason": "Some questions but could be more thought-provoking", "evidence": []}},
-  "adaptability": {{"score": 7.0, "reason": "Adjusts complexity appropriately", "evidence": []}},
-  "relevance": {{"score": 8.5, "reason": "Highly relevant with valuable context", "evidence": []}}
+  "clarity": {{"score": <1-10>, "reason": "<detailed explanation>", "evidence": ["specific example 1", "specific example 2"]}},
+  "structure": {{"score": <1-10>, "reason": "<detailed explanation>", "evidence": []}},
+  "correctness": {{"score": <1-10>, "reason": "<detailed explanation>", "evidence": []}},
+  "pacing": {{"score": <1-10>, "reason": "<detailed explanation>", "evidence": []}},
+  "communication": {{"score": <1-10>, "reason": "<detailed explanation>", "evidence": []}},
+  "engagement": {{"score": <1-10>, "reason": "<detailed explanation>", "evidence": []}},
+  "examples": {{"score": <1-10>, "reason": "<detailed explanation>", "evidence": []}},
+  "questioning": {{"score": <1-10>, "reason": "<detailed explanation>", "evidence": []}},
+  "adaptability": {{"score": <1-10>, "reason": "<detailed explanation>", "evidence": []}},
+  "relevance": {{"score": <1-10>, "reason": "<detailed explanation including topic analysis>", "evidence": []}}
 }}
 
-**REMINDER: Return ONLY valid JSON. Do NOT include any markdown formatting, code blocks, or explanatory text outside the JSON.**
-
-**CRITICAL REQUIREMENTS:**
-1. Return ONLY valid JSON - no markdown, no code blocks, no explanations
-2. Use EXACTLY these key names (case-sensitive):
-   - clarity, structure, correctness, pacing, communication
-   - engagement, examples, questioning, adaptability, relevance
-3. Each metric must have: {{"score": float, "reason": string}}
-4. Do NOT use alternative names like "structural_coherence" or "technical_correctness"
-
-Example format:
-{{
-  "clarity": {{"score": 8.5, "reason": "...", "evidence": []}},
-  "structure": {{"score": 7.0, "reason": "..."}}
-}}
-
-Return the JSON now:
-"""
+Provide ONLY the JSON response, no additional text."""
     
     def _mock_evaluation(self) -> Dict[str, ScoreDetail]:
         """Mock evaluation for demo purposes or when LLM fails"""
@@ -236,7 +197,7 @@ Return the JSON now:
             'examples': "Examples are relevant and help clarify concepts. A good variety of illustrations is provided.",
             'questioning': "Questions are used to check understanding, though more thought-provoking questions could enhance learning.",
             'adaptability': "The teacher adjusts explanation depth appropriately, showing awareness of complexity levels.",
-            'relevance': "Content is highly relevant to the stated topic. Brief tangents enhance understanding and are appropriate.",
+            'relevance': "Content is highly relevant to the stated topic and related concepts enhance understanding effectively."
         }
         
         return {

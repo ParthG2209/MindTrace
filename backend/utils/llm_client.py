@@ -225,41 +225,8 @@ class UnifiedLLMClient:
             content = data['choices'][0]['message']['content']
             
             if response_format == 'json':
-                # Remove ALL markdown formatting
-                content = content.strip()
-                
-                # Remove markdown code blocks
-                content = re.sub(r'^```json\s*', '', content)
-                content = re.sub(r'^```\s*', '', content)
-                content = re.sub(r'\s*```$', '', content)
-                
-                # Remove any leading/trailing whitespace again
-                content = content.strip()
-                
-                # Try to extract JSON if embedded in text
-                if not content.startswith('{'):
-                    json_match = re.search(r'\{.*\}', content, re.DOTALL)
-                    if json_match:
-                        content = json_match.group()
-                
-                try:
-                    parsed = json.loads(content)
-                    
-                    # Validate all required keys exist
-                    required_keys = [
-                        'clarity', 'structure', 'correctness', 'pacing', 'communication',
-                        'engagement', 'examples', 'questioning', 'adaptability', 'relevance'
-                    ]
-                    
-                    missing_keys = [k for k in required_keys if k not in parsed]
-                    if missing_keys:
-                        raise ValueError(f"Missing required keys: {missing_keys}")
-                    
-                    return parsed
-                except json.JSONDecodeError as je:
-                    print(f"❌ JSON parsing failed: {je}")
-                    print(f"Raw content: {content[:500]}")
-                    raise LLMClientError(f"Failed to parse JSON: {je}\nContent: {content[:200]}")
+                content = self._clean_json_string(content)
+                return json.loads(content)
             return {'text': content}
             
         except (KeyError, IndexError, json.JSONDecodeError) as e:
