@@ -187,7 +187,24 @@ Return your evaluation in the following JSON format (NO markdown, NO code blocks
   "relevance": {{"score": 8.5, "reason": "Highly relevant with valuable context", "evidence": []}}
 }}
 
-**REMINDER: Return ONLY valid JSON. Do NOT include any markdown formatting, code blocks, or explanatory text outside the JSON.**"""
+**REMINDER: Return ONLY valid JSON. Do NOT include any markdown formatting, code blocks, or explanatory text outside the JSON.**
+
+**CRITICAL REQUIREMENTS:**
+1. Return ONLY valid JSON - no markdown, no code blocks, no explanations
+2. Use EXACTLY these key names (case-sensitive):
+   - clarity, structure, correctness, pacing, communication
+   - engagement, examples, questioning, adaptability, relevance
+3. Each metric must have: {"score": float, "reason": string}
+4. Do NOT use alternative names like "structural_coherence" or "technical_correctness"
+
+Example format:
+{
+  "clarity": {"score": 8.5, "reason": "...", "evidence": []},
+  "structure": {"score": 7.0, "reason": "..."}
+}
+
+Return the JSON now:
+"""
     
     def _mock_evaluation(self) -> Dict[str, ScoreDetail]:
         """Mock evaluation for demo purposes or when LLM fails"""

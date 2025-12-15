@@ -1,10 +1,10 @@
 import json
 import asyncio
+import re
 from typing import Dict, Any, Optional, List
 from datetime import datetime
 import httpx
 import google.generativeai as genai
-import re
 from config import settings
 
 class LLMClientError(Exception):
@@ -22,15 +22,16 @@ class UnifiedLLMClient:
     """
     
     def __init__(self):
-        self.gemini_api_key = settings.GOOGLE_API_KEY
-        self.groq_api_key = settings.GROQ_API_KEY
+        # ✅ CRITICAL FIX: Strip keys to remove hidden newlines/spaces that break requests
+        self.gemini_api_key = settings.GOOGLE_API_KEY.strip() if settings.GOOGLE_API_KEY else ""
+        self.groq_api_key = settings.GROQ_API_KEY.strip() if settings.GROQ_API_KEY else ""
         self.use_mock_fallback = settings.FALLBACK_TO_MOCK
         
         # Task routing configuration
         self.task_routing = {
             'evaluate': 'gemini',      # Frequent, needs accuracy
             'evidence': 'gemini',      # Needs precision
-            'rewrite': 'groq',         # Needs speed
+            'rewrite': 'groq',         # Needs speed (User enforced)
             'coherence': 'groq',       # Complex reasoning
             'pacing': 'gemini'         # Analytical task
         }
@@ -48,16 +49,6 @@ class UnifiedLLMClient:
     ) -> Dict[str, Any]:
         """
         Main LLM call method with intelligent routing and fallback
-        
-        Args:
-            prompt: The prompt to send to the LLM
-            task_type: Type of task (evaluate, rewrite, coherence, etc.)
-            response_format: Expected response format (json or text)
-            temperature: Sampling temperature (0-1)
-            max_retries: Number of retry attempts
-            
-        Returns:
-            Parsed response from LLM
         """
         
         # Determine which provider to use
@@ -65,12 +56,14 @@ class UnifiedLLMClient:
         
         for attempt in range(max_retries):
             try:
+                # Try selected provider
                 if provider == 'gemini' and self.gemini_api_key:
                     return await self._call_gemini(prompt, response_format, temperature)
                 elif provider == 'groq' and self.groq_api_key:
                     return await self._call_groq(prompt, response_format, temperature)
                 else:
-                    # Try alternative provider
+                    # If preferred provider key is missing, try the other one
+                    # (Unless it's a rewrite task and we want to enforce Groq preferences where possible)
                     if provider == 'gemini' and self.groq_api_key:
                         return await self._call_groq(prompt, response_format, temperature)
                     elif provider == 'groq' and self.gemini_api_key:
@@ -81,18 +74,28 @@ class UnifiedLLMClient:
                         raise LLMClientError("No LLM provider available")
                         
             except RateLimitError:
-                # Try alternative provider on rate limit
                 if attempt < max_retries - 1:
-                    provider = 'groq' if provider == 'gemini' else 'gemini'
-                    await asyncio.sleep(2 ** attempt)  # Exponential backoff
+                    print(f"Rate limit hit for {provider}. Retrying...")
+                    await asyncio.sleep(2 ** attempt)
+                    # For rewrite, stick to Groq if possible, otherwise switch
+                    if task_type != 'rewrite':
+                        provider = 'groq' if provider == 'gemini' else 'gemini'
                     continue
                 raise
                 
             except Exception as e:
-                # Log the error but don't crash yet
                 print(f"LLM attempt {attempt+1} failed ({provider}): {str(e)}")
                 
                 if attempt < max_retries - 1:
+                    # ✅ FIX: Enforce Groq for rewrites (do not switch to Gemini)
+                    if task_type == 'rewrite' and provider == 'groq':
+                        print("Retrying Groq for rewrite (enforcing user preference)...")
+                        # Provider stays 'groq'
+                    else:
+                        # For other tasks, switch provider to maximize success chance
+                        provider = 'groq' if provider == 'gemini' else 'gemini'
+                        print(f"Switching to {provider} for retry...")
+                    
                     await asyncio.sleep(2 ** attempt)
                     continue
                     
@@ -112,24 +115,18 @@ class UnifiedLLMClient:
         
         url = f"https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key={self.gemini_api_key}"
         
-        # For JSON format, ensure prompt requests JSON
         if response_format == 'json':
             if not ('json' in prompt.lower() and 'return' in prompt.lower()):
                 prompt = prompt + "\n\nYou MUST return ONLY a valid JSON object. No markdown, no code blocks, no explanations - just pure JSON."
         
-        # Prepare request
         payload = {
-            "contents": [{
-                "parts": [{"text": prompt}]
-            }],
+            "contents": [{"parts": [{"text": prompt}]}],
             "generationConfig": {
                 "temperature": temperature,
                 "topP": 0.95,
                 "topK": 40,
-                # FIXED: Increased token limit to prevent JSON cutoff
                 "maxOutputTokens": 8192,
             },
-            # FIXED: Added safety settings to prevent blocking valid content
             "safetySettings": [
                 {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
                 {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
@@ -138,7 +135,6 @@ class UnifiedLLMClient:
             ]
         }
         
-        # Make request
         response = await self.http_client.post(url, json=payload)
         
         if response.status_code == 429:
@@ -147,17 +143,13 @@ class UnifiedLLMClient:
         if response.status_code != 200:
             raise LLMClientError(f"Gemini API error: {response.status_code} - {response.text}")
         
-        # Parse response
         data = response.json()
         
         try:
-            # Enhanced safety checks for response structure
             if 'candidates' not in data or not data['candidates']:
                 raise LLMClientError(f"Gemini returned no candidates. Possible safety block. Response: {str(data)[:200]}")
             
             candidate = data['candidates'][0]
-            
-            # Check for safety finish reason
             if candidate.get('finishReason') == 'SAFETY':
                  raise LLMClientError("Gemini generation blocked due to safety settings.")
 
@@ -171,20 +163,10 @@ class UnifiedLLMClient:
             content = content_part['parts'][0]['text']
             
             if response_format == 'json':
-                # Remove markdown formatting if present
-                content = content.strip()
-                if content.startswith('```json'):
-                    content = content[7:]
-                elif content.startswith('```'):
-                    content = content[3:]
-                if content.endswith('```'):
-                    content = content[:-3]
-                content = content.strip()
-                
+                content = self._clean_json_string(content)
                 try:
                     return json.loads(content)
                 except json.JSONDecodeError as je:
-                    # If JSON parsing fails, try to extract JSON from the content
                     json_match = re.search(r'\{.*\}', content, re.DOTALL)
                     if json_match:
                         return json.loads(json_match.group())
@@ -203,23 +185,17 @@ class UnifiedLLMClient:
     ) -> Dict[str, Any]:
         """Call Groq API (LLaMA 3.1)"""
         
-        url = "[https://api.groq.com/openai/v1/chat/completions](https://api.groq.com/openai/v1/chat/completions)"
+        # ✅ Clean URL string to prevent protocol errors
+        url = "https://api.groq.com/openai/v1/chat/completions"
         
         headers = {
             "Authorization": f"Bearer {self.groq_api_key}",
             "Content-Type": "application/json"
         }
         
-        # Prepare messages
         messages = [
-            {
-                "role": "system",
-                "content": "You are an expert educational evaluator. Respond in valid JSON format."
-            },
-            {
-                "role": "user",
-                "content": prompt
-            }
+            {"role": "system", "content": "You are an expert educational evaluator. Respond in valid JSON format."},
+            {"role": "user", "content": prompt}
         ]
         
         payload = {
@@ -233,8 +209,9 @@ class UnifiedLLMClient:
         if response_format == 'json':
             payload["response_format"] = {"type": "json_object"}
         
-        # Make request
-        response = await self.http_client.post(url, headers=headers, json=payload)
+        # Use a fresh client context for Groq to ensure no pollution
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            response = await client.post(url, headers=headers, json=payload)
         
         if response.status_code == 429:
             raise RateLimitError("Groq rate limit exceeded")
@@ -242,122 +219,100 @@ class UnifiedLLMClient:
         if response.status_code != 200:
             raise LLMClientError(f"Groq API error: {response.status_code} - {response.text}")
         
-        # Parse response
         data = response.json()
         
         try:
             content = data['choices'][0]['message']['content']
             
             if response_format == 'json':
-                # Groq sometimes wraps JSON in markdown
-                content = content.strip()
-                if content.startswith('```json'):
-                    content = content[7:]
-                if content.endswith('```'):
-                    content = content[:-3]
+                # Remove ALL markdown formatting
                 content = content.strip()
                 
-                return json.loads(content)
+                # Remove markdown code blocks
+                content = re.sub(r'^```json\s*', '', content)
+                content = re.sub(r'^```\s*', '', content)
+                content = re.sub(r'\s*```$', '', content)
+                
+                # Remove any leading/trailing whitespace again
+                content = content.strip()
+                
+                # Try to extract JSON if embedded in text
+                if not content.startswith('{'):
+                    json_match = re.search(r'\{.*\}', content, re.DOTALL)
+                    if json_match:
+                        content = json_match.group()
+                
+                try:
+                    parsed = json.loads(content)
+                    
+                    # Validate all required keys exist
+                    required_keys = [
+                        'clarity', 'structure', 'correctness', 'pacing', 'communication',
+                        'engagement', 'examples', 'questioning', 'adaptability', 'relevance'
+                    ]
+                    
+                    missing_keys = [k for k in required_keys if k not in parsed]
+                    if missing_keys:
+                        raise ValueError(f"Missing required keys: {missing_keys}")
+                    
+                    return parsed
+                except json.JSONDecodeError as je:
+                    print(f"❌ JSON parsing failed: {je}")
+                    print(f"Raw content: {content[:500]}")
+                    raise LLMClientError(f"Failed to parse JSON: {je}\nContent: {content[:200]}")
             return {'text': content}
             
         except (KeyError, IndexError, json.JSONDecodeError) as e:
             raise LLMClientError(f"Failed to parse Groq response: {e}")
+
+    def _clean_json_string(self, content: str) -> str:
+        """Helper to remove markdown code blocks from JSON strings"""
+        content = content.strip()
+        if content.startswith('```json'):
+            content = content[7:]
+        elif content.startswith('```'):
+            content = content[3:]
+        if content.endswith('```'):
+            content = content[:-3]
+        return content.strip()
     
     def _generate_mock_response(self, task_type: str) -> Dict[str, Any]:
         """Generate realistic mock responses for demo purposes"""
-        
         import random
         
         if task_type == 'evaluate':
             return {
-                "clarity": {
-                    "score": round(random.uniform(6.5, 9.5), 1),
-                    "reason": "The explanation uses clear language with appropriate examples. Some technical terms could be better defined."
-                },
-                "structure": {
-                    "score": round(random.uniform(6.0, 9.0), 1),
-                    "reason": "The segment follows a logical flow, introducing concepts before elaborating. Transitions could be smoother."
-                },
-                "correctness": {
-                    "score": round(random.uniform(7.0, 9.5), 1),
-                    "reason": "The technical content is accurate and demonstrates solid understanding of the subject matter."
-                },
-                "pacing": {
-                    "score": round(random.uniform(6.0, 8.5), 1),
-                    "reason": "The pacing is generally appropriate, though some sections could be slightly slower for complex topics."
-                },
-                "communication": {
-                    "score": round(random.uniform(6.5, 9.0), 1),
-                    "reason": "The language is engaging and appropriate. Good use of analogies and examples to illustrate points."
-                },
-                "engagement": {
-                    "score": round(random.uniform(6.0, 9.0), 1),
-                    "reason": "The teacher uses effective techniques to maintain interest, including real-world connections."
-                },
-                "examples": {
-                    "score": round(random.uniform(6.5, 9.5), 1),
-                    "reason": "Examples are relevant and help clarify concepts. A good variety of illustrations is provided."
-                },
-                "questioning": {
-                    "score": round(random.uniform(5.5, 8.5), 1),
-                    "reason": "Questions are used to check understanding, though more thought-provoking questions could enhance learning."
-                },
-                "adaptability": {
-                    "score": round(random.uniform(6.0, 8.5), 1),
-                    "reason": "The teacher adjusts explanation depth appropriately, showing awareness of complexity levels."
-                },
-                "relevance": {
-                    "score": round(random.uniform(7.0, 9.5), 1),
-                    "reason": "Content is highly relevant to the stated topic and related concepts enhance understanding effectively."
-                }
+                "clarity": {"score": round(random.uniform(6.5, 9.5), 1), "reason": "Clear explanation with examples."},
+                "structure": {"score": round(random.uniform(6.0, 9.0), 1), "reason": "Logical flow present."},
+                "correctness": {"score": round(random.uniform(7.0, 9.5), 1), "reason": "Technically accurate."},
+                "pacing": {"score": round(random.uniform(6.0, 8.5), 1), "reason": "Appropriate pacing."},
+                "communication": {"score": round(random.uniform(6.5, 9.0), 1), "reason": "Engaging tone."},
+                "engagement": {"score": round(random.uniform(6.0, 9.0), 1), "reason": "Maintains interest."},
+                "examples": {"score": round(random.uniform(6.5, 9.5), 1), "reason": "Good examples used."},
+                "questioning": {"score": round(random.uniform(5.5, 8.5), 1), "reason": "Questions could be better."},
+                "adaptability": {"score": round(random.uniform(6.0, 8.5), 1), "reason": "Good adaptation."},
+                "relevance": {"score": round(random.uniform(7.0, 9.5), 1), "reason": "Highly relevant."}
             }
-        
-        elif task_type == 'evidence':
-            return {
-                "evidence": [
-                    {
-                        "phrase": "this thing here",
-                        "char_start": 45,
-                        "char_end": 60,
-                        "issue": "Vague reference - unclear what 'this thing' refers to",
-                        "suggestion": "Use specific terminology instead of generic references",
-                        "alternative_phrasing": "the decorator function",
-                        "severity": "moderate"
-                    }
-                ]
-            }
-        
         elif task_type == 'rewrite':
             return {
-                "original_text": "The function does stuff with the data",
-                "rewritten_text": "The function processes the input data by applying a transformation algorithm",
-                "improvements": [
-                    "Replaced vague 'stuff' with specific 'processes'",
-                    "Added technical detail about transformation",
-                    "More professional terminology"
-                ],
-                "key_changes": {
-                    "terminology": "Improved from vague to specific",
-                    "structure": "Added logical flow"
-                },
-                "clarity_improvement": 2.5,
-                "word_count_change": 8,
-                "confidence": 0.85
+                "original_text": "Original text placeholder",
+                "rewritten_text": "Significantly improved text with better clarity and structure.",
+                "improvements": ["Improved terminology", "Better flow"],
+                "key_changes": {"structure": "Reorganized"},
+                "clarity_improvement": 2.0,
+                "word_count_change": 10,
+                "confidence": 0.9
             }
-        
         elif task_type == 'coherence':
             return {
                 "contradictions": [],
                 "topic_drifts": [],
                 "logical_gaps": [],
-                "overall_coherence_score": round(random.uniform(7.0, 9.0), 1)
+                "overall_coherence_score": 8.5
             }
-        
-        else:
-            return {"text": "Mock response for demo purposes"}
+        return {"text": "Mock response"}
     
     async def close(self):
-        """Close HTTP client"""
         await self.http_client.aclose()
 
 # Create global instance
