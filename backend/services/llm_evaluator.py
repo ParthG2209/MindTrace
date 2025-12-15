@@ -86,6 +86,7 @@ class LLMEvaluator:
     ) -> str:
         """Build the enhanced evaluation prompt with 10 metrics"""
         
+        # FIX: Added double braces {{ }} around the JSON example in point 3 below
         return f"""You are an expert educational evaluator analyzing a mentor's teaching quality with a focus on real classroom dynamics.
 
 STATED TOPIC: {topic}
@@ -194,14 +195,14 @@ Return your evaluation in the following JSON format (NO markdown, NO code blocks
 2. Use EXACTLY these key names (case-sensitive):
    - clarity, structure, correctness, pacing, communication
    - engagement, examples, questioning, adaptability, relevance
-3. Each metric must have: {"score": float, "reason": string}
+3. Each metric must have: {{"score": float, "reason": string}}
 4. Do NOT use alternative names like "structural_coherence" or "technical_correctness"
 
 Example format:
-{
-  "clarity": {"score": 8.5, "reason": "...", "evidence": []},
-  "structure": {"score": 7.0, "reason": "..."}
-}
+{{
+  "clarity": {{"score": 8.5, "reason": "...", "evidence": []}},
+  "structure": {{"score": 7.0, "reason": "..."}}
+}}
 
 Return the JSON now:
 """
