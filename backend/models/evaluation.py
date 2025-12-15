@@ -18,12 +18,17 @@ class SegmentEvaluation(BaseModel):
     pacing: ScoreDetail
     communication: ScoreDetail
     
-    # ===== NEW: Advanced Metrics - OPTIONAL for backward compatibility =====
-    engagement: Optional[ScoreDetail] = None
-    examples: Optional[ScoreDetail] = None
-    questioning: Optional[ScoreDetail] = None
-    adaptability: Optional[ScoreDetail] = None
-    relevance: Optional[ScoreDetail] = None
+    # Advanced Metrics - REQUIRED (changed from Optional)
+    engagement: ScoreDetail
+    examples: ScoreDetail
+    questioning: ScoreDetail
+    adaptability: ScoreDetail
+    relevance: ScoreDetail
+    
+    # NEW: Classroom Dynamics Metrics
+    student_interaction: Optional[ScoreDetail] = None  # How well teacher interacts with students
+    off_topic_management: Optional[ScoreDetail] = None  # Handling of off-topic discussions
+    classroom_control: Optional[ScoreDetail] = None  # Maintaining focus and discipline
     
     overall_segment_score: float
     topic_alignment: Optional[float] = None  # How well aligned with topic (0-1)
@@ -36,12 +41,17 @@ class Metrics(BaseModel):
     pacing: float
     communication: float
     
-    # ===== NEW: Advanced Metrics - OPTIONAL =====
-    engagement: Optional[float] = None
-    examples: Optional[float] = None
-    questioning: Optional[float] = None
-    adaptability: Optional[float] = None
-    relevance: Optional[float] = None
+    # Advanced Metrics - REQUIRED (changed from Optional)
+    engagement: float
+    examples: float
+    questioning: float
+    adaptability: float
+    relevance: float
+    
+    # NEW: Classroom Dynamics Metrics
+    student_interaction: Optional[float] = None
+    off_topic_management: Optional[float] = None
+    classroom_control: Optional[float] = None
 
 class EvaluationBase(BaseModel):
     session_id: str
@@ -49,13 +59,15 @@ class EvaluationBase(BaseModel):
     metrics: Metrics
     segments: List[SegmentEvaluation]
     
-    # ===== NEW: Topic Analysis =====
+    # Topic Analysis
     topic_analysis: Optional[dict] = {
         "stated_topic": "",
         "detected_topics": [],
         "relevance_score": 0.0,
         "topic_drift": [],
-        "related_topics_bonus": 0.0
+        "related_topics_bonus": 0.0,
+        "off_topic_percentage": 0.0,  # NEW: Track off-topic content
+        "acceptable_deviation": True  # NEW: Whether deviations are educationally valuable
     }
 
 class EvaluationCreate(EvaluationBase):
