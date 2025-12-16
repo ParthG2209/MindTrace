@@ -3,15 +3,17 @@ from typing import List, Optional
 from datetime import datetime
 
 class EvidenceItem(BaseModel):
-    """Single piece of evidence for a problem"""
+    """
+    Single piece of diagnostic evidence.
+    DISTINCTION: purely diagnostic. Points out WHAT is wrong, not how to fix it.
+    """
     segment_id: int
     metric: str  # clarity, structure, correctness, pacing, communication
-    phrase: str  # Exact problematic text
-    char_start: int  # Character position in segment text
+    phrase: str  # The exact problematic text (The "Highlight")
+    char_start: int 
     char_end: int
-    issue: str  # What's wrong with this phrase
-    suggestion: str  # How to fix it
-    alternative_phrasing: Optional[str] = None  # Better way to say it
+    issue: str  # The diagnosis (e.g., "Ambiguous terminology used here")
+    impact: str # Why this matters (e.g., "Confuses the student about variable types")
     severity: str = "moderate"  # minor, moderate, major
 
 class EvidenceCollection(BaseModel):
@@ -21,25 +23,3 @@ class EvidenceCollection(BaseModel):
     items: List[EvidenceItem] = []
     total_issues: int = 0
     created_at: datetime = Field(default_factory=datetime.utcnow)
-    
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "session_id": "507f1f77bcf86cd799439011",
-                "evaluation_id": "507f1f77bcf86cd799439012",
-                "items": [
-                    {
-                        "segment_id": 2,
-                        "metric": "clarity",
-                        "phrase": "this thing here",
-                        "char_start": 45,
-                        "char_end": 60,
-                        "issue": "Vague reference - unclear what 'this thing' refers to",
-                        "suggestion": "Use specific terminology",
-                        "alternative_phrasing": "the decorator function",
-                        "severity": "moderate"
-                    }
-                ],
-                "total_issues": 1
-            }
-        }

@@ -1,241 +1,251 @@
-from typing import List, Dict, Any
-from models.evaluation import SegmentEvaluation, ScoreDetail
+from typing import Dict, Any, List
+from models.evaluation import SegmentEvaluation
 from utils.llm_client import llm_client
 
-class EvidenceExtractor:
+class ExplanationRewriter:
     """
-    Extracts specific evidence of problems from teaching segments
-    FIXED VERSION - Now properly extracts problematic phrases
+    Rewrites explanations to improve teaching quality and style.
+    DISTINCTION: This service acts as a 'Coach'. It focuses on transformation,
+    style transfer, and generating superior, creative versions of the content.
+    FIXED VERSION - Robust against missing metrics/scores.
     """
     
     def __init__(self):
-        self.threshold_score = 7.0  # Extract evidence for scores below this
+        # We offer rewrites even for 'okay' segments (up to 8.0) to provide a 'Gold Standard' alternative
+        self.clarity_threshold = 8.0 
         
-    async def extract_evidence(
-        self, 
+    def _get_safe_score(self, segment: SegmentEvaluation, metric_name: str, default: float = 0.0) -> float:
+        """Helper to safely get a score from a metric that might be None"""
+        metric_obj = getattr(segment, metric_name, None)
+        if metric_obj and hasattr(metric_obj, 'score'):
+            return metric_obj.score
+        return default
+
+    def _get_safe_reason(self, segment: SegmentEvaluation, metric_name: str, default: str = "N/A") -> str:
+        """Helper to safely get a reason from a metric that might be None"""
+        metric_obj = getattr(segment, metric_name, None)
+        if metric_obj and hasattr(metric_obj, 'reason'):
+            return metric_obj.reason
+        return default
+
+    async def rewrite_segment(
+        self,
         segment: SegmentEvaluation,
-        metric: str
-    ) -> List[Dict[str, Any]]:
+        topic_context: str = ""
+    ) -> Dict[str, Any]:
         """
-        Extract evidence for a specific metric from a segment
-        
-        Args:
-            segment: The segment to analyze
-            metric: The metric to extract evidence for
-            
-        Returns:
-            List of evidence items with problematic phrases
+        Rewrite a segment to improve clarity and effectiveness using specific teaching styles.
         """
+        # Safe access to clarity score
+        clarity_score = self._get_safe_score(segment, 'clarity')
         
-        # Get the score detail for this metric safely
-        score_detail = getattr(segment, metric, None)
+        # Check if rewrite is needed (using the higher threshold for "Gold Standard" coaching)
+        if clarity_score >= self.clarity_threshold:
+            return {
+                "needs_rewrite": False,
+                "reason": f"Clarity score ({clarity_score}) is already excellent",
+                "original_text": segment.text
+            }
         
-        # If detail is missing or score is high, skip
-        if not score_detail or score_detail.score >= self.threshold_score:
-            return []
+        # Build rewrite prompt with specific "Style" instructions
+        prompt = self._build_rewrite_prompt(segment, topic_context)
         
-        # Build prompt for evidence extraction
-        prompt = self._build_evidence_prompt(segment.text, metric, score_detail)
-        
-        # Call LLM
         try:
-            print(f"🔍 Extracting evidence for {metric} (score: {score_detail.score})")
+            print(f"🔄 Generating transformation for segment {segment.segment_id}")
             response = await llm_client.call_llm(
                 prompt=prompt,
-                task_type='evidence',
+                task_type='rewrite',
                 response_format='json',
-                temperature=0.3  # Lower temperature for more precise extraction
+                temperature=0.7 # Higher temperature for creative rewriting
             )
             
-            # Parse and validate evidence items
-            evidence_items = response.get('evidence', [])
+            # Validate response
+            if not response.get('rewritten_text'):
+                return {
+                    "needs_rewrite": True,
+                    "error": "No rewritten text generated",
+                    "original_text": segment.text
+                }
             
-            # Add segment context and validate
-            valid_items = []
-            for item in evidence_items:
-                # Validate that the phrase actually exists in the segment
-                if 'phrase' in item and segment.text and item['phrase'].lower() in segment.text.lower():
-                    item['segment_id'] = segment.segment_id
-                    item['metric'] = metric
-                    
-                    # Calculate character positions if not provided
-                    if 'char_start' not in item:
-                        try:
-                            start_pos = segment.text.lower().find(item['phrase'].lower())
-                            if start_pos != -1:
-                                item['char_start'] = start_pos
-                                item['char_end'] = start_pos + len(item['phrase'])
-                        except:
-                            item['char_start'] = 0
-                            item['char_end'] = len(item['phrase'])
-                    
-                    valid_items.append(item)
+            # Add metadata and safe scores
+            response['segment_id'] = segment.segment_id
+            response['needs_rewrite'] = True
+            response['original_text'] = segment.text
+            response['applied_style'] = "Gold Standard (Socratic & Analogical)"
             
-            print(f"✅ Found {len(valid_items)} valid evidence items")
-            return valid_items
+            response['original_scores'] = {
+                'clarity': clarity_score,
+                'structure': self._get_safe_score(segment, 'structure'),
+                'communication': self._get_safe_score(segment, 'communication'),
+                'engagement': self._get_safe_score(segment, 'engagement'),
+                'examples': self._get_safe_score(segment, 'examples')
+            }
+            
+            # Calculate word count change
+            original_words = len(segment.text.split()) if segment.text else 0
+            rewritten_words = len(response['rewritten_text'].split()) if response.get('rewritten_text') else 0
+            response['word_count_change'] = rewritten_words - original_words
+            
+            print(f"✅ Transformation complete ({original_words} → {rewritten_words} words)")
+            
+            return response
             
         except Exception as e:
-            print(f"❌ Evidence extraction failed: {e}")
-            return []
+            print(f"❌ Rewrite failed: {e}")
+            return {
+                "needs_rewrite": True,
+                "error": str(e),
+                "original_text": segment.text
+            }
     
-    async def extract_all_evidence(
+    def _build_rewrite_prompt(
         self,
-        segments: List[SegmentEvaluation]
-    ) -> Dict[str, List[Dict[str, Any]]]:
-        """
-        Extract evidence for all low-scoring metrics across all segments
-        
-        Args:
-            segments: List of evaluated segments
-            
-        Returns:
-            Dictionary mapping metrics to evidence lists
-        """
-        
-        evidence_by_metric = {
-            'clarity': [],
-            'structure': [],
-            'correctness': [],
-            'pacing': [],
-            'communication': [],
-            'engagement': [],
-            'examples': [],
-            'questioning': [],
-            'adaptability': [],
-            'relevance': []
-        }
-        
-        for segment in segments:
-            for metric in evidence_by_metric.keys():
-                # Safe access to score [FIXED]
-                metric_obj = getattr(segment, metric, None)
-                score = metric_obj.score if metric_obj else 10.0 # Default to 10 (skip) if missing
-                
-                if score < self.threshold_score:
-                    print(f"Processing segment {segment.segment_id}, metric {metric}")
-                    items = await self.extract_evidence(segment, metric)
-                    evidence_by_metric[metric].extend(items)
-        
-        return evidence_by_metric
-    
-    def _build_evidence_prompt(
-        self,
-        segment_text: str,
-        metric: str,
-        score_detail: ScoreDetail
+        segment: SegmentEvaluation,
+        topic_context: str
     ) -> str:
-        """Build prompt for evidence extraction"""
+        """Build prompt for rewriting that focuses on stylistic transformation."""
         
-        metric_descriptions = {
-            'clarity': 'unclear or confusing language, vague terminology, ambiguous statements',
-            'structure': 'poor organization, logical flow issues, missing transitions',
-            'correctness': 'technical inaccuracies, errors, or misleading information',
-            'pacing': 'inappropriate speed, rushed explanations, or overly slow delivery',
-            'communication': 'ineffective communication, poor word choice, or disengaging delivery',
-            'engagement': 'lack of interactive elements, monotonous delivery, missing enthusiasm',
-            'examples': 'poor quality examples, irrelevant illustrations, or unclear demonstrations',
-            'questioning': 'lack of questions, ineffective questioning, or no checks for understanding',
-            'adaptability': 'failure to adjust difficulty, inappropriate complexity, poor scaffolding',
-            'relevance': 'off-topic content, irrelevant tangents, or poorly connected concepts'
-        }
-        
-        prompt = f"""You are analyzing a teaching segment that scored {score_detail.score}/10 on {metric}.
+        # Helper for prompt string generation
+        def get_metric_str(name):
+            score = self._get_safe_score(segment, name)
+            reason = self._get_safe_reason(segment, name)
+            return f"{score}/10 - {reason}"
 
-SEGMENT TEXT:
-"{segment_text}"
+        prompt = f"""You are a World-Class Teaching Coach. You have been given a transcript segment that needs to be transformed into a perfect, engaging explanation.
 
-EVALUATOR'S REASONING:
-{score_detail.reason}
+CONTEXT/TOPIC: {topic_context if topic_context else "Educational Content"}
+ORIGINAL TEXT: "{segment.text}"
 
-Your task: Extract SPECIFIC problematic phrases from the text that demonstrate {metric_descriptions.get(metric, 'issues')}.
+CURRENT DIAGNOSTICS:
+- Clarity: {get_metric_str('clarity')}
+- Engagement: {get_metric_str('engagement')}
 
-CRITICAL REQUIREMENTS:
-1. Extract ONLY phrases that ACTUALLY EXIST in the segment text (copy them exactly)
-2. Each phrase must be 5-30 words long
-3. Provide the exact character positions where each phrase appears
-4. Each phrase must clearly demonstrate the problem identified
+Your task is to generate a 'Gold Standard' version of this explanation.
+Do not just fix grammar. Completely restructure the delivery to be more engaging and clear. This is the **Rewriting/Transformation** tool.
 
-For each issue found, provide:
-- phrase: EXACT text from the segment (must exist word-for-word)
-- char_start: Starting character position in the text
-- char_end: Ending character position in the text
-- issue: Clear explanation of what's wrong
-- suggestion: Specific improvement suggestion
-- alternative_phrasing: Better way to phrase this (optional)
-- severity: "minor", "moderate", or "major"
+Perform the following stylistic transformations:
+1. **Analogy Injection**: If the concept is abstract, weave in a concrete real-world analogy (e.g., explaining a 'loop' using a 'recipe that repeats').
+2. **Socratic Pivot**: Instead of just lecturing, rephrase key points as engaging questions that guide the student to the answer.
+3. **Pacing and Conciseness**: Remove all filler words and make the explanation punchy and direct.
 
-Return as JSON in this format:
+Return only a valid JSON object:
 {{
-  "evidence": [
-    {{
-      "phrase": "exact problematic phrase from text",
-      "char_start": 123,
-      "char_end": 145,
-      "issue": "clear explanation of the problem",
-      "suggestion": "specific improvement suggestion",
-      "alternative_phrasing": "better way to phrase this",
-      "severity": "moderate"
-    }}
-  ]
+  "rewritten_text": "The complete, transformed text that implements the styles above.",
+  "transformation_notes": [
+    "Added analogy about [X] to explain [Y]",
+    "Converted passive explanation into Socratic questions",
+    "Removed [specific fluff] to improve pacing"
+  ],
+  "tone_shift": "From [Original Tone] to [New Tone]",
+  "estimated_clarity_lift": "+2.5 points",
+  "confidence": 0.9
 }}
 
-Guidelines:
-- Extract 2-5 evidence items (focus on the most impactful)
-- Only extract phrases that ACTUALLY exist in the text
-- Be specific and actionable
-- Prioritize issues by severity
-- If score is above 7.0, return empty evidence array
-
-Extract the evidence now:"""
+Make the rewrite significantly distinct from the original while preserving technical accuracy."""
         
         return prompt
     
-    async def get_evidence_by_segment(
+    async def batch_rewrite_session(
         self,
         segments: List[SegmentEvaluation],
-        segment_id: int
-    ) -> Dict[str, List[Dict[str, Any]]]:
-        """Get all evidence for a specific segment"""
-        
-        segment = next((s for s in segments if s.segment_id == segment_id), None)
-        if not segment:
-            return {}
-        
-        evidence = {}
-        metrics = [
-            'clarity', 'structure', 'correctness', 'pacing', 'communication',
-            'engagement', 'examples', 'questioning', 'adaptability', 'relevance'
-        ]
-        
-        for metric in metrics:
-            items = await self.extract_evidence(segment, metric)
-            if items:
-                evidence[metric] = items
-        
-        return evidence
-    
-    def identify_critical_issues(
-        self,
-        evidence_by_metric: Dict[str, List[Dict[str, Any]]]
+        topic: str
     ) -> List[Dict[str, Any]]:
         """
-        Identify the most critical issues across all evidence
-        Returns top 10 issues sorted by severity
+        Rewrite all segments that can be significantly improved
         """
+        rewrites = []
         
-        all_evidence = []
-        for metric, items in evidence_by_metric.items():
-            all_evidence.extend(items)
+        for segment in segments:
+            # Completely safe score extraction
+            clarity_score = self._get_safe_score(segment, 'clarity')
+            engagement_score = self._get_safe_score(segment, 'engagement')
+            examples_score = self._get_safe_score(segment, 'examples')
+            comm_score = self._get_safe_score(segment, 'communication')
+            
+            # Rewrite if clarity is below our high threshold OR multiple metrics are low
+            needs_rewrite = (
+                clarity_score < self.clarity_threshold or
+                engagement_score < 7.0 or
+                examples_score < 7.0 or
+                comm_score < 7.0
+            )
+            
+            if needs_rewrite:
+                print(f"Processing transformation for segment {segment.segment_id} (Clarity: {clarity_score})")
+                rewrite = await self.rewrite_segment(segment, topic)
+                if rewrite.get('needs_rewrite') and rewrite.get('rewritten_text'):
+                    rewrites.append(rewrite)
         
-        # Sort by severity (major > moderate > minor)
-        severity_order = {'major': 3, 'moderate': 2, 'minor': 1}
+        return rewrites
+    
+    async def generate_multiple_versions(
+        self,
+        segment: SegmentEvaluation,
+        num_versions: int = 3
+    ) -> List[Dict[str, Any]]:
+        """
+        Generate multiple alternative rewrites to give teachers options
+        """
+        versions = []
+        for i in range(num_versions):
+            # We can rely on the high temperature to give variations
+            rewrite = await self.rewrite_segment(segment, "")
+            if rewrite.get('rewritten_text'):
+                rewrite['version_number'] = i + 1
+                versions.append(rewrite)
+        return versions
+    
+    def calculate_improvement_potential(
+        self,
+        segment: SegmentEvaluation
+    ) -> Dict[str, Any]:
+        """
+        Estimate how much improvement is possible
+        """
+        # Safe score extraction
+        current_scores = {
+            'clarity': self._get_safe_score(segment, 'clarity'),
+            'structure': self._get_safe_score(segment, 'structure'),
+            'engagement': self._get_safe_score(segment, 'engagement'),
+            'communication': self._get_safe_score(segment, 'communication'),
+            'examples': self._get_safe_score(segment, 'examples')
+        }
         
-        all_evidence.sort(
-            key=lambda x: severity_order.get(x.get('severity', 'minor'), 0),
-            reverse=True
-        )
+        potential_gains = {
+            key: 10.0 - score for key, score in current_scores.items()
+        }
         
-        return all_evidence[:10]
+        avg_current = sum(current_scores.values()) / len(current_scores)
+        avg_potential = sum(potential_gains.values()) / len(potential_gains)
+        
+        return {
+            "current_scores": current_scores,
+            "potential_gains": potential_gains,
+            "current_average": round(avg_current, 2),
+            "max_possible": 10.0,
+            "average_potential_gain": round(avg_potential, 2),
+            "improvement_priority": self._get_priority_level(avg_current),
+            "estimated_effort": self._estimate_effort(segment)
+        }
+    
+    def _get_priority_level(self, score: float) -> str:
+        if score < 5.0: return "critical"
+        elif score < 6.5: return "high"
+        elif score < 8.0: return "medium" # Adjusted for higher standards
+        else: return "low"
+    
+    def _estimate_effort(self, segment: SegmentEvaluation) -> str:
+        low_scores = sum(1 for metric in [
+            self._get_safe_score(segment, 'clarity'),
+            self._get_safe_score(segment, 'structure'),
+            self._get_safe_score(segment, 'engagement'),
+            self._get_safe_score(segment, 'communication'),
+            self._get_safe_score(segment, 'examples')
+        ] if metric < 7.0)
+        
+        if low_scores >= 4: return "substantial"
+        elif low_scores >= 2: return "moderate"
+        else: return "minor"
 
 # Create global instance
-evidence_extractor = EvidenceExtractor()
+explanation_rewriter = ExplanationRewriter()

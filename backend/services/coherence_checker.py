@@ -4,8 +4,11 @@ from utils.llm_client import llm_client
 
 class CoherenceChecker:
     """
-    Analyzes entire teaching sessions for coherence issues
-    FIXED VERSION - Now properly detects contradictions, drift, and gaps
+    Analyzes entire teaching sessions for coherence issues.
+    DISTINCTION: This service acts as the 'Architect'. It ONLY looks at the 
+    relationships BETWEEN segments (flow, contradictions, gaps). 
+    It explicitly ignores sentence-level errors (grammar, phrasing), focusing 
+    purely on the macro-structure and logic map of the session.
     """
     
     def __init__(self):
@@ -17,22 +20,24 @@ class CoherenceChecker:
         topic: str
     ) -> Dict[str, Any]:
         """
-        Comprehensive coherence analysis of entire session
-        
-        Args:
-            segments: All evaluated segments
-            topic: Main topic of the session
-            
-        Returns:
-            Comprehensive coherence report
+        Comprehensive coherence analysis of entire session (Macro-Level)
         """
         
-        # Filter valid segments only [FIXED]
+        # Filter valid segments only
         valid_segments = [s for s in segments if s and s.text]
         
-        print(f"🔍 Checking coherence across {len(valid_segments)} segments")
+        if not valid_segments or len(valid_segments) < 2:
+             return {
+                "session_coherence_score": 10.0,
+                "contradictions": [],
+                "topic_drifts": [],
+                "logical_gaps": [],
+                "overall_assessment": "Insufficient data for coherence analysis."
+            }
+
+        print(f"🔍 Architect is analyzing structure across {len(valid_segments)} segments")
         
-        # Check for different types of issues
+        # Check for macro-level structural issues
         contradictions = await self.detect_contradictions(valid_segments)
         topic_drifts = await self.detect_topic_drift(valid_segments, topic)
         logical_gaps = await self.detect_logical_gaps(valid_segments)
@@ -57,43 +62,38 @@ class CoherenceChecker:
             )
         }
         
-        print(f"✅ Coherence check complete. Score: {coherence_score}/10")
-        print(f"   Found: {len(contradictions)} contradictions, {len(topic_drifts)} drifts, {len(logical_gaps)} gaps")
+        print(f"✅ Coherence map complete. Score: {coherence_score}/10")
         
         return report
+    
+    def _combine_segments_for_llm(self, segments: List[SegmentEvaluation]) -> str:
+        """Formats the transcript for the LLM to analyze macro-flow."""
+        combined = []
+        for seg in segments:
+            combined.append(f"[SEGMENT {seg.segment_id}]: {seg.text}")
+        return "\n\n".join(combined)
     
     async def detect_contradictions(
         self,
         segments: List[SegmentEvaluation]
     ) -> List[Dict[str, Any]]:
         """
-        Detect statements that contradict each other
+        Detect statements that logically contradict each other (Macro-Consistency).
         """
+        combined_text = self._combine_segments_for_llm(segments)
         
-        if not segments:
-            return []
-
-        # Build combined text for analysis
-        combined_text = "\n\n".join([
-            f"[SEGMENT {seg.segment_id}]: {seg.text}"
-            for seg in segments
-        ])
-        
-        prompt = f"""Analyze this teaching session for logical CONTRADICTIONS - statements that oppose or conflict with each other.
+        prompt = f"""Analyze this teaching session for **MACRO-LEVEL CONTRADICTIONS**.
 
 SESSION TEXT:
 {combined_text}
 
-Your task: Identify any contradictions where the teacher:
-1. States something in one segment, then says the opposite later
-2. Provides conflicting information about the same concept
-3. Uses examples that contradict the main explanation
-4. Makes statements that logically cannot both be true
+DISTINCTION RULES (MUST FOLLOW):
+1. **IGNORE** grammar, spelling, or poor phrasing (that is for the Evidence tool).
+2. **IGNORE** weak or unclear single explanations (that is for the Rewrite tool).
+3. **ONLY** flag instances where the content of one segment logically conflicts with the content of another segment. The focus is on **Factual/Conceptual Conflicts**.
 
-IMPORTANT: Be strict but fair. Only flag actual contradictions, not:
-- Different perspectives or nuances
-- Progressive refinement of ideas
-- Examples showing exceptions to rules (when explicitly stated as exceptions)
+Example of what to find:
+- Segment 5 says "Python is statically typed" BUT Segment 10 says "Python is dynamically typed".
 
 Return as JSON:
 {{
@@ -103,26 +103,24 @@ Return as JSON:
       "segment2_id": 5,
       "statement1": "exact quote from segment 2",
       "statement2": "exact quote from segment 5 that contradicts",
-      "contradiction_type": "direct_opposition | conflicting_info | inconsistent_example",
+      "contradiction_type": "direct_opposition | conflicting_info",
       "severity": "minor | moderate | major",
-      "explanation": "Clear explanation of why these contradict",
+      "explanation": "Clear explanation of the logical conflict",
       "resolution": "How to resolve this contradiction"
     }}
   ]
 }}
 
-Only report ACTUAL contradictions. If no contradictions found, return empty array."""
+Only report ACTUAL logical contradictions. If none, return empty array."""
         
         try:
             response = await llm_client.call_llm(
                 prompt=prompt,
                 task_type='coherence',
                 response_format='json',
-                temperature=0.3  # Lower temp for more precise detection
+                temperature=0.1 # Low temp for factual consistency check
             )
-            contradictions = response.get('contradictions', [])
-            print(f"   Contradictions detected: {len(contradictions)}")
-            return contradictions
+            return response.get('contradictions', [])
         except Exception as e:
             print(f"❌ Contradiction detection failed: {e}")
             return []
@@ -133,33 +131,22 @@ Only report ACTUAL contradictions. If no contradictions found, return empty arra
         main_topic: str
     ) -> List[Dict[str, Any]]:
         """
-        Detect when explanation drifts from the main topic
+        Detect when the lesson structure breaks due to drift (Macro-Focus).
         """
+        combined_text = self._combine_segments_for_llm(segments)
         
-        if not segments:
-            return []
-
-        segments_text = "\n\n".join([
-            f"[SEGMENT {seg.segment_id}]: {seg.text}"
-            for seg in segments
-        ])
-        
-        prompt = f"""Analyze this teaching session for TOPIC DRIFT - when the teacher strays from the main topic.
+        prompt = f"""Analyze this teaching session for **MACRO-LEVEL TOPIC DRIFT**.
 
 MAIN TOPIC: {main_topic}
 
 SESSION TEXT:
-{segments_text}
+{combined_text}
 
-Your task: Identify segments where the teacher:
-1. Goes significantly off-topic without educational justification
-2. Introduces unrelated tangents that don't enhance understanding
-3. Spends excessive time on peripheral concepts
-4. Loses focus on the main learning objective
+Your task is to identify segments that break the **structural integrity** of the lesson by drifting into unrelated territory.
 
-CRITICAL DISTINCTION:
-- VALUABLE DRIFT (Don't flag): Related topics that provide context, analogies from other fields that clarify concepts, real-world examples that enhance understanding
-- PROBLEMATIC DRIFT (Flag): Completely unrelated content, personal anecdotes without educational value, tangents that confuse rather than clarify
+DISTINCTION RULES:
+1. **IGNORE** small tangents or colorful examples if they relate to the topic.
+2. **FLAG** only when the teacher completely abandons the learning objective for something unrelated.
 
 Return as JSON:
 {{
@@ -167,30 +154,28 @@ Return as JSON:
     {{
       "segment_id": 3,
       "expected_topic": "{main_topic}",
-      "actual_content": "brief description of what was discussed instead",
-      "drift_degree": 0.7,
-      "relevance_score": 0.3,
-      "impact": "how this affects learning",
-      "suggestion": "how to bring it back on topic or connect it better"
+      "actual_content": "Brief description of the drift content",
+      "drift_degree": 0.8,
+      "relevance_score": 0.1,
+      "impact": "How this breaks the lesson flow",
+      "suggestion": "How to bring it back on track"
     }}
   ]
 }}
 
-drift_degree: 0.0 (perfectly on topic) to 1.0 (completely unrelated)
-relevance_score: 0.0 (no educational value) to 1.0 (highly valuable)
+drift_degree: 0.0 (on topic) to 1.0 (completely lost)
+relevance_score: 0.0 (useless) to 1.0 (useful context)
 
-Only report significant drift (degree > 0.6 AND relevance < 0.4)."""
+Only report significant drift (degree > 0.6 AND relevance < 0.3)."""
         
         try:
             response = await llm_client.call_llm(
                 prompt=prompt,
                 task_type='coherence',
                 response_format='json',
-                temperature=0.3
+                temperature=0.2
             )
-            drifts = response.get('topic_drifts', [])
-            print(f"   Topic drifts detected: {len(drifts)}")
-            return drifts
+            return response.get('topic_drifts', [])
         except Exception as e:
             print(f"❌ Topic drift detection failed: {e}")
             return []
@@ -200,34 +185,21 @@ Only report significant drift (degree > 0.6 AND relevance < 0.4)."""
         segments: List[SegmentEvaluation]
     ) -> List[Dict[str, Any]]:
         """
-        Detect missing steps or unexplained jumps in logic
+        Detect missing steps or unexplained jumps in logic (Macro-Flow).
         """
+        combined_text = self._combine_segments_for_llm(segments)
         
-        if not segments:
-            return []
-
-        segments_text = "\n\n".join([
-            f"[SEGMENT {seg.segment_id}]: {seg.text}"
-            for seg in segments
-        ])
-        
-        prompt = f"""Analyze this teaching session for LOGICAL GAPS - missing steps or unexplained jumps.
+        prompt = f"""Analyze the **SEQUENCING and FLOW** of this session for LOGICAL GAPS.
 
 SESSION TEXT:
-{segments_text}
+{combined_text}
 
-Your task: Identify where the teacher:
-1. Jumps to conclusions without explaining intermediate steps
-2. Uses concepts without introducing them first (assumes prior knowledge)
-3. Makes assumptions about understanding that may not exist
-4. Skips critical steps in an explanation
-5. Has abrupt transitions without connecting ideas
+Your task is to find "**Missing Bridges**". This occurs when the teacher jumps abruptly from one high-level concept to another without providing the necessary prerequisite explanation or transition.
 
-IDENTIFICATION CRITERIA:
-- Gap must significantly impact understanding
-- Missing information should be necessary for comprehension
-- Don't flag minor shortcuts in well-understood material
-- Focus on gaps that would genuinely confuse learners
+DISTINCTION RULES:
+1. **IGNORE** the quality of the text within a single segment (no grammar/clarity checks).
+2. **FOCUS** purely on the **FLOW** of ideas between Segment X and Segment Y.
+3. Flag "Leaps of Logic" where a student would get lost because a step was skipped.
 
 Return as JSON:
 {{
@@ -235,27 +207,23 @@ Return as JSON:
     {{
       "between_segment1": 2,
       "between_segment2": 3,
-      "gap_type": "missing_step | undefined_concept | unexplained_jump | assumption",
-      "missing_concept": "what needs to be explained",
-      "impact": "how this affects understanding",
+      "gap_type": "missing_step | undefined_concept | unexplained_jump",
+      "missing_concept": "The concept that should have been explained between these two",
+      "impact": "Why the student is now lost",
       "severity": "minor | moderate | major",
-      "fill_suggestion": "what should be added to fill this gap"
+      "fill_suggestion": "What concept needs to be inserted here"
     }}
   ]
-}}
-
-Focus on gaps that would genuinely confuse learners at the target level."""
+}}"""
         
         try:
             response = await llm_client.call_llm(
                 prompt=prompt,
                 task_type='coherence',
                 response_format='json',
-                temperature=0.3
+                temperature=0.2
             )
-            gaps = response.get('logical_gaps', [])
-            print(f"   Logical gaps detected: {len(gaps)}")
-            return gaps
+            return response.get('logical_gaps', [])
         except Exception as e:
             print(f"❌ Logical gap detection failed: {e}")
             return []
@@ -267,37 +235,30 @@ Focus on gaps that would genuinely confuse learners at the target level."""
         logical_gaps: List
     ) -> float:
         """
-        Calculate overall coherence score based on issues found
+        Calculate overall coherence score based on macro issues found.
         """
-        
-        # Start at 10.0
         score = 10.0
         
-        # Deduct for each issue based on severity
+        # Deduct for contradictions (High penalty for logic breaks)
         for contradiction in contradictions:
             severity = contradiction.get('severity', 'moderate')
-            if severity == 'major':
-                score -= 1.5
-            elif severity == 'moderate':
-                score -= 1.0
-            else:
-                score -= 0.5
+            if severity == 'major': score -= 2.0
+            elif severity == 'moderate': score -= 1.0
+            else: score -= 0.5
         
+        # Deduct for drift (Weighted by irrelevance)
         for drift in topic_drifts:
             drift_degree = drift.get('drift_degree', 0.5)
             relevance_score = drift.get('relevance_score', 0.5)
-            # Higher drift and lower relevance = bigger penalty
             penalty = drift_degree * (1 - relevance_score) * 1.5
             score -= penalty
         
+        # Deduct for gaps (Flow breaks)
         for gap in logical_gaps:
             severity = gap.get('severity', 'moderate')
-            if severity == 'major':
-                score -= 1.0
-            elif severity == 'moderate':
-                score -= 0.7
-            else:
-                score -= 0.3
+            if severity == 'major': score -= 1.5
+            elif severity == 'moderate': score -= 0.8
+            else: score -= 0.4
         
         return max(0.0, round(score, 1))
     
@@ -308,20 +269,20 @@ Focus on gaps that would genuinely confuse learners at the target level."""
         num_drifts: int,
         num_gaps: int
     ) -> str:
-        """Generate human-readable assessment"""
+        """Generate human-readable assessment of the session structure."""
         
         total_issues = num_contradictions + num_drifts + num_gaps
         
         if score >= 9.0:
-            return f"Excellent coherence. The explanation flows logically with no significant issues. ({total_issues} minor items noted)"
+            return "Excellent Structural Integrity. The lesson flows logically with a solid map of concepts."
         elif score >= 7.5:
-            return f"Good coherence. Minor issues present ({total_issues} items) but overall explanation is well-structured."
+            return f"Good Flow. The structure is sound, with only {total_issues} minor disconnects in the logic."
         elif score >= 6.0:
-            return f"Acceptable coherence. Some logical issues ({total_issues} items) that should be addressed to improve clarity."
+            return f"Acceptable Flow. The lesson holds together, but has {total_issues} noticeable gaps or drifts that hurt the progression."
         elif score >= 4.0:
-            return f"Poor coherence. Multiple issues ({total_issues} items) affecting understanding. Revision recommended."
+            return f"Poor Structure. The lesson map is confusing, with {total_issues} significant logic breaks or contradictions."
         else:
-            return f"Very poor coherence. Major logical problems ({total_issues} items). Significant revision needed."
+            return "Structural Failure. The lesson lacks a coherent thread, making it very difficult to follow."
 
 # Create global instance
 coherence_checker = CoherenceChecker()
