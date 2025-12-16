@@ -1,4 +1,4 @@
-/* Position and sizing of burger button (Legacy - we are using custom placement now but keeping for safety) */
+/* Position and sizing of burger button */
 .bm-burger-button {
   position: fixed;
   width: 36px;
@@ -43,10 +43,11 @@
   left: 0;
 }
 
-/* General sidebar styles */
+/* General sidebar styles - GLASSMORPHISM THEME */
 .bm-menu {
-  background: linear-gradient(to bottom, rgba(17, 24, 39, 0.95), rgba(0, 0, 0, 0.95));
-  backdrop-filter: blur(10px);
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(20px);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
   padding: 2.5em 1.5em 0;
   font-size: 1.15em;
   overflow-y: auto !important;
@@ -54,12 +55,12 @@
 
 /* Morph shape necessary with bubble or elastic */
 .bm-morph-shape {
-  fill: #111827;
+  fill: rgba(0, 0, 0, 0.4);
 }
 
 /* Wrapper for item list */
 .bm-item-list {
-  color: #b8b7ad;
+  color: #d1d5db;
   padding: 0.8em;
 }
 
@@ -84,14 +85,14 @@
 
 /* Styling of overlay */
 .bm-overlay {
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(4px);
   position: fixed;
   top: 0;
   left: 0;
 }
 
-/* Custom menu item styling */
+/* Custom menu item styling - GLASSMORPHISM */
 .menu-item {
   display: flex;
   align-items: center;
@@ -102,15 +103,20 @@
   cursor: pointer;
   color: #d1d5db;
   text-decoration: none;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .menu-item:hover {
   background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.2);
   color: #ffffff;
+  transform: translateX(4px);
 }
 
 .menu-item.active {
-  background: rgba(59, 130, 246, 0.2);
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.3);
   color: #3b82f6;
 }
 
@@ -125,7 +131,7 @@
   font-weight: 500;
 }
 
-/* Logo section */
+/* Logo section - GLASSMORPHISM */
 .menu-logo {
   display: flex;
   align-items: center;
@@ -134,21 +140,28 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   margin-bottom: 24px;
   cursor: pointer;
+  transition: all 0.2s;
+}
+
+.menu-logo:hover {
+  transform: translateX(4px);
 }
 
 .menu-logo svg {
   width: 28px;
   height: 28px;
   color: #ffffff;
+  filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.5));
 }
 
 .menu-logo span {
   font-size: 20px;
   font-weight: bold;
   color: #ffffff;
+  text-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
 }
 
-/* User profile section */
+/* User profile section - GLASSMORPHISM */
 .menu-user-profile {
   position: absolute;
   bottom: 0;
@@ -156,7 +169,8 @@
   right: 0;
   padding: 20px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(10px);
 }
 
 .user-profile-button {
@@ -170,21 +184,25 @@
   width: 100%;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
 }
 
 .user-profile-button:hover {
   background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
 }
 
 .user-avatar {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: linear-gradient(to bottom right, #3b82f6, #8b5cf6);
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
 .user-avatar svg {
@@ -215,13 +233,14 @@
   text-overflow: ellipsis;
 }
 
-/* User dropdown menu */
+/* User dropdown menu - GLASSMORPHISM */
 .user-dropdown {
   position: absolute;
   bottom: 80px;
   left: 20px;
   right: 20px;
-  background: linear-gradient(to bottom right, #111827, #000000);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   overflow: hidden;
@@ -238,15 +257,17 @@
   transition: all 0.2s;
   cursor: pointer;
   text-decoration: none;
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .user-dropdown-item:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.1);
   color: #ffffff;
 }
 
 .user-dropdown-item.logout {
   color: #f87171;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .user-dropdown-item.logout:hover {
@@ -259,7 +280,7 @@
   height: 16px;
 }
 
-/* Scrollbar styling for menu */
+/* Scrollbar styling for menu - GLASSMORPHISM */
 .bm-menu::-webkit-scrollbar {
   width: 6px;
 }
@@ -278,11 +299,7 @@
   background: rgba(255, 255, 255, 0.3);
 }
 
-/* ============================================================ */
-/* NEW STYLES: Custom Menu Bar Toggle Icon (from MenuBarToggle) */
-/* ============================================================ */
-
-/* The clickable button container */
+/* Custom Menu Bar Toggle Icon */
 .burger-icon {
   background: transparent;
   border: none;
@@ -292,44 +309,37 @@
   align-items: center;
   justify-content: center;
   position: relative;
-  /* Removed z-index here because it's handled in the Layout parent div */
 }
 
-/* The container for the lines */
 .burger-lines {
-  width: 2rem;    /* 32px width */
-  height: 1.5rem; /* 24px height */
+  width: 2rem;
+  height: 1.5rem;
   position: relative;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
 }
 
-/* The actual lines (white bars) */
 .burger-lines span {
   display: block;
   width: 100%;
-  height: 3px;    /* Thickness of the lines */
-  background-color: white; /* Color of the lines */
+  height: 3px;
+  background-color: white;
   border-radius: 10px;
   transition: all 0.3s ease-in-out;
   transform-origin: 1px;
 }
 
-/* --- ANIMATION STATES (When 'open' class is added) --- */
-
-/* Top line rotation */
+/* Animation states */
 .burger-lines.open span:first-child {
   transform: rotate(45deg);
 }
 
-/* Middle line fade out */
 .burger-lines.open span:nth-child(2) {
   opacity: 0;
   transform: translateX(20px);
 }
 
-/* Bottom line rotation */
 .burger-lines.open span:nth-child(3) {
   transform: rotate(-45deg);
 }
