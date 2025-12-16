@@ -485,7 +485,7 @@ const ExplanationGraph = ({ segments, sessionId, coherenceData: initialCoherence
       </div>
 
       {/* Canvas */}
-      <div className={`relative flex-1 ${isFullscreen ? 'h-full' : 'min-h-[500px]'} bg-slate-50/30`} ref={containerRef}>
+      <div className={`relative flex-1 ${isFullscreen ? 'h-full' : 'min-h-[500px]'} bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-sm rounded-xl border border-white/10`} ref={containerRef}>
         <svg ref={svgRef} className="w-full h-full cursor-grab active:cursor-grabbing"></svg>
         
         {/* Legend - Removed backdrop blur to fix overlapping glitches */}
