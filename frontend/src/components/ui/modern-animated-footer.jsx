@@ -22,9 +22,6 @@ export const Footer = ({
             <div className="w-full flex flex-col items-center">
               <div className="space-y-2 flex flex-col items-center flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-white text-2xl font-bold transition-colors duration-300">
-                    {brandName}
-                  </span>
                 </div>
                 <p className="text-gray-300 font-semibold text-center w-full max-w-sm sm:w-96 px-4 sm:px-0 transition-colors duration-300 text-sm">
                   {brandDescription}
@@ -88,6 +85,16 @@ export const Footer = ({
           </div>
         </div>
         
+        <div 
+          className="bg-gradient-to-b from-white/20 via-white/10 to-transparent bg-clip-text text-transparent leading-none absolute left-1/2 -translate-x-1/2 bottom-32 md:bottom-28 font-extrabold tracking-tighter pointer-events-none select-none text-center px-4 transition-colors duration-300"
+          style={{
+            fontSize: 'clamp(3rem, 12vw, 10rem)',
+            maxWidth: '95vw'
+          }}
+        >
+          {brandName.toUpperCase()}
+        </div>
+
         {/* Bottom logo - Reduced size */}
         <div className="absolute hover:border-white duration-400 drop-shadow-[0_0px_20px_rgba(255,255,255,0.3)] bottom-16 md:bottom-14 backdrop-blur-sm rounded-2xl bg-black/60 left-1/2 border-2 border-white/20 flex items-center justify-center p-2 -translate-x-1/2 z-10 transition-colors duration-300">
           <div className="w-10 sm:w-12 md:w-16 h-10 sm:h-12 md:h-16 bg-gradient-to-br from-white to-white/80 rounded-xl flex items-center justify-center shadow-lg transition-colors duration-300">
