@@ -35,7 +35,7 @@ export const Footer = ({
               {socialLinks.length > 0 && (
                 <div className="flex mb-6 mt-3 gap-4">
                   {socialLinks.map((link, index) => (
-                    
+                    <a
                       key={index}
                       href={link.href}
                       className="text-gray-400 hover:text-white transition-colors duration-300"
@@ -55,7 +55,7 @@ export const Footer = ({
               {navLinks.length > 0 && (
                 <div className="flex flex-wrap justify-center gap-4 text-xs font-medium text-gray-400 max-w-full px-4 transition-colors duration-300">
                   {navLinks.map((link, index) => (
-                    
+                    <a
                       key={index}
                       className="hover:text-white duration-300 hover:font-semibold"
                       href={link.href}
@@ -75,7 +75,7 @@ export const Footer = ({
             </p>
             {creatorName && creatorUrl && (
               <nav className="flex gap-4">
-                
+                <a
                   href={creatorUrl}
                   target="_blank"
                   rel="noopener noreferrer"
