@@ -1,11 +1,22 @@
-// Fixed ExplanationGraph.jsx - Prevents constant re-rendering
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+// parthg2209/mindtrace/MindTrace-454002ad537de541ce806a44cdbebf379fec4615/frontend/src/components/ExplanationGraph.jsx
+
+import React, { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import { 
   GitBranch, AlertTriangle, XCircle, ZoomIn, ZoomOut, RefreshCw,
-  CheckCircle, Minimize2, Maximize2
+  CheckCircle, Minimize2, Maximize2, ArrowRight
 } from 'lucide-react';
 import apiClient from '../api/client';
+
+// Utility for deep comparison
+const useDeepCompareMemo = (factory, deps) => {
+  const ref = useRef(undefined);
+  const isEqual = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  if (!ref.current || !isEqual(ref.current.deps, deps)) {
+    ref.current = { deps, value: factory() };
+  }
+  return ref.current.value;
+};
 
 const ExplanationGraph = ({ segments, sessionId, coherenceData: initialCoherenceData }) => {
   const svgRef = useRef();
@@ -17,39 +28,38 @@ const ExplanationGraph = ({ segments, sessionId, coherenceData: initialCoherence
   const [loading, setLoading] = useState(!initialCoherenceData && !!sessionId);
   const [selectedNode, setSelectedNode] = useState(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [coherenceFetched, setCoherenceFetched] = useState(false);
 
-  // Fetch coherence data ONCE when component mounts
+  // Fetch coherence data if missing
   useEffect(() => {
     const fetchCoherence = async () => {
-      if (!sessionId || initialCoherenceData || coherenceFetched) return;
-      
+      if (!sessionId || initialCoherenceData) return;
       try {
         setLoading(true);
+        // CHANGED: Use apiClient instead of fetch
         const response = await apiClient.get(`/api/coherence/${sessionId}`);
         setCoherenceData(response.data);
-        setCoherenceFetched(true);
       } catch (error) {
         setCoherenceData({ contradictions: [], topic_drifts: [], logical_gaps: [] });
-        setCoherenceFetched(true);
       } finally {
         setLoading(false);
       }
     };
-    
-    if (!coherenceFetched) {
-      fetchCoherence();
-    }
-  }, [sessionId]); // Only depend on sessionId, not coherenceData
+    fetchCoherence();
+  }, [sessionId, initialCoherenceData]);
 
-  // Stable graph data using useMemo
-  const graphData = useMemo(() => {
+  useEffect(() => {
+    if (initialCoherenceData) setCoherenceData(initialCoherenceData);
+  }, [initialCoherenceData]);
+
+  // Advanced graph data processing
+  const graphData = useDeepCompareMemo(() => {
     if (!segments || segments.length === 0) return { nodes: [], links: [] };
 
     const drifts = coherenceData?.topic_drifts || [];
     const contradictions = coherenceData?.contradictions || [];
     const gaps = coherenceData?.logical_gaps || [];
 
+    // Helper: Calculate semantic similarity (mock)
     const calculateSimilarity = (seg1, seg2) => {
       const words1 = seg1.text.toLowerCase().split(/\s+/);
       const words2 = seg2.text.toLowerCase().split(/\s+/);
@@ -58,6 +68,7 @@ const ExplanationGraph = ({ segments, sessionId, coherenceData: initialCoherence
       return intersection / union;
     };
 
+    // Helper: Determine segment role
     const determineRole = (seg, index, allSegs) => {
       if (index === 0) return 'introduce';
       if (index === allSegs.length - 1) return 'conclude';
@@ -71,6 +82,7 @@ const ExplanationGraph = ({ segments, sessionId, coherenceData: initialCoherence
       return 'transition';
     };
 
+    // Helper: Get primary issue
     const getPrimaryIssue = (seg) => {
       const scores = {
         clarity: seg.clarity?.score || 10,
@@ -84,6 +96,7 @@ const ExplanationGraph = ({ segments, sessionId, coherenceData: initialCoherence
       return lowest[1] >= 7.5 ? 'good' : lowest[0];
     };
 
+    // Helper: Get color for issue type
     const getIssueColor = (issue) => {
       const colors = {
         good: '#10b981',
@@ -96,10 +109,13 @@ const ExplanationGraph = ({ segments, sessionId, coherenceData: initialCoherence
       return colors[issue] || '#6b7280';
     };
 
+    // Create nodes with enhanced metadata
     const nodes = segments.map((seg, i) => {
       const role = determineRole(seg, i, segments);
       const primaryIssue = getPrimaryIssue(seg);
       const driftItem = drifts.find(d => d.segment_id === seg.segment_id);
+      
+      // Calculate node size based on score
       const radius = 15 + (seg.overall_segment_score * 2.5);
       
       const node = {
@@ -117,12 +133,14 @@ const ExplanationGraph = ({ segments, sessionId, coherenceData: initialCoherence
         isDeadEnd: i === segments.length - 1 && seg.overall_segment_score < 4,
       };
 
+      // CRITICAL FIX: Strictly preserve physics state
       const prev = nodesRef.current.find(n => n.id === node.id);
       if (prev) {
         node.x = prev.x;
         node.y = prev.y;
         node.vx = prev.vx;
         node.vy = prev.vy;
+        // Keep fixed state if it was dragged
         node.fx = prev.fx;
         node.fy = prev.fy;
       }
@@ -131,8 +149,10 @@ const ExplanationGraph = ({ segments, sessionId, coherenceData: initialCoherence
 
     nodesRef.current = nodes;
 
+    // Create links
     const links = [];
     
+    // Sequential links
     for (let i = 0; i < nodes.length - 1; i++) {
       const source = nodes[i];
       const target = nodes[i + 1];
@@ -158,6 +178,7 @@ const ExplanationGraph = ({ segments, sessionId, coherenceData: initialCoherence
       });
     }
 
+    // Contradiction links
     contradictions.forEach((c, idx) => {
       const source = nodes.find(n => n.id === c.segment1_id);
       const target = nodes.find(n => n.id === c.segment2_id);
@@ -173,9 +194,9 @@ const ExplanationGraph = ({ segments, sessionId, coherenceData: initialCoherence
     });
 
     return { nodes, links };
-  }, [segments, coherenceData]); // Only recompute when these change
+  }, [segments, coherenceData]);
 
-  // D3 Rendering with proper cleanup
+  // D3 Rendering
   useEffect(() => {
     if (!graphData.nodes.length || !svgRef.current) return;
 
@@ -185,12 +206,15 @@ const ExplanationGraph = ({ segments, sessionId, coherenceData: initialCoherence
     
     svg.attr('width', width).attr('height', height);
 
+    // Setup layers
     let mainGroup = svg.select('g.main-group');
     if (mainGroup.empty()) {
       mainGroup = svg.append('g').attr('class', 'main-group');
+      // Simple layering: Links bottom, Nodes top
       mainGroup.append('g').attr('class', 'links');
       mainGroup.append('g').attr('class', 'nodes');
 
+      // Zoom behavior
       const zoom = d3.zoom()
         .scaleExtent([0.1, 4])
         .on('zoom', (event) => mainGroup.attr('transform', event.transform));
@@ -198,36 +222,48 @@ const ExplanationGraph = ({ segments, sessionId, coherenceData: initialCoherence
       svg.call(zoom)
          .call(zoom.transform, d3.zoomIdentity.translate(width/2 - (graphData.nodes.length * 60), height/2).scale(0.8));
 
+      // Arrow markers
       const defs = svg.append('defs');
       
+      // Normal arrow
       defs.append('marker').attr('id', 'arrow-normal')
         .attr('viewBox','0 -5 10 10').attr('refX',32).attr('refY',0)
         .attr('markerWidth',6).attr('markerHeight',6).attr('orient','auto')
         .append('path').attr('d','M0,-5L10,0L0,5').attr('fill','#94a3b8');
       
+      // Contradiction arrow
       defs.append('marker').attr('id', 'arrow-contradiction')
         .attr('viewBox','0 -5 10 10').attr('refX',28).attr('refY',0)
         .attr('markerWidth',8).attr('markerHeight',8).attr('orient','auto')
         .append('path').attr('d','M0,-5L10,0L0,5').attr('fill','#ef4444');
       
+      // Weak arrow
       defs.append('marker').attr('id', 'arrow-weak')
         .attr('viewBox','0 -5 10 10').attr('refX',28).attr('refY',0)
         .attr('markerWidth',5).attr('markerHeight',5).attr('orient','auto')
         .append('path').attr('d','M0,-5L10,0L0,5').attr('fill','#6b7280');
     }
 
+    // --- FIX 1: CONDITIONAL TREE LAYOUT ---
+    // Only apply the rigid tree layout to nodes that DO NOT have a position yet.
+    // This stops the "twitch/collapse" where nodes snap back to grid on every update.
     const layoutTree = () => {
       const nodes = graphData.nodes;
+      const links = graphData.links;
       
+      // Map for easy access
       const nodeMap = new Map();
       nodes.forEach(n => nodeMap.set(n.id, { ...n }));
       
       let currentX = 0;
       let branchY = 0;
 
+      // Sequential layout logic (simplified tree)
       nodes.forEach((node, i) => {
+        // Skip if node already has position (preserved from previous render)
         if (node.x != null && node.y != null) return;
 
+        // Calculate logical position
         const idealX = i * 150;
         let idealY = 0;
 
@@ -236,6 +272,7 @@ const ExplanationGraph = ({ segments, sessionId, coherenceData: initialCoherence
           idealY = (i % 2 === 0 ? 1 : -1) * branchY;
         }
 
+        // Apply
         node.x = idealX;
         node.y = idealY;
       });
@@ -243,19 +280,22 @@ const ExplanationGraph = ({ segments, sessionId, coherenceData: initialCoherence
 
     layoutTree();
     
+    // Simulation setup
     if (!simulationRef.current) {
       simulationRef.current = d3.forceSimulation()
         .force('link', d3.forceLink().id(d => d.id).distance(120).strength(0.5))
         .force('charge', d3.forceManyBody().strength(-400))
         .force('collide', d3.forceCollide().radius(d => d.radius + 20).strength(0.7))
-        .force('y', d3.forceY(0).strength(0.05));
+        .force('y', d3.forceY(0).strength(0.05)); // Gentle centering
     }
     
     const simulation = simulationRef.current;
     simulation.nodes(graphData.nodes);
     simulation.force('link').links(graphData.links);
+    // Low alpha target prevents "explosive" restarts
     simulation.alphaTarget(0.01).restart();
 
+    // Draw links
     const linkGroup = mainGroup.select('g.links');
     const link = linkGroup.selectAll('path.link')
       .data(graphData.links, d => d.id)
@@ -268,7 +308,7 @@ const ExplanationGraph = ({ segments, sessionId, coherenceData: initialCoherence
         if (d.type === 'weak') return '#6b7280';
         if (d.type === 'gap') return '#94a3b8';
         if (d.type === 'drift') return '#9ca3af';
-        return '#cbd5e1';
+        return '#cbd5e1'; // backbone
       })
       .attr('stroke-width', d => d.type === 'backbone' ? 3 : 2)
       .attr('stroke-dasharray', d => {
@@ -283,6 +323,7 @@ const ExplanationGraph = ({ segments, sessionId, coherenceData: initialCoherence
         return 'url(#arrow-normal)';
       });
 
+    // Draw nodes
     const nodeGroup = mainGroup.select('g.nodes');
     const node = nodeGroup.selectAll('g.node')
       .data(graphData.nodes, d => d.id)
@@ -297,6 +338,7 @@ const ExplanationGraph = ({ segments, sessionId, coherenceData: initialCoherence
             .attr('stroke-width', 3)
             .call(e => e.transition().duration(500).attr('r', d => d.radius));
           
+          // Simple role indicator dot
           g.append('circle')
             .attr('r', 5)
             .attr('cx', d => d.radius * 0.7)
@@ -341,6 +383,7 @@ const ExplanationGraph = ({ segments, sessionId, coherenceData: initialCoherence
 
     node.on('click', (e, d) => { e.stopPropagation(); setSelectedNode(d); });
 
+    // Tick function
     simulation.on('tick', () => {
       link.attr('d', d => {
         const dx = d.target.x - d.source.x;
@@ -376,6 +419,7 @@ const ExplanationGraph = ({ segments, sessionId, coherenceData: initialCoherence
     return () => simulation.on('tick', null);
   }, [graphData, isFullscreen]);
 
+  // Zoom controls
   const handleZoom = (factor) => {
     const svg = d3.select(svgRef.current);
     const mainGroup = svg.select('g.main-group');
@@ -388,6 +432,7 @@ const ExplanationGraph = ({ segments, sessionId, coherenceData: initialCoherence
   const handleReset = () => {
     const svg = d3.select(svgRef.current);
     const height = isFullscreen ? window.innerHeight - 100 : 600;
+    // Reset view to center based on node count
     const centerOffset = (graphData.nodes.length * 60);
     svg.transition().call(
       d3.zoom().transform,
@@ -415,32 +460,35 @@ const ExplanationGraph = ({ segments, sessionId, coherenceData: initialCoherence
   );
 
   return (
-    <div className={`bg-white/5 border border-white/10 backdrop-blur-sm rounded-xl shadow-sm overflow-hidden flex flex-col ${isFullscreen ? 'fixed inset-0 z-50' : 'h-full'} relative group`}>
-      <div className="px-4 py-3 border-b border-white/10 flex justify-between items-center bg-white/5 z-10">
+    <div className={`bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col ${isFullscreen ? 'fixed inset-0 z-50' : 'h-full'} relative group`}>
+      {/* Header - Transparent/Minimal to fix white bar issue */}
+      <div className="px-4 py-3 border-b border-gray-100 flex justify-between items-center bg-white z-10">
         <div>
-          <h3 className="font-bold text-white flex items-center gap-2 text-sm">
-            <GitBranch className="w-4 h-4 text-blue-400" /> Explanation Graph
+          <h3 className="font-bold text-gray-800 flex items-center gap-2 text-sm">
+            <GitBranch className="w-4 h-4 text-blue-600" /> Explanation Graph
           </h3>
         </div>
         <div className="flex gap-1">
-          <button onClick={() => handleZoom(1.2)} className="p-1 hover:bg-white/10 rounded">
-            <ZoomIn className="w-3.5 h-3.5 text-gray-400"/>
+          <button onClick={() => handleZoom(1.2)} className="p-1 hover:bg-gray-100 rounded">
+            <ZoomIn className="w-3.5 h-3.5 text-gray-600"/>
           </button>
-          <button onClick={() => handleZoom(0.8)} className="p-1 hover:bg-white/10 rounded">
-            <ZoomOut className="w-3.5 h-3.5 text-gray-400"/>
+          <button onClick={() => handleZoom(0.8)} className="p-1 hover:bg-gray-100 rounded">
+            <ZoomOut className="w-3.5 h-3.5 text-gray-600"/>
           </button>
-          <button onClick={handleReset} className="p-1 hover:bg-white/10 rounded">
-            <RefreshCw className="w-3.5 h-3.5 text-gray-400"/>
+          <button onClick={handleReset} className="p-1 hover:bg-gray-100 rounded">
+            <RefreshCw className="w-3.5 h-3.5 text-gray-600"/>
           </button>
-          <button onClick={toggleFullscreen} className="p-1 hover:bg-white/10 rounded">
-            {isFullscreen ? <Minimize2 className="w-3.5 h-3.5 text-gray-400"/> : <Maximize2 className="w-3.5 h-3.5 text-gray-400"/>}
+          <button onClick={toggleFullscreen} className="p-1 hover:bg-gray-100 rounded">
+            {isFullscreen ? <Minimize2 className="w-3.5 h-3.5 text-gray-600"/> : <Maximize2 className="w-3.5 h-3.5 text-gray-600"/>}
           </button>
         </div>
       </div>
 
-      <div className={`relative flex-1 ${isFullscreen ? 'h-full' : 'min-h-[500px]'} bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-sm rounded-xl border border-white/10`} ref={containerRef}>
+      {/* Canvas */}
+      <div className={`relative flex-1 ${isFullscreen ? 'h-full' : 'min-h-[500px]'} bg-slate-50/30`} ref={containerRef}>
         <svg ref={svgRef} className="w-full h-full cursor-grab active:cursor-grabbing"></svg>
         
+        {/* Legend - Removed backdrop blur to fix overlapping glitches */}
         <div className="absolute top-4 right-4 bg-white/90 px-3 py-2 rounded-lg border border-gray-200 shadow-sm pointer-events-none select-none z-0 max-w-xs">
           <div className="text-[10px] font-bold text-gray-700 mb-1">Structure</div>
           <div className="grid grid-cols-2 gap-x-4 gap-y-1 mb-2">
@@ -457,6 +505,7 @@ const ExplanationGraph = ({ segments, sessionId, coherenceData: initialCoherence
           </div>
         </div>
 
+        {/* Selected Node Panel */}
         {selectedNode && (
           <div className="absolute bottom-4 left-4 w-72 bg-white shadow-xl border border-gray-200 rounded-lg p-4 animate-in slide-in-from-bottom-2 z-20">
             <div className="flex justify-between items-start mb-2">
