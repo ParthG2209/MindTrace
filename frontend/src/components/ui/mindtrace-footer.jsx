@@ -8,11 +8,7 @@ const MindTraceFooter = () => {
   const isDashboard = location.pathname.startsWith('/dashboard');
 
   const socialLinks = [
-    {
-      icon: <Linkedin className="w-6 h-6" />,
-      href: "https://www.linkedin.com/in/parth-gupta-4598b8324/",
-      label: "LinkedIn",
-    },
+    
     {
       icon: <Github className="w-6 h-6" />,
       href: "https://github.com/ParthG2209/MindTrace",
@@ -25,13 +21,7 @@ const MindTraceFooter = () => {
     },
   ];
 
-  const navLinks = [
-    { label: "Features", href: "#features" },
-    { label: "Pricing", href: "#pricing" },
-    { label: "Documentation", href: "#docs" },
-    { label: "About", href: "#about" },
-    { label: "Contact", href: "#contact" },
-  ];
+  
 
   return (
     <Footer
