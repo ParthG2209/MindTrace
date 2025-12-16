@@ -9,11 +9,6 @@ const MindTraceFooter = () => {
 
   const socialLinks = [
     {
-      icon: <Linkedin className="w-6 h-6" />,
-      href: "https://www.linkedin.com/in/parth-gupta-4598b8324/",
-      label: "LinkedIn",
-    },
-    {
       icon: <Github className="w-6 h-6" />,
       href: "https://github.com/ParthG2209/MindTrace",
       label: "GitHub",
@@ -25,20 +20,14 @@ const MindTraceFooter = () => {
     },
   ];
 
-  const navLinks = [
-    { label: "Features", href: "#features" },
-    { label: "Pricing", href: "#pricing" },
-    { label: "Documentation", href: "#docs" },
-    { label: "About", href: "#about" },
-    { label: "Contact", href: "#contact" },
-  ];
+  const navLinks = [];
 
   return (
     <Footer
       brandName="MindTrace"
-      brandDescription={isDashboard ? "" : "AI-powered mentor evaluation system for modern educators. Analyze teaching quality with explainable AI insights."}
-      socialLinks={isDashboard ? [] : socialLinks}
-      navLinks={isDashboard ? [] : navLinks}
+      brandDescription=""
+      socialLinks={socialLinks}
+      navLinks={navLinks}
       creatorName="Team MindTrace"
       creatorUrl="https://www.linkedin.com/in/parth-gupta-4598b8324/"
       brandIcon={<Award className="w-8 sm:w-10 md:w-14 h-8 sm:h-10 md:h-14 text-background dark:text-foreground drop-shadow-lg" />}
