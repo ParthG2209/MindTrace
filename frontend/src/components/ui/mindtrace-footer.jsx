@@ -39,7 +39,7 @@ const MindTraceFooter = () => {
       brandDescription={isDashboard ? "" : "AI-powered mentor evaluation system for modern educators. Analyze teaching quality with explainable AI insights."}
       socialLinks={isDashboard ? [] : socialLinks}
       navLinks={isDashboard ? [] : navLinks}
-      creatorName="Parth Gupta"
+      creatorName="Team MindTrace"
       creatorUrl="https://www.linkedin.com/in/parth-gupta-4598b8324/"
       brandIcon={<Award className="w-8 sm:w-10 md:w-14 h-8 sm:h-10 md:h-14 text-background dark:text-foreground drop-shadow-lg" />}
     />
