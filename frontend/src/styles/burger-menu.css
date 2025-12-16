@@ -147,20 +147,13 @@
   transform: translateX(4px);
 }
 
-.menu-logo svg {
-  width: 28px;
-  height: 28px;
-  color: #ffffff;
-  filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.5));
-}
-
+/* Remove icon styling since we're not using it */
 .menu-logo span {
   font-size: 20px;
   font-weight: bold;
   color: #ffffff;
   text-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
 }
-
 /* User profile section - GLASSMORPHISM */
 .menu-user-profile {
   position: absolute;
