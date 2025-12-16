@@ -1,4 +1,4 @@
-// parthg2209/mindtrace/MindTrace-454002ad537de541ce806a44cdbebf379fec4615/frontend/src/pages/Dashboard/SessionDetailPage.jsx
+// frontend/src/pages/Dashboard/SessionDetailPage.jsx
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -7,7 +7,7 @@ import {
   TrendingUp, Play, Loader, CheckCircle
 } from 'lucide-react';
 import { sessionApi, evaluationApi, mentorApi } from '../../api/client';
-import apiClient from '../../api/client'; // Added generic client for coherence
+import apiClient from '../../api/client';
 import MetricCard from '../../components/MetricCard';
 import SegmentList from '../../components/SegmentList';
 import ExplanationGraph from '../../components/ExplanationGraph';
@@ -20,7 +20,7 @@ const SessionDetailPage = () => {
   const navigate = useNavigate();
   const [session, setSession] = useState(null);
   const [evaluation, setEvaluation] = useState(null);
-  const [coherence, setCoherence] = useState(null); // New State
+  const [coherence, setCoherence] = useState(null);
   const [mentor, setMentor] = useState(null);
   const [loading, setLoading] = useState(true);
   const [evaluating, setEvaluating] = useState(false);
@@ -51,7 +51,6 @@ const SessionDetailPage = () => {
           const evalRes = await evaluationApi.getBySessionId(sessionId);
           setEvaluation(evalRes.data);
           
-          // Fetch Coherence Data for Graph
           try {
             const cohRes = await apiClient.get(`/api/coherence/${sessionId}`);
             setCoherence(cohRes.data);
@@ -187,7 +186,6 @@ const SessionDetailPage = () => {
           </div>
         </div>
 
-        {/* Status Badge */}
         <div className={`px-4 py-2 rounded-xl bg-gradient-to-r ${getStatusColor(session.status)} text-white font-semibold flex items-center gap-2 shadow-lg`}>
           {session.status === 'completed' && <CheckCircle className="w-5 h-5" />}
           {['transcribing', 'analyzing'].includes(session.status) && (
@@ -271,7 +269,7 @@ const SessionDetailPage = () => {
             />
           </div>
 
-          {/* Tabs */}
+          {/* Tabs - GLASSMORPHISM APPLIED */}
           <div className="bg-white/5 border border-white/10 backdrop-blur-sm rounded-2xl overflow-hidden hover:bg-white/10 hover:border-white/20 transition-all">
             {/* Tab Headers */}
             <div className="flex border-b border-white/10 overflow-x-auto">
@@ -290,7 +288,7 @@ const SessionDetailPage = () => {
               ))}
             </div>
 
-            {/* Tab Content */}
+            {/* Tab Content - ALL GLASSMORPHISM */}
             <div className="p-6">
               {activeTab === 'overview' && (
                 <div className="space-y-6">
@@ -300,7 +298,7 @@ const SessionDetailPage = () => {
                     coherenceData={coherence} 
                   />
                   
-                  {/* Strengths & Weaknesses */}
+                  {/* Strengths & Weaknesses - GLASSMORPHISM */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="bg-green-500/10 border border-green-500/20 backdrop-blur-sm rounded-xl p-6 hover:bg-green-500/20 hover:border-green-500/30 transition-all">
                       <h3 className="text-lg font-bold text-green-400 mb-4">Strengths</h3>
@@ -335,7 +333,42 @@ const SessionDetailPage = () => {
               )}
 
               {activeTab === 'segments' && (
-                <SegmentList segments={evaluation.segments} />
+                <div className="space-y-3">
+                  {evaluation.segments.map((segment) => (
+                    <div
+                      key={segment.segment_id}
+                      className="bg-white/5 border border-white/10 backdrop-blur-sm rounded-lg overflow-hidden hover:bg-white/10 hover:border-white/20 transition-all"
+                    >
+                      <div className="p-4 cursor-pointer">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center mb-2">
+                              <span className="text-xs font-medium text-gray-400 mr-2">
+                                Segment {segment.segment_id + 1}
+                              </span>
+                              <div className={`w-2 h-2 rounded-full ${
+                                segment.overall_segment_score >= 8 ? 'bg-green-500' : 
+                                segment.overall_segment_score >= 5 ? 'bg-yellow-500' : 'bg-red-500'
+                              }`}></div>
+                            </div>
+                            <p className="text-sm text-gray-300 line-clamp-2">{segment.text}</p>
+                          </div>
+                          <div className="flex items-center ml-4">
+                            <span className={`px-3 py-1 rounded-lg text-sm font-semibold border ${
+                              segment.overall_segment_score >= 8 
+                                ? 'text-green-400 bg-green-500/10 border-green-500/20'
+                                : segment.overall_segment_score >= 5 
+                                ? 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20'
+                                : 'text-red-400 bg-red-500/10 border-red-500/20'
+                            }`}>
+                              {segment.overall_segment_score.toFixed(1)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
 
               {activeTab === 'evidence' && (
