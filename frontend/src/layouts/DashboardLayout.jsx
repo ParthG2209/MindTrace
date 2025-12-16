@@ -8,8 +8,7 @@ import {
   Video,
   Users,
   Settings as SettingsIcon,
-  BarChart3,
-  Award
+  BarChart3
 } from 'lucide-react';
 import { auth } from '../lib/firebase';
 import { signOut } from 'firebase/auth';
@@ -44,7 +43,6 @@ const DashboardLayout = () => {
     }
   };
 
-  // Syncs the library's internal state with our local state
   const handleStateChange = (state) => {
     setMenuOpen(state.isOpen);
   };
@@ -53,7 +51,6 @@ const DashboardLayout = () => {
     setMenuOpen(false);
   };
 
-  // Manually toggle the menu
   const toggleMenu = () => {
     setMenuOpen(!menuOpen);
   };
@@ -102,13 +99,8 @@ const DashboardLayout = () => {
 
   return (
     <div className="min-h-screen bg-black relative">
-      {/* Dotted Surface Background */}
       <DottedSurface darkMode={true} />
 
-      {/* CUSTOM TOGGLE BUTTON 
-        Placed manually to ensure your custom component and animations work 
-        independently of the library's default button wrapper.
-      */}
       <div className="fixed top-6 left-6 z-[1100]">
         <MenuToggleIcon
           open={menuOpen}
@@ -117,18 +109,16 @@ const DashboardLayout = () => {
         />
       </div>
 
-      {/* Burger Menu Sidebar */}
       <Menu
         isOpen={menuOpen}
         onStateChange={handleStateChange}
         width={'280px'}
-        customBurgerIcon={false} /* We disable the default icon to use our own above */
-        customCrossIcon={false}  /* Optional: disable default close X if you want to use the toggle to close too */
+        customBurgerIcon={false}
+        customCrossIcon={false}
       >
-        {/* Logo */}
-        <div className="menu-logo" onClick={() => handleNavigation('/dashboard')}>
-          <Award />
-          <span>MindTrace</span>
+        {/* REMOVED LOGO SECTION - Just show MindTrace text */}
+        <div className="px-4 pb-6 mb-6 border-b border-white/10">
+          <h2 className="text-2xl font-bold text-white">MindTrace</h2>
         </div>
 
         {/* Menu Items */}
@@ -200,7 +190,6 @@ const DashboardLayout = () => {
         )}
       </Menu>
 
-      {/* Main Content */}
       <div className="flex flex-1 flex-col w-full">
         <main className="p-6 flex-1 relative z-10 overflow-auto">
           <Outlet />
