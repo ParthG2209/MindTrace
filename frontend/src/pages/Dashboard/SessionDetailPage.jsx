@@ -1,3 +1,5 @@
+// parthg2209/mindtrace/MindTrace-454002ad537de541ce806a44cdbebf379fec4615/frontend/src/pages/Dashboard/SessionDetailPage.jsx
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
@@ -5,7 +7,7 @@ import {
   TrendingUp, Play, Loader, CheckCircle
 } from 'lucide-react';
 import { sessionApi, evaluationApi, mentorApi } from '../../api/client';
-import apiClient from '../../api/client';
+import apiClient from '../../api/client'; // Added generic client for coherence
 import MetricCard from '../../components/MetricCard';
 import SegmentList from '../../components/SegmentList';
 import ExplanationGraph from '../../components/ExplanationGraph';
@@ -18,7 +20,7 @@ const SessionDetailPage = () => {
   const navigate = useNavigate();
   const [session, setSession] = useState(null);
   const [evaluation, setEvaluation] = useState(null);
-  const [coherence, setCoherence] = useState(null);
+  const [coherence, setCoherence] = useState(null); // New State
   const [mentor, setMentor] = useState(null);
   const [loading, setLoading] = useState(true);
   const [evaluating, setEvaluating] = useState(false);
@@ -49,6 +51,7 @@ const SessionDetailPage = () => {
           const evalRes = await evaluationApi.getBySessionId(sessionId);
           setEvaluation(evalRes.data);
           
+          // Fetch Coherence Data for Graph
           try {
             const cohRes = await apiClient.get(`/api/coherence/${sessionId}`);
             setCoherence(cohRes.data);
@@ -184,6 +187,7 @@ const SessionDetailPage = () => {
           </div>
         </div>
 
+        {/* Status Badge */}
         <div className={`px-4 py-2 rounded-xl bg-gradient-to-r ${getStatusColor(session.status)} text-white font-semibold flex items-center gap-2 shadow-lg`}>
           {session.status === 'completed' && <CheckCircle className="w-5 h-5" />}
           {['transcribing', 'analyzing'].includes(session.status) && (
@@ -195,7 +199,7 @@ const SessionDetailPage = () => {
 
       {/* Evaluation Action */}
       {session.status === 'uploaded' && !evaluation && (
-        <GlassCard className="hover:bg-white/10 hover:border-white/20 transition-all">
+        <div className="bg-blue-500/10 border border-blue-500/20 backdrop-blur-sm rounded-2xl p-6 hover:bg-blue-500/20 hover:border-blue-500/30 transition-all">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-bold text-white mb-1">Ready for Evaluation</h3>
@@ -219,12 +223,12 @@ const SessionDetailPage = () => {
               )}
             </button>
           </div>
-        </GlassCard>
+        </div>
       )}
 
       {/* Processing Status */}
       {['transcribing', 'analyzing'].includes(session.status) && (
-        <GlassCard className="hover:bg-white/10 hover:border-white/20 transition-all">
+        <div className="bg-blue-500/10 border border-blue-500/20 backdrop-blur-sm rounded-2xl p-6 hover:bg-blue-500/20 hover:border-blue-500/30 transition-all">
           <div className="flex items-center gap-4">
             <Loader className="w-8 h-8 text-blue-400 animate-spin" />
             <div>
@@ -236,7 +240,7 @@ const SessionDetailPage = () => {
               </p>
             </div>
           </div>
-        </GlassCard>
+        </div>
       )}
 
       {/* Evaluation Results */}
@@ -267,17 +271,17 @@ const SessionDetailPage = () => {
             />
           </div>
 
-          {/* Tabs - GLASSMORPHISM THEME */}
-          <GlassCard className="p-0 overflow-hidden hover:bg-white/10 hover:border-white/20 transition-all">
+          {/* Tabs */}
+          <div className="bg-white/5 border border-white/10 backdrop-blur-sm rounded-2xl overflow-hidden hover:bg-white/10 hover:border-white/20 transition-all">
             {/* Tab Headers */}
-            <div className="flex border-b border-white/10 overflow-x-auto bg-white/5 backdrop-blur-md">
+            <div className="flex border-b border-white/10 overflow-x-auto">
               {tabs.filter(tab => tab.show).map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`px-6 py-4 font-medium text-sm whitespace-nowrap transition-all relative ${
+                  className={`px-6 py-4 font-medium text-sm whitespace-nowrap transition-all ${
                     activeTab === tab.id
-                      ? 'text-white bg-blue-500/20 border-b-2 border-blue-500'
+                      ? 'text-white border-b-2 border-blue-500 bg-blue-500/10'
                       : 'text-gray-400 hover:text-white hover:bg-white/5'
                   }`}
                 >
@@ -286,8 +290,8 @@ const SessionDetailPage = () => {
               ))}
             </div>
 
-            {/* Tab Content - GLASSMORPHISM BACKGROUND */}
-            <div className="p-6 bg-white/5 backdrop-blur-sm">
+            {/* Tab Content */}
+            <div className="p-6">
               {activeTab === 'overview' && (
                 <div className="space-y-6">
                   <ExplanationGraph 
@@ -298,7 +302,7 @@ const SessionDetailPage = () => {
                   
                   {/* Strengths & Weaknesses */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <GlassCard className="hover:bg-green-500/10 hover:border-green-500/20 transition-all">
+                    <div className="bg-green-500/10 border border-green-500/20 backdrop-blur-sm rounded-xl p-6 hover:bg-green-500/20 hover:border-green-500/30 transition-all">
                       <h3 className="text-lg font-bold text-green-400 mb-4">Strengths</h3>
                       <ul className="space-y-2">
                         {evaluation.segments
@@ -311,8 +315,8 @@ const SessionDetailPage = () => {
                             </li>
                           ))}
                       </ul>
-                    </GlassCard>
-                    <GlassCard className="hover:bg-yellow-500/10 hover:border-yellow-500/20 transition-all">
+                    </div>
+                    <div className="bg-yellow-500/10 border border-yellow-500/20 backdrop-blur-sm rounded-xl p-6 hover:bg-yellow-500/20 hover:border-yellow-500/30 transition-all">
                       <h3 className="text-lg font-bold text-yellow-400 mb-4">Areas for Improvement</h3>
                       <ul className="space-y-2">
                         {evaluation.segments
@@ -325,7 +329,7 @@ const SessionDetailPage = () => {
                             </li>
                           ))}
                       </ul>
-                    </GlassCard>
+                    </div>
                   </div>
                 </div>
               )}
@@ -355,7 +359,7 @@ const SessionDetailPage = () => {
                 />
               )}
             </div>
-          </GlassCard>
+          </div>
         </>
       )}
     </div>
