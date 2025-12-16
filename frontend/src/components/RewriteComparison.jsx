@@ -1,15 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { RefreshCw, CheckCircle, ArrowRight, Loader, TrendingUp } from 'lucide-react';
-import apiClient from '../api/client'; // ✅ CHANGED: Import apiClient instead of axios
+import apiClient from '../api/client';
 
-const RewriteComparison = ({ sessionId, evaluationId }) => {
+export const RewriteComparison = ({ sessionId, evaluationId }) => {
   const [rewrites, setRewrites] = useState(null);
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [selectedSegment, setSelectedSegment] = useState(null);
+  const fetchedRef = useRef(false);
 
   useEffect(() => {
-    if (sessionId) {
+    if (sessionId && !fetchedRef.current) {
+      fetchedRef.current = true;
       fetchRewrites();
     }
   }, [sessionId]);
@@ -17,7 +19,6 @@ const RewriteComparison = ({ sessionId, evaluationId }) => {
   const fetchRewrites = async () => {
     try {
       setLoading(true);
-      // ✅ CHANGED: Use apiClient and remove localhost URL
       const response = await apiClient.get(`/api/rewrites/${sessionId}`);
       setRewrites(response.data);
     } catch (error) {
@@ -34,13 +35,10 @@ const RewriteComparison = ({ sessionId, evaluationId }) => {
   const handleGenerateRewrites = async () => {
     try {
       setGenerating(true);
-      // ✅ CHANGED: Use apiClient and remove localhost URL
       await apiClient.post(`/api/rewrites/session/${sessionId}`);
       
-      // Poll for completion
       const pollInterval = setInterval(async () => {
         try {
-          // ✅ CHANGED: Use apiClient
           const response = await apiClient.get(`/api/rewrites/${sessionId}`);
           if (response.data && response.data.rewrites && response.data.rewrites.length > 0) {
             setRewrites(response.data);
@@ -52,7 +50,6 @@ const RewriteComparison = ({ sessionId, evaluationId }) => {
         }
       }, 3000);
 
-      // Timeout after 60 seconds
       setTimeout(() => {
         clearInterval(pollInterval);
         setGenerating(false);
@@ -66,10 +63,10 @@ const RewriteComparison = ({ sessionId, evaluationId }) => {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-8 border border-gray-200">
+      <div className="bg-white/5 border border-white/10 backdrop-blur-sm rounded-lg shadow-md p-8">
         <div className="flex items-center justify-center">
-          <Loader className="w-8 h-8 animate-spin text-blue-600 mr-3" />
-          <span className="text-gray-600">Loading rewrites...</span>
+          <Loader className="w-8 h-8 animate-spin text-blue-400 mr-3" />
+          <span className="text-gray-300">Loading rewrites...</span>
         </div>
       </div>
     );
@@ -77,13 +74,13 @@ const RewriteComparison = ({ sessionId, evaluationId }) => {
 
   if (!rewrites || rewrites.rewrites.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-8 border border-gray-200">
+      <div className="bg-white/5 border border-white/10 backdrop-blur-sm rounded-lg shadow-md p-8">
         <div className="text-center">
-          <RefreshCw className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">
+          <RefreshCw className="w-16 h-16 mx-auto text-gray-500 mb-4" />
+          <h3 className="text-xl font-semibold text-white mb-2">
             No Rewrites Generated Yet
           </h3>
-          <p className="text-gray-600 mb-6">
+          <p className="text-gray-400 mb-6">
             Generate improved versions of unclear explanations
           </p>
           <button
@@ -109,22 +106,22 @@ const RewriteComparison = ({ sessionId, evaluationId }) => {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md border border-gray-200">
-      <div className="p-6 border-b border-gray-200">
+    <div className="bg-white/5 border border-white/10 backdrop-blur-sm rounded-lg shadow-md">
+      <div className="p-6 border-b border-white/10">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-2xl font-bold text-gray-900 flex items-center">
-              <RefreshCw className="w-7 h-7 mr-3 text-blue-600" />
+            <h3 className="text-2xl font-bold text-white flex items-center">
+              <RefreshCw className="w-7 h-7 mr-3 text-blue-400" />
               Explanation Rewrites
             </h3>
-            <p className="text-gray-600 mt-1">
+            <p className="text-gray-400 mt-1">
               AI-improved versions of unclear explanations
             </p>
           </div>
           <button
             onClick={handleGenerateRewrites}
             disabled={generating}
-            className="px-4 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors disabled:opacity-50"
+            className="px-4 py-2 border border-blue-500/30 bg-blue-500/10 text-blue-400 rounded-lg hover:bg-blue-500/20 transition-colors disabled:opacity-50"
           >
             {generating ? 'Generating...' : 'Regenerate'}
           </button>
@@ -135,7 +132,7 @@ const RewriteComparison = ({ sessionId, evaluationId }) => {
             <select
               value={selectedSegment === null ? 'all' : selectedSegment}
               onChange={(e) => setSelectedSegment(e.target.value === 'all' ? null : parseInt(e.target.value))}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-blue-500/50 focus:border-transparent"
             >
               <option value="all">All Segments</option>
               {[...new Set(rewrites.rewrites.map(r => r.segment_id))].sort().map(id => (
@@ -147,7 +144,7 @@ const RewriteComparison = ({ sessionId, evaluationId }) => {
       </div>
 
       <div className="p-6">
-        <div className="text-sm text-gray-600 mb-4">
+        <div className="text-sm text-gray-400 mb-4">
           {rewrites.total} segments rewritten
         </div>
 
@@ -157,65 +154,61 @@ const RewriteComparison = ({ sessionId, evaluationId }) => {
             .map((rewrite, index) => (
               <div
                 key={index}
-                className="border border-gray-200 rounded-lg p-5 hover:shadow-md transition-shadow"
+                className="bg-white/5 border border-white/10 rounded-lg p-5 hover:bg-white/10 transition-colors"
               >
                 <div className="flex items-center justify-between mb-4">
-                  <span className="text-sm font-medium text-gray-700">
+                  <span className="text-sm font-medium text-gray-300">
                     Segment {rewrite.segment_id + 1}
                   </span>
                   <div className="flex items-center gap-4">
                     {rewrite.rewrite.clarity_improvement && (
-                      <div className="flex items-center text-green-600">
+                      <div className="flex items-center text-green-400">
                         <TrendingUp className="w-4 h-4 mr-1" />
                         <span className="text-sm font-medium">
                           +{rewrite.rewrite.clarity_improvement.toFixed(1)} clarity
                         </span>
                       </div>
                     )}
-                    <span className="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-full">
+                    <span className="px-3 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-medium rounded-full">
                       Confidence: {(rewrite.confidence * 100).toFixed(0)}%
                     </span>
                   </div>
                 </div>
 
-                {/* Original Text */}
                 <div className="mb-4">
                   <div className="flex items-center mb-2">
                     <div className="w-3 h-3 rounded-full bg-red-400 mr-2"></div>
-                    <p className="text-sm font-medium text-gray-700">Original:</p>
+                    <p className="text-sm font-medium text-gray-300">Original:</p>
                   </div>
-                  <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded">
-                    <p className="text-sm text-gray-800">{rewrite.rewrite.original_text}</p>
+                  <div className="bg-red-500/10 border-l-4 border-red-400 p-4 rounded">
+                    <p className="text-sm text-gray-300">{rewrite.rewrite.original_text}</p>
                   </div>
                 </div>
 
-                {/* Arrow */}
                 <div className="flex justify-center my-3">
-                  <ArrowRight className="w-6 h-6 text-gray-400" />
+                  <ArrowRight className="w-6 h-6 text-gray-500" />
                 </div>
 
-                {/* Rewritten Text */}
                 <div className="mb-4">
                   <div className="flex items-center mb-2">
                     <div className="w-3 h-3 rounded-full bg-green-400 mr-2"></div>
-                    <p className="text-sm font-medium text-gray-700">Improved:</p>
+                    <p className="text-sm font-medium text-gray-300">Improved:</p>
                   </div>
-                  <div className="bg-green-50 border-l-4 border-green-400 p-4 rounded">
-                    <p className="text-sm text-gray-800">{rewrite.rewrite.rewritten_text}</p>
+                  <div className="bg-green-500/10 border-l-4 border-green-400 p-4 rounded">
+                    <p className="text-sm text-gray-300">{rewrite.rewrite.rewritten_text}</p>
                   </div>
                 </div>
 
-                {/* Improvements */}
                 {rewrite.rewrite.improvements && rewrite.rewrite.improvements.length > 0 && (
                   <div>
-                    <p className="text-sm font-medium text-gray-700 mb-2 flex items-center">
-                      <CheckCircle className="w-4 h-4 mr-1 text-green-600" />
+                    <p className="text-sm font-medium text-gray-300 mb-2 flex items-center">
+                      <CheckCircle className="w-4 h-4 mr-1 text-green-400" />
                       Key Improvements:
                     </p>
                     <ul className="space-y-1">
                       {rewrite.rewrite.improvements.map((improvement, idx) => (
-                        <li key={idx} className="text-sm text-gray-600 flex items-start">
-                          <span className="text-green-600 mr-2">•</span>
+                        <li key={idx} className="text-sm text-gray-400 flex items-start">
+                          <span className="text-green-400 mr-2">•</span>
                           {improvement}
                         </li>
                       ))}
@@ -223,8 +216,7 @@ const RewriteComparison = ({ sessionId, evaluationId }) => {
                   </div>
                 )}
 
-                {/* Stats */}
-                <div className="mt-4 pt-4 border-t border-gray-200 flex gap-6 text-xs text-gray-500">
+                <div className="mt-4 pt-4 border-t border-white/10 flex gap-6 text-xs text-gray-500">
                   <span>Words: {rewrite.rewrite.original_text.split(' ').length} → {rewrite.rewrite.rewritten_text.split(' ').length}</span>
                   {rewrite.rewrite.word_count_change !== undefined && (
                     <span>Change: {rewrite.rewrite.word_count_change > 0 ? '+' : ''}{rewrite.rewrite.word_count_change} words</span>
@@ -237,5 +229,4 @@ const RewriteComparison = ({ sessionId, evaluationId }) => {
     </div>
   );
 };
-
 export default RewriteComparison;
