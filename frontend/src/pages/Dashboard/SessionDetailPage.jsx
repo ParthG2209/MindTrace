@@ -197,7 +197,7 @@ const SessionDetailPage = () => {
 
       {/* Evaluation Action */}
       {session.status === 'uploaded' && !evaluation && (
-        <div className="bg-blue-500/10 border border-blue-500/20 backdrop-blur-sm rounded-2xl p-6 hover:bg-blue-500/20 hover:border-blue-500/30 transition-all">
+        <GlassCard className="hover:bg-white/10 transition-all">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-bold text-white mb-1">Ready for Evaluation</h3>
@@ -221,12 +221,12 @@ const SessionDetailPage = () => {
               )}
             </button>
           </div>
-        </div>
+        </GlassCard>
       )}
 
       {/* Processing Status */}
       {['transcribing', 'analyzing'].includes(session.status) && (
-        <div className="bg-blue-500/10 border border-blue-500/20 backdrop-blur-sm rounded-2xl p-6 hover:bg-blue-500/20 hover:border-blue-500/30 transition-all">
+        <GlassCard className="hover:bg-white/10 transition-all">
           <div className="flex items-center gap-4">
             <Loader className="w-8 h-8 text-blue-400 animate-spin" />
             <div>
@@ -238,7 +238,7 @@ const SessionDetailPage = () => {
               </p>
             </div>
           </div>
-        </div>
+        </GlassCard>
       )}
 
       {/* Evaluation Results */}
@@ -269,7 +269,7 @@ const SessionDetailPage = () => {
             />
           </div>
 
-          {/* Tabs - GLASSMORPHISM APPLIED */}
+          {/* Tabs - GLASSMORPHISM */}
           <div className="bg-white/5 border border-white/10 backdrop-blur-sm rounded-2xl overflow-hidden hover:bg-white/10 hover:border-white/20 transition-all">
             {/* Tab Headers */}
             <div className="flex border-b border-white/10 overflow-x-auto">
