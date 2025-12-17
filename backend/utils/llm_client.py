@@ -1,3 +1,5 @@
+
+
 import json
 import asyncio
 import re
@@ -28,11 +30,12 @@ class UnifiedLLMClient:
         self.use_mock_fallback = settings.FALLBACK_TO_MOCK
         
         # Task routing configuration
+        # UPDATED: Shifted all tasks to Gemini 2.5 Flash
         self.task_routing = {
             'evaluate': 'gemini',      # Frequent, needs accuracy
             'evidence': 'gemini',      # Needs precision
-            'rewrite': 'groq',         # Needs speed (User enforced)
-            'coherence': 'groq',       # Complex reasoning
+            'rewrite': 'gemini',       # Shifted to Gemini
+            'coherence': 'gemini',     # Shifted to Gemini
             'pacing': 'gemini'         # Analytical task
         }
         
@@ -63,7 +66,6 @@ class UnifiedLLMClient:
                     return await self._call_groq(prompt, response_format, temperature)
                 else:
                     # If preferred provider key is missing, try the other one
-                    # (Unless it's a rewrite task and we want to enforce Groq preferences where possible)
                     if provider == 'gemini' and self.groq_api_key:
                         return await self._call_groq(prompt, response_format, temperature)
                     elif provider == 'groq' and self.gemini_api_key:
@@ -77,9 +79,8 @@ class UnifiedLLMClient:
                 if attempt < max_retries - 1:
                     print(f"Rate limit hit for {provider}. Retrying...")
                     await asyncio.sleep(2 ** attempt)
-                    # For rewrite, stick to Groq if possible, otherwise switch
-                    if task_type != 'rewrite':
-                        provider = 'groq' if provider == 'gemini' else 'gemini'
+                    # Switch provider if possible to avoid rate limit
+                    provider = 'groq' if provider == 'gemini' else 'gemini'
                     continue
                 raise
                 
@@ -87,14 +88,9 @@ class UnifiedLLMClient:
                 print(f"LLM attempt {attempt+1} failed ({provider}): {str(e)}")
                 
                 if attempt < max_retries - 1:
-                    # ✅ FIX: Enforce Groq for rewrites (do not switch to Gemini)
-                    if task_type == 'rewrite' and provider == 'groq':
-                        print("Retrying Groq for rewrite (enforcing user preference)...")
-                        # Provider stays 'groq'
-                    else:
-                        # For other tasks, switch provider to maximize success chance
-                        provider = 'groq' if provider == 'gemini' else 'gemini'
-                        print(f"Switching to {provider} for retry...")
+                    # For other tasks, switch provider to maximize success chance
+                    provider = 'groq' if provider == 'gemini' else 'gemini'
+                    print(f"Switching to {provider} for retry...")
                     
                     await asyncio.sleep(2 ** attempt)
                     continue
@@ -113,6 +109,7 @@ class UnifiedLLMClient:
     ) -> Dict[str, Any]:
         """Call Google Gemini API"""
         
+        # Using Gemini 2.5 Flash
         url = f"https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key={self.gemini_api_key}"
         
         if response_format == 'json':
