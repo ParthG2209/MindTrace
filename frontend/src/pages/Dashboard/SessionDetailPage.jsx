@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Video, Clock, Calendar, User, 
-  TrendingUp, Play, Loader, CheckCircle
+  TrendingUp, Play, Loader, CheckCircle, RefreshCw, Trash2, AlertCircle
 } from 'lucide-react';
 import { sessionApi, evaluationApi, mentorApi } from '../../api/client';
 import apiClient from '../../api/client';
@@ -24,6 +24,8 @@ const SessionDetailPage = () => {
   const [mentor, setMentor] = useState(null);
   const [loading, setLoading] = useState(true);
   const [evaluating, setEvaluating] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
@@ -76,9 +78,44 @@ const SessionDetailPage = () => {
       setTimeout(fetchSessionData, 2000);
     } catch (error) {
       console.error('Error starting evaluation:', error);
-      alert('Failed to start evaluation');
+      alert('Failed to start evaluation: ' + (error.response?.data?.detail || error.message));
     } finally {
       setEvaluating(false);
+    }
+  };
+
+  const handleRetryEvaluation = async () => {
+    if (!confirm('Are you sure you want to retry the evaluation? This will re-process the entire session.')) {
+      return;
+    }
+    
+    try {
+      setEvaluating(true);
+      // Update session status back to uploaded
+      await sessionApi.update(sessionId, { status: 'uploaded' });
+      // Start new evaluation
+      await evaluationApi.startEvaluation(sessionId);
+      // Reset evaluation state
+      setEvaluation(null);
+      setTimeout(fetchSessionData, 2000);
+    } catch (error) {
+      console.error('Error retrying evaluation:', error);
+      alert('Failed to retry evaluation: ' + (error.response?.data?.detail || error.message));
+    } finally {
+      setEvaluating(false);
+    }
+  };
+
+  const handleDeleteSession = async () => {
+    try {
+      setDeleting(true);
+      await sessionApi.delete(sessionId);
+      setShowDeleteModal(false);
+      navigate(`/dashboard/sessions?mentor=${session.mentor_id}`);
+    } catch (error) {
+      console.error('Error deleting session:', error);
+      alert('Failed to delete session: ' + (error.response?.data?.detail || error.message));
+      setDeleting(false);
     }
   };
 
@@ -186,12 +223,24 @@ const SessionDetailPage = () => {
           </div>
         </div>
 
-        <div className={`px-4 py-2 rounded-xl bg-gradient-to-r ${getStatusColor(session.status)} text-white font-semibold flex items-center gap-2 shadow-lg`}>
-          {session.status === 'completed' && <CheckCircle className="w-5 h-5" />}
-          {['transcribing', 'analyzing'].includes(session.status) && (
-            <Loader className="w-5 h-5 animate-spin" />
-          )}
-          {session.status.charAt(0).toUpperCase() + session.status.slice(1)}
+        <div className="flex items-center gap-3">
+          <div className={`px-4 py-2 rounded-xl bg-gradient-to-r ${getStatusColor(session.status)} text-white font-semibold flex items-center gap-2 shadow-lg`}>
+            {session.status === 'completed' && <CheckCircle className="w-5 h-5" />}
+            {session.status === 'failed' && <AlertCircle className="w-5 h-5" />}
+            {['transcribing', 'analyzing'].includes(session.status) && (
+              <Loader className="w-5 h-5 animate-spin" />
+            )}
+            {session.status.charAt(0).toUpperCase() + session.status.slice(1)}
+          </div>
+          
+          {/* Delete Button */}
+          <button
+            onClick={() => setShowDeleteModal(true)}
+            className="p-2 hover:bg-red-500/10 rounded-lg transition-colors border border-red-500/20 hover:border-red-500/40"
+            title="Delete Session"
+          >
+            <Trash2 className="w-5 h-5 text-red-400" />
+          </button>
         </div>
       </div>
 
@@ -217,6 +266,40 @@ const SessionDetailPage = () => {
                 <>
                   <Play className="w-5 h-5" />
                   Start Evaluation
+                </>
+              )}
+            </button>
+          </div>
+        </GlassCard>
+      )}
+
+      {/* Failed Status - Retry Option */}
+      {session.status === 'failed' && (
+        <GlassCard className="border-red-500/30 bg-red-500/10 hover:bg-red-500/15 transition-all">
+          <div className="flex items-center justify-between">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-6 h-6 text-red-400 flex-shrink-0 mt-1" />
+              <div>
+                <h3 className="text-lg font-bold text-white mb-1">Evaluation Failed</h3>
+                <p className="text-gray-300">
+                  The evaluation process encountered an error. You can retry the evaluation or delete this session.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={handleRetryEvaluation}
+              disabled={evaluating}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-semibold transition-all shadow-lg disabled:opacity-50 whitespace-nowrap"
+            >
+              {evaluating ? (
+                <>
+                  <Loader className="w-5 h-5 animate-spin" />
+                  Retrying...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="w-5 h-5" />
+                  Retry Evaluation
                 </>
               )}
             </button>
@@ -269,7 +352,7 @@ const SessionDetailPage = () => {
             />
           </div>
 
-          {/* Tabs - GLASSMORPHISM */}
+          {/* Tabs */}
           <div className="bg-white/5 border border-white/10 backdrop-blur-sm rounded-2xl overflow-hidden hover:bg-white/10 hover:border-white/20 transition-all">
             {/* Tab Headers */}
             <div className="flex border-b border-white/10 overflow-x-auto">
@@ -288,7 +371,7 @@ const SessionDetailPage = () => {
               ))}
             </div>
 
-            {/* Tab Content - ALL GLASSMORPHISM */}
+            {/* Tab Content */}
             <div className="p-6">
               {activeTab === 'overview' && (
                 <div className="space-y-6">
@@ -298,7 +381,7 @@ const SessionDetailPage = () => {
                     coherenceData={coherence} 
                   />
                   
-                  {/* Strengths & Weaknesses - GLASSMORPHISM */}
+                  {/* Strengths & Weaknesses */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="bg-green-500/10 border border-green-500/20 backdrop-blur-sm rounded-xl p-6 hover:bg-green-500/20 hover:border-green-500/30 transition-all">
                       <h3 className="text-lg font-bold text-green-400 mb-4">Strengths</h3>
@@ -333,42 +416,7 @@ const SessionDetailPage = () => {
               )}
 
               {activeTab === 'segments' && (
-                <div className="space-y-3">
-                  {evaluation.segments.map((segment) => (
-                    <div
-                      key={segment.segment_id}
-                      className="bg-white/5 border border-white/10 backdrop-blur-sm rounded-lg overflow-hidden hover:bg-white/10 hover:border-white/20 transition-all"
-                    >
-                      <div className="p-4 cursor-pointer">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center mb-2">
-                              <span className="text-xs font-medium text-gray-400 mr-2">
-                                Segment {segment.segment_id + 1}
-                              </span>
-                              <div className={`w-2 h-2 rounded-full ${
-                                segment.overall_segment_score >= 8 ? 'bg-green-500' : 
-                                segment.overall_segment_score >= 5 ? 'bg-yellow-500' : 'bg-red-500'
-                              }`}></div>
-                            </div>
-                            <p className="text-sm text-gray-300 line-clamp-2">{segment.text}</p>
-                          </div>
-                          <div className="flex items-center ml-4">
-                            <span className={`px-3 py-1 rounded-lg text-sm font-semibold border ${
-                              segment.overall_segment_score >= 8 
-                                ? 'text-green-400 bg-green-500/10 border-green-500/20'
-                                : segment.overall_segment_score >= 5 
-                                ? 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20'
-                                : 'text-red-400 bg-red-500/10 border-red-500/20'
-                            }`}>
-                              {segment.overall_segment_score.toFixed(1)}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <SegmentList segments={evaluation.segments} />
               )}
 
               {activeTab === 'evidence' && (
@@ -394,6 +442,64 @@ const SessionDetailPage = () => {
             </div>
           </div>
         </>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white/5 border border-white/10 backdrop-blur-md rounded-2xl max-w-md w-full p-8 shadow-2xl">
+            <div className="flex items-start gap-4 mb-6">
+              <div className="p-3 bg-red-500/20 rounded-xl">
+                <Trash2 className="w-6 h-6 text-red-400" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-white mb-2">Delete Session</h2>
+                <p className="text-gray-300">
+                  Are you sure you want to delete this session? This action cannot be undone.
+                </p>
+              </div>
+            </div>
+            
+            <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4 mb-6">
+              <p className="text-sm text-yellow-300">
+                <strong>Warning:</strong> This will permanently delete:
+              </p>
+              <ul className="text-sm text-gray-300 mt-2 ml-4 list-disc">
+                <li>Video file</li>
+                <li>Transcription data</li>
+                <li>Evaluation results</li>
+                <li>All associated analytics</li>
+              </ul>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                disabled={deleting}
+                className="flex-1 px-6 py-3 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-all font-medium disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteSession}
+                disabled={deleting}
+                className="flex-1 px-6 py-3 bg-red-600 hover:bg-red-500 text-white rounded-xl transition-all font-medium shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {deleting ? (
+                  <>
+                    <Loader className="w-4 h-4 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    Delete Session
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
