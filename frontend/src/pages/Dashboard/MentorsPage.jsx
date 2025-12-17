@@ -1,4 +1,5 @@
-// src/pages/Dashboard/MentorsPage.jsx - GLASSMORPHISM VERSION
+// frontend/src/pages/Dashboard/MentorsPage.jsx
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, User, TrendingUp, TrendingDown, Minus, Search, Filter } from 'lucide-react';
@@ -222,19 +223,19 @@ const MentorsPage = () => {
         </GlassCard>
       </div>
 
-      {/* Search and Filter */}
+      {/* Search and Filter - FIXED OPACITY */}
       <div className="flex items-center gap-4">
         <div className="flex-1 relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
           <input
             type="text"
             placeholder="Search mentors..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all backdrop-blur-sm"
+            className="w-full pl-12 pr-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all backdrop-blur-sm"
           />
         </div>
-        <button className="p-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-colors backdrop-blur-sm">
+        <button className="p-3 bg-white/10 border border-white/20 rounded-xl hover:bg-white/15 transition-colors backdrop-blur-sm">
           <Filter className="w-5 h-5 text-gray-400" />
         </button>
       </div>
