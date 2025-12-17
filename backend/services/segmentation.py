@@ -6,11 +6,14 @@ class SegmentationService:
     
     def __init__(self):
         self.min_segment_words = 15
-        self.max_segment_words = 100
+        self.max_segment_words = 60  # Slightly increased since transcription is now more granular
         self.topic_shift_indicators = [
-            'now', 'next', 'let me', 'let\'s', 'moving on', 'another',
+            'now', 'next', 'let me', "let's", 'moving on', 'another',
             'first', 'second', 'third', 'finally', 'to summarize',
-            'in conclusion', 'the key point', 'remember that'
+            'in conclusion', 'the key point', 'remember that',
+            'so', 'okay', 'alright', 'well', 'basically',
+            'what we', 'what i', 'the next', 'going to',
+            'important', 'note that', 'keep in mind',
         ]
     
     def segment_transcript(self, segments: List[TranscriptSegment]) -> List[TranscriptSegment]:
@@ -27,6 +30,11 @@ class SegmentationService:
         if not segments:
             return []
         
+        # If we have very few segments, just return them
+        if len(segments) <= 5:
+            print(f"⚠️ Only {len(segments)} segments received, returning as-is")
+            return segments
+        
         logical_segments = []
         current_segment = {
             'texts': [],
@@ -36,8 +44,10 @@ class SegmentationService:
         
         for i, seg in enumerate(segments):
             words = seg.text.split()
+            word_count = len(words)
+            
             current_segment['texts'].append(seg.text)
-            current_segment['word_count'] += len(words)
+            current_segment['word_count'] += word_count
             
             # Check if we should create a new segment
             should_split = False
@@ -61,7 +71,7 @@ class SegmentationService:
                     text=' '.join(current_segment['texts']),
                     start_time=current_segment['start_time'],
                     end_time=seg.end_time,
-                    confidence=sum(s.confidence for s in segments[len(logical_segments):i+1]) / (i + 1 - len(logical_segments))
+                    confidence=sum(s.confidence for s in segments[max(0, i - len(current_segment['texts'])):i+1]) / (len(current_segment['texts']) or 1)
                 ))
                 
                 # Start new segment
@@ -72,6 +82,7 @@ class SegmentationService:
                         'word_count': 0
                     }
         
+        print(f"📊 Segmentation: {len(segments)} raw → {len(logical_segments)} logical segments")
         return logical_segments
     
     def _detect_topic_shift(self, text: str) -> bool:
