@@ -3,7 +3,7 @@ import { Button } from "./button";
 import { Input } from "./input";
 import { Label } from "./label";
 import { Checkbox } from "./checkbox";
-import { Eye, EyeOff, Mail, Sparkles, Sun, Moon } from "lucide-react";
+import { Eye, EyeOff, Mail, Sparkles } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { 
   signInWithEmailAndPassword, 
@@ -167,7 +167,6 @@ function LoginPage() {
   const [name, setName] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
 
   const [mouseX, setMouseX] = useState(0);
   const [mouseY, setMouseY] = useState(0);
@@ -335,9 +334,6 @@ function LoginPage() {
       const result = await signInWithPopup(auth, googleProvider);
       console.log("✅ Google sign-in successful!", result.user);
       
-      // FIX: Removed alert() to prevent the browser from blocking the popup close event.
-      // alert(`Welcome, ${result.user.displayName || result.user.email}!`);
-      
       // Navigate immediately to dashboard
       navigate("/dashboard");
       
@@ -358,15 +354,11 @@ function LoginPage() {
     setName("");
   };
 
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-  };
-
   return (
-    <div className={`min-h-screen grid lg:grid-cols-2 ${darkMode ? 'dark' : ''}`}>
+    <div className="min-h-screen grid lg:grid-cols-2 dark">
       {/* Left Content Section - Keep as is */}
       <div className="relative hidden lg:flex flex-col justify-between bg-gradient-to-br from-primary/90 via-primary to-primary/80 p-12 text-primary-foreground">
-        {/* ... Keep all the character animation code ... */}
+        {/* Logo */}
         <div className="relative z-20">
           <div className="flex items-center gap-2 text-lg font-semibold">
             <div className="size-8 rounded-lg bg-primary-foreground/10 backdrop-blur-sm flex items-center justify-center">
@@ -375,6 +367,8 @@ function LoginPage() {
             <span>MindTrace</span>
           </div>
         </div>
+
+        {/* Characters */}
         <div className="relative z-20 flex items-end justify-center h-[500px]">
           <div className="relative" style={{ width: '550px', height: '400px' }}>
             {/* Purple tall rectangle character */}
@@ -536,41 +530,29 @@ function LoginPage() {
             </div>
           </div>
         </div>
-        <div className="relative z-20 flex items-center gap-8 text-sm text-primary-foreground/60">
-          <button className="hover:text-primary-foreground transition-colors">Privacy Policy</button>
-          <button className="hover:text-primary-foreground transition-colors">Terms of Service</button>
-          <button className="hover:text-primary-foreground transition-colors">Contact</button>
-        </div>
+
+        {/* Bottom gradients */}
         <div className="absolute inset-0 bg-grid-white/[0.05] bg-[size:20px_20px]" />
         <div className="absolute top-1/4 right-1/4 size-64 bg-primary-foreground/10 rounded-full blur-3xl" />
         <div className="absolute bottom-1/4 left-1/4 size-96 bg-primary-foreground/5 rounded-full blur-3xl" />
       </div>
 
       {/* Right Login Section */}
-      <div className={`flex items-center justify-center p-8 ${darkMode ? 'bg-gray-900' : 'bg-background'}`}>
+      <div className="flex items-center justify-center p-8 bg-gray-900">
         <div className="w-full max-w-[420px]">
-          {/* Dark Mode Toggle */}
-          <div className="flex justify-end mb-6">
-            <button
-              onClick={toggleDarkMode}
-              className={`p-2 rounded-lg transition-colors ${darkMode ? 'bg-gray-800 text-yellow-400' : 'bg-gray-100 text-gray-700'} hover:opacity-80`}
-            >
-              {darkMode ? <Sun className="size-5" /> : <Moon className="size-5" />}
-            </button>
-          </div>
-
+          
           <div className="lg:hidden flex items-center justify-center gap-2 text-lg font-semibold mb-12">
-            <div className={`size-8 rounded-lg flex items-center justify-center ${darkMode ? 'bg-primary/20' : 'bg-primary/10'}`}>
-              <Sparkles className={`size-4 ${darkMode ? 'text-primary' : 'text-primary'}`} />
+            <div className="size-8 rounded-lg flex items-center justify-center bg-primary/20">
+              <Sparkles className="size-4 text-primary" />
             </div>
-            <span className={darkMode ? 'text-white' : ''}>MindTrace</span>
+            <span className="text-white">MindTrace</span>
           </div>
 
           <div className="text-center mb-10">
-            <h1 className={`text-3xl font-bold tracking-tight mb-2 ${darkMode ? 'text-white' : ''}`}>
+            <h1 className="text-3xl font-bold tracking-tight mb-2 text-white">
               {isSignUp ? 'Create an account' : 'Welcome back!'}
             </h1>
-            <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-muted-foreground'}`}>
+            <p className="text-sm text-gray-400">
               {isSignUp ? 'Sign up to get started' : 'Please enter your details'}
             </p>
           </div>
@@ -578,7 +560,7 @@ function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-5">
             {isSignUp && (
               <div className="space-y-2">
-                <Label htmlFor="name" className={`text-sm font-medium ${darkMode ? 'text-gray-300' : ''}`}>Full Name</Label>
+                <Label htmlFor="name" className="text-sm font-medium text-gray-300">Full Name</Label>
                 <Input
                   id="name"
                   type="text"
@@ -587,13 +569,13 @@ function LoginPage() {
                   autoComplete="off"
                   onChange={(e) => setName(e.target.value)}
                   required
-                  className={`h-12 focus:border-primary ${darkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-background border-border/60'}`}
+                  className="h-12 focus:border-primary bg-gray-800 text-white border-gray-700"
                 />
               </div>
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="email" className={`text-sm font-medium ${darkMode ? 'text-gray-300' : ''}`}>Email</Label>
+              <Label htmlFor="email" className="text-sm font-medium text-gray-300">Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -602,12 +584,12 @@ function LoginPage() {
                 autoComplete="off"
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className={`h-12 focus:border-primary ${darkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-background border-border/60'}`}
+                className="h-12 focus:border-primary bg-gray-800 text-white border-gray-700"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className={`text-sm font-medium ${darkMode ? 'text-gray-300' : ''}`}>Password</Label>
+              <Label htmlFor="password" className="text-sm font-medium text-gray-300">Password</Label>
               <div className="relative">
                 <Input
                   id="password"
@@ -616,12 +598,12 @@ function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className={`h-12 pr-10 focus:border-primary ${darkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-background border-border/60'}`}
+                  className="h-12 pr-10 focus:border-primary bg-gray-800 text-white border-gray-700"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className={`absolute right-3 top-1/2 -translate-y-1/2 transition-colors ${darkMode ? 'text-gray-400 hover:text-white' : 'text-muted-foreground hover:text-foreground'}`}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors text-gray-400 hover:text-white"
                 >
                   {showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
                 </button>
@@ -630,7 +612,7 @@ function LoginPage() {
 
             {isSignUp && (
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword" className={`text-sm font-medium ${darkMode ? 'text-gray-300' : ''}`}>Confirm Password</Label>
+                <Label htmlFor="confirmPassword" className="text-sm font-medium text-gray-300">Confirm Password</Label>
                 <div className="relative">
                   <Input
                     id="confirmPassword"
@@ -639,12 +621,12 @@ function LoginPage() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
-                    className={`h-12 pr-10 focus:border-primary ${darkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-background border-border/60'}`}
+                    className="h-12 pr-10 focus:border-primary bg-gray-800 text-white border-gray-700"
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className={`absolute right-3 top-1/2 -translate-y-1/2 transition-colors ${darkMode ? 'text-gray-400 hover:text-white' : 'text-muted-foreground hover:text-foreground'}`}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors text-gray-400 hover:text-white"
                   >
                     {showConfirmPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
                   </button>
@@ -656,7 +638,7 @@ function LoginPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <Checkbox id="remember" />
-                  <Label htmlFor="remember" className={`text-sm font-normal cursor-pointer ${darkMode ? 'text-gray-400' : ''}`}>
+                  <Label htmlFor="remember" className="text-sm font-normal cursor-pointer text-gray-400">
                     Remember for 30 days
                   </Label>
                 </div>
@@ -667,7 +649,7 @@ function LoginPage() {
             )}
 
             {error && (
-              <div className={`p-3 text-sm border rounded-lg ${darkMode ? 'text-red-300 bg-red-950/30 border-red-900/50' : 'text-red-400 bg-red-950/20 border-red-900/30'}`}>
+              <div className="p-3 text-sm border rounded-lg text-red-300 bg-red-950/30 border-red-900/50">
                 {error}
               </div>
             )}
@@ -680,7 +662,7 @@ function LoginPage() {
           <div className="mt-6">
             <Button 
               variant="outline" 
-              className={`w-full h-12 border-border/60 hover:bg-accent ${darkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-background'}`} 
+              className="w-full h-12 border-border/60 hover:bg-accent bg-gray-800 text-white border-gray-700" 
               type="button"
               onClick={handleGoogleSignIn}
               disabled={isLoading}
@@ -690,9 +672,9 @@ function LoginPage() {
             </Button>
           </div>
 
-          <div className={`text-center text-sm mt-8 ${darkMode ? 'text-gray-400' : 'text-muted-foreground'}`}>
+          <div className="text-center text-sm mt-8 text-gray-400">
             {isSignUp ? 'Already have an account?' : "Don't have an account?"}{" "}
-            <button type="button" onClick={toggleAuthMode} className={`font-medium hover:underline ${darkMode ? 'text-white' : 'text-foreground'}`}>
+            <button type="button" onClick={toggleAuthMode} className="font-medium hover:underline text-white">
               {isSignUp ? 'Log in' : 'Sign Up'}
             </button>
           </div>
