@@ -28,6 +28,21 @@ const SessionDetailPage = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
 
+  // NEW: Global processing state to block UI interactions
+  const [isGlobalProcessing, setIsGlobalProcessing] = useState(false);
+  const [processingMessage, setProcessingMessage] = useState('');
+
+  // NEW: Handlers passed down to child components
+  const handleProcessingStart = (message) => {
+    setIsGlobalProcessing(true);
+    setProcessingMessage(message);
+  };
+
+  const handleProcessingEnd = () => {
+    setIsGlobalProcessing(false);
+    setProcessingMessage('');
+  };
+
   useEffect(() => {
     fetchSessionData();
     const interval = setInterval(() => {
@@ -186,12 +201,30 @@ const SessionDetailPage = () => {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-10">
+      
+      {/* NEW: Global Blocking Overlay */}
+      {isGlobalProcessing && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center">
+          <div className="bg-gray-900 border border-white/10 p-8 rounded-2xl flex flex-col items-center max-w-md text-center shadow-2xl">
+            <Loader className="w-12 h-12 text-blue-500 animate-spin mb-6" />
+            <h3 className="text-xl font-bold text-white mb-2">AI Processing in Progress</h3>
+            <p className="text-gray-300 text-lg mb-2">{processingMessage}</p>
+            <p className="text-sm text-yellow-500/80 bg-yellow-500/10 px-4 py-2 rounded-lg border border-yellow-500/20 mt-4">
+              Please wait. Navigating away now may cancel the process.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-4 flex-1">
           <button
-            onClick={() => navigate(`/dashboard/sessions?mentor=${session.mentor_id}`)}
-            className="p-2 hover:bg-white/5 rounded-lg transition-colors mt-1 backdrop-blur-sm"
+            onClick={() => !isGlobalProcessing && navigate(`/dashboard/sessions?mentor=${session.mentor_id}`)}
+            disabled={isGlobalProcessing}
+            className={`p-2 rounded-lg transition-colors mt-1 backdrop-blur-sm ${
+              isGlobalProcessing ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white/5'
+            }`}
           >
             <ArrowLeft className="w-5 h-5 text-gray-400 hover:text-white" />
           </button>
@@ -232,7 +265,12 @@ const SessionDetailPage = () => {
           
           <button
             onClick={() => setShowDeleteModal(true)}
-            className="p-2 hover:bg-red-500/10 rounded-lg transition-colors border border-red-500/20 hover:border-red-500/40"
+            disabled={isGlobalProcessing}
+            className={`p-2 rounded-lg transition-colors border border-red-500/20 ${
+              isGlobalProcessing 
+                ? 'opacity-50 cursor-not-allowed' 
+                : 'hover:bg-red-500/10 hover:border-red-500/40'
+            }`}
             title="Delete Session"
           >
             <Trash2 className="w-5 h-5 text-red-400" />
@@ -250,7 +288,7 @@ const SessionDetailPage = () => {
             </div>
             <button
               onClick={handleStartEvaluation}
-              disabled={evaluating}
+              disabled={evaluating || isGlobalProcessing}
               className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-semibold transition-all shadow-lg disabled:opacity-50"
             >
               {evaluating ? (
@@ -284,7 +322,7 @@ const SessionDetailPage = () => {
             </div>
             <button
               onClick={handleRetryEvaluation}
-              disabled={evaluating}
+              disabled={evaluating || isGlobalProcessing}
               className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-semibold transition-all shadow-lg disabled:opacity-50 whitespace-nowrap"
             >
               {evaluating ? (
@@ -348,18 +386,21 @@ const SessionDetailPage = () => {
             />
           </div>
 
-          {/* Tabs - REDUCED HOVER GLOW */}
+          {/* Tabs */}
           <div className="bg-white/5 border border-white/10 backdrop-blur-sm rounded-2xl overflow-hidden hover:bg-white/[0.07] hover:border-white/20 transition-all">
-            {/* Tab Headers */}
+            {/* Tab Headers - Disabled during processing */}
             <div className="flex border-b border-white/10 overflow-x-auto">
               {tabs.filter(tab => tab.show).map((tab) => (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => !isGlobalProcessing && setActiveTab(tab.id)}
+                  disabled={isGlobalProcessing}
                   className={`px-6 py-4 font-medium text-sm whitespace-nowrap transition-all ${
                     activeTab === tab.id
                       ? 'text-white border-b-2 border-blue-500 bg-blue-500/10'
-                      : 'text-gray-400 hover:text-white hover:bg-white/5'
+                      : isGlobalProcessing 
+                        ? 'text-gray-600 cursor-not-allowed'
+                        : 'text-gray-400 hover:text-white hover:bg-white/5'
                   }`}
                 >
                   {tab.label}
@@ -367,7 +408,7 @@ const SessionDetailPage = () => {
               ))}
             </div>
 
-            {/* Tab Content */}
+            {/* Tab Content - Pass Handlers to Children */}
             <div className="p-6">
               {activeTab === 'overview' && (
                 <div className="space-y-6">
@@ -419,6 +460,8 @@ const SessionDetailPage = () => {
                 <EvidencePanel
                   evaluationId={evaluation._id || evaluation.id}
                   sessionId={sessionId}
+                  onProcessingStart={() => handleProcessingStart("Extracting evidence from transcript...")}
+                  onProcessingEnd={handleProcessingEnd}
                 />
               )}
 
@@ -426,6 +469,8 @@ const SessionDetailPage = () => {
                 <RewriteComparison
                   sessionId={sessionId}
                   evaluationId={evaluation._id || evaluation.id}
+                  onProcessingStart={() => handleProcessingStart("Generating optimized rewrites...")}
+                  onProcessingEnd={handleProcessingEnd}
                 />
               )}
 
@@ -433,6 +478,8 @@ const SessionDetailPage = () => {
                 <CoherenceIssuesViewer
                   sessionId={sessionId}
                   evaluationId={evaluation._id || evaluation.id}
+                  onProcessingStart={() => handleProcessingStart("Analyzing logical coherence...")}
+                  onProcessingEnd={handleProcessingEnd}
                 />
               )}
             </div>
