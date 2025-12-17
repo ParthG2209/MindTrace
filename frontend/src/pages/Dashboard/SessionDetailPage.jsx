@@ -1,4 +1,4 @@
-// frontend/src/pages/Dashboard/SessionDetailPage.jsx
+// frontend/src/pages/Dashboard/SessionDetailPage.jsx - FIXED VERSION
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -91,11 +91,8 @@ const SessionDetailPage = () => {
     
     try {
       setEvaluating(true);
-      // Update session status back to uploaded
       await sessionApi.update(sessionId, { status: 'uploaded' });
-      // Start new evaluation
       await evaluationApi.startEvaluation(sessionId);
-      // Reset evaluation state
       setEvaluation(null);
       setTimeout(fetchSessionData, 2000);
     } catch (error) {
@@ -233,7 +230,6 @@ const SessionDetailPage = () => {
             {session.status.charAt(0).toUpperCase() + session.status.slice(1)}
           </div>
           
-          {/* Delete Button */}
           <button
             onClick={() => setShowDeleteModal(true)}
             className="p-2 hover:bg-red-500/10 rounded-lg transition-colors border border-red-500/20 hover:border-red-500/40"
@@ -273,7 +269,7 @@ const SessionDetailPage = () => {
         </GlassCard>
       )}
 
-      {/* Failed Status - Retry Option */}
+      {/* Failed Status */}
       {session.status === 'failed' && (
         <GlassCard className="border-red-500/30 bg-red-500/10 hover:bg-red-500/15 transition-all">
           <div className="flex items-center justify-between">
@@ -352,8 +348,8 @@ const SessionDetailPage = () => {
             />
           </div>
 
-          {/* Tabs */}
-          <div className="bg-white/5 border border-white/10 backdrop-blur-sm rounded-2xl overflow-hidden hover:bg-white/10 hover:border-white/20 transition-all">
+          {/* Tabs - REDUCED HOVER GLOW */}
+          <div className="bg-white/5 border border-white/10 backdrop-blur-sm rounded-2xl overflow-hidden hover:bg-white/[0.07] hover:border-white/20 transition-all">
             {/* Tab Headers */}
             <div className="flex border-b border-white/10 overflow-x-auto">
               {tabs.filter(tab => tab.show).map((tab) => (
@@ -383,7 +379,7 @@ const SessionDetailPage = () => {
                   
                   {/* Strengths & Weaknesses */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="bg-green-500/10 border border-green-500/20 backdrop-blur-sm rounded-xl p-6 hover:bg-green-500/20 hover:border-green-500/30 transition-all">
+                    <div className="bg-green-500/10 border border-green-500/20 backdrop-blur-sm rounded-xl p-6 hover:bg-green-500/[0.15] hover:border-green-500/30 transition-all">
                       <h3 className="text-lg font-bold text-green-400 mb-4">Strengths</h3>
                       <ul className="space-y-2">
                         {evaluation.segments
@@ -397,7 +393,7 @@ const SessionDetailPage = () => {
                           ))}
                       </ul>
                     </div>
-                    <div className="bg-yellow-500/10 border border-yellow-500/20 backdrop-blur-sm rounded-xl p-6 hover:bg-yellow-500/20 hover:border-yellow-500/30 transition-all">
+                    <div className="bg-yellow-500/10 border border-yellow-500/20 backdrop-blur-sm rounded-xl p-6 hover:bg-yellow-500/[0.15] hover:border-yellow-500/30 transition-all">
                       <h3 className="text-lg font-bold text-yellow-400 mb-4">Areas for Improvement</h3>
                       <ul className="space-y-2">
                         {evaluation.segments
@@ -444,7 +440,7 @@ const SessionDetailPage = () => {
         </>
       )}
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white/5 border border-white/10 backdrop-blur-md rounded-2xl max-w-md w-full p-8 shadow-2xl">
