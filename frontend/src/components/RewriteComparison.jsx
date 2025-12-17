@@ -72,7 +72,7 @@ const RewriteComparison = ({ sessionId, evaluationId }) => {
 
   if (!rewrites || rewrites.rewrites.length === 0) {
     return (
-      <div className="bg-white/5 border border-white/10 backdrop-blur-sm rounded-2xl p-8 hover:bg-white/10 hover:border-white/20 transition-all">
+      <div className="bg-white/5 border border-white/10 backdrop-blur-sm rounded-2xl p-8">
         <div className="text-center">
           <RefreshCw className="w-16 h-16 mx-auto text-gray-500 mb-4" />
           <h3 className="text-xl font-semibold text-white mb-2">
@@ -104,7 +104,7 @@ const RewriteComparison = ({ sessionId, evaluationId }) => {
   }
 
   return (
-    <div className="bg-white/5 border border-white/10 backdrop-blur-sm rounded-2xl overflow-hidden hover:bg-white/10 hover:border-white/20 transition-all">
+    <div className="bg-white/5 border border-white/10 backdrop-blur-sm rounded-2xl overflow-hidden">
       <div className="p-6 border-b border-white/10">
         <div className="flex items-center justify-between">
           <div>
@@ -119,7 +119,7 @@ const RewriteComparison = ({ sessionId, evaluationId }) => {
           <button
             onClick={handleGenerateRewrites}
             disabled={generating}
-            className="px-4 py-2 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 hover:border-white/20 transition-all disabled:opacity-50 backdrop-blur-sm"
+            className="px-4 py-2 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-colors disabled:opacity-50 backdrop-blur-sm"
           >
             {generating ? 'Generating...' : 'Regenerate'}
           </button>
@@ -152,7 +152,7 @@ const RewriteComparison = ({ sessionId, evaluationId }) => {
             .map((rewrite, index) => (
               <div
                 key={index}
-                className="bg-white/5 border border-white/10 backdrop-blur-sm rounded-xl p-5 hover:bg-white/10 hover:border-white/20 transition-all"
+                className="bg-white/5 border border-white/10 backdrop-blur-sm rounded-xl p-5"
               >
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-sm font-medium text-gray-300">

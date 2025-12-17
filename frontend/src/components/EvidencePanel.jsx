@@ -115,7 +115,7 @@ const EvidencePanel = ({ evaluationId, sessionId }) => {
 
   if (!evidence) {
     return (
-      <div className="bg-white/5 border border-white/10 backdrop-blur-sm rounded-2xl p-8 hover:bg-white/10 hover:border-white/20 transition-all">
+      <div className="bg-white/5 border border-white/10 backdrop-blur-sm rounded-2xl p-8">
         <div className="text-center">
           <AlertCircle className="w-16 h-16 mx-auto text-gray-500 mb-4" />
           <h3 className="text-xl font-semibold text-white mb-2">
@@ -147,7 +147,7 @@ const EvidencePanel = ({ evaluationId, sessionId }) => {
   }
 
   return (
-    <div className="bg-white/5 border border-white/10 backdrop-blur-sm rounded-2xl overflow-hidden hover:bg-white/10 hover:border-white/20 transition-all">
+    <div className="bg-white/5 border border-white/10 backdrop-blur-sm rounded-2xl overflow-hidden">
       <div className="p-6 border-b border-white/10">
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -162,7 +162,7 @@ const EvidencePanel = ({ evaluationId, sessionId }) => {
           <button
             onClick={handleExtractEvidence}
             disabled={extracting}
-            className="px-4 py-2 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 hover:border-white/20 transition-all disabled:opacity-50 backdrop-blur-sm"
+            className="px-4 py-2 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-colors disabled:opacity-50 backdrop-blur-sm"
           >
             {extracting ? 'Extracting...' : 'Refresh Evidence'}
           </button>
@@ -221,7 +221,7 @@ const EvidencePanel = ({ evaluationId, sessionId }) => {
             {filteredItems.map((item, index) => (
               <div
                 key={index}
-                className="bg-white/5 border border-white/10 backdrop-blur-sm rounded-xl p-4 hover:bg-white/10 hover:border-white/20 transition-all"
+                className="bg-white/5 border border-white/10 backdrop-blur-sm rounded-xl p-4"
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-2">
