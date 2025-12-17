@@ -32,6 +32,11 @@ const SessionDetailPage = () => {
   const [isGlobalProcessing, setIsGlobalProcessing] = useState(false);
   const [processingMessage, setProcessingMessage] = useState('');
 
+  // NEW: Component-specific loading states (lifted up for persistence)
+  const [rewritesGenerating, setRewritesGenerating] = useState(false);
+  const [coherenceChecking, setCoherenceChecking] = useState(false);
+  const [evidenceExtracting, setEvidenceExtracting] = useState(false);
+
   // NEW: Handlers passed down to child components
   const handleProcessingStart = (message) => {
     setIsGlobalProcessing(true);
@@ -460,8 +465,8 @@ const SessionDetailPage = () => {
                 <EvidencePanel
                   evaluationId={evaluation._id || evaluation.id}
                   sessionId={sessionId}
-                  onProcessingStart={() => handleProcessingStart("Extracting evidence from transcript...")}
-                  onProcessingEnd={handleProcessingEnd}
+                  extracting={evidenceExtracting}
+                  setExtracting={setEvidenceExtracting}
                 />
               )}
 
@@ -469,8 +474,8 @@ const SessionDetailPage = () => {
                 <RewriteComparison
                   sessionId={sessionId}
                   evaluationId={evaluation._id || evaluation.id}
-                  onProcessingStart={() => handleProcessingStart("Generating optimized rewrites...")}
-                  onProcessingEnd={handleProcessingEnd}
+                  generating={rewritesGenerating}
+                  setGenerating={setRewritesGenerating}
                 />
               )}
 
@@ -478,8 +483,8 @@ const SessionDetailPage = () => {
                 <CoherenceIssuesViewer
                   sessionId={sessionId}
                   evaluationId={evaluation._id || evaluation.id}
-                  onProcessingStart={() => handleProcessingStart("Analyzing logical coherence...")}
-                  onProcessingEnd={handleProcessingEnd}
+                  checking={coherenceChecking}
+                  setChecking={setCoherenceChecking}
                 />
               )}
             </div>
