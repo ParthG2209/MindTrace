@@ -85,7 +85,7 @@ const SessionDetailPage = () => {
   };
 
   const handleRetryEvaluation = async () => {
-    if (!confirm('Are you sure you want to retry the evaluation? This will re-process the entire session.')) {
+    if (!window.confirm('Are you sure you want to retry the evaluation? This will re-process the entire session.')) {
       return;
     }
     
