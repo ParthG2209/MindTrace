@@ -2,10 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { RefreshCw, CheckCircle, ArrowRight, Loader, TrendingUp } from 'lucide-react';
 import apiClient from '../api/client';
 
-const RewriteComparison = ({ sessionId, evaluationId }) => {
+const RewriteComparison = ({ sessionId, evaluationId, generating, setGenerating }) => {
   const [rewrites, setRewrites] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [generating, setGenerating] = useState(false);
   const [selectedSegment, setSelectedSegment] = useState(null);
 
   useEffect(() => {
@@ -13,6 +12,36 @@ const RewriteComparison = ({ sessionId, evaluationId }) => {
       fetchRewrites();
     }
   }, [sessionId]);
+
+  // Handle polling when generating state is true (persists across unmounts via parent state)
+  useEffect(() => {
+    let pollInterval;
+    if (generating) {
+      pollInterval = setInterval(async () => {
+        try {
+          const response = await apiClient.get(`/api/rewrites/${sessionId}`);
+          if (response.data && response.data.rewrites && response.data.rewrites.length > 0) {
+            setRewrites(response.data);
+            setGenerating(false);
+            clearInterval(pollInterval);
+          }
+        } catch (err) {
+          // Still processing
+        }
+      }, 3000);
+      
+      // Auto-stop after 60 seconds to prevent infinite polling
+      const timeoutId = setTimeout(() => {
+        clearInterval(pollInterval);
+        if (generating) setGenerating(false);
+      }, 60000);
+
+      return () => {
+        clearInterval(pollInterval);
+        clearTimeout(timeoutId);
+      };
+    }
+  }, [generating, sessionId, setGenerating]);
 
   const fetchRewrites = async () => {
     try {
@@ -34,24 +63,7 @@ const RewriteComparison = ({ sessionId, evaluationId }) => {
     try {
       setGenerating(true);
       await apiClient.post(`/api/rewrites/session/${sessionId}`);
-      
-      const pollInterval = setInterval(async () => {
-        try {
-          const response = await apiClient.get(`/api/rewrites/${sessionId}`);
-          if (response.data && response.data.rewrites && response.data.rewrites.length > 0) {
-            setRewrites(response.data);
-            setGenerating(false);
-            clearInterval(pollInterval);
-          }
-        } catch (err) {
-          // Still processing
-        }
-      }, 3000);
-
-      setTimeout(() => {
-        clearInterval(pollInterval);
-        setGenerating(false);
-      }, 60000);
+      // Polling is handled by the useEffect above
     } catch (error) {
       console.error('Error generating rewrites:', error);
       setGenerating(false);
@@ -167,9 +179,6 @@ const RewriteComparison = ({ sessionId, evaluationId }) => {
                         </span>
                       </div>
                     )}
-                    <span className="px-3 py-1 bg-blue-500/10 text-blue-400 text-xs font-medium rounded-full border border-blue-500/20 backdrop-blur-sm">
-                      Confidence: {(rewrite.confidence * 100).toFixed(0)}%
-                    </span>
                   </div>
                 </div>
 
