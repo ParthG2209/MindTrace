@@ -5,8 +5,12 @@ class SegmentationService:
     """Service for segmenting transcripts into logical explanation units"""
     
     def __init__(self):
-        self.min_segment_words = 15
-        self.max_segment_words = 60  # Slightly increased since transcription is now more granular
+        # UPDATED: Aggressively increased thresholds for 1.5h sessions
+        # Target: ~30-35 segments for a 90-minute session (~13,000 words)
+        # Avg segment needed: ~400 words
+        self.min_segment_words = 250
+        self.max_segment_words = 600
+        
         self.topic_shift_indicators = [
             'now', 'next', 'let me', "let's", 'moving on', 'another',
             'first', 'second', 'third', 'finally', 'to summarize',
