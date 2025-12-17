@@ -102,7 +102,7 @@ const MentorsPage = () => {
     >
       {/* Background Glow Effect */}
       <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/10 to-purple-600/10 rounded-full blur-3xl group-hover:opacity-100 opacity-0 transition-opacity"></div>
-      
+
       <div className="relative z-10">
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
@@ -213,17 +213,18 @@ const MentorsPage = () => {
           <p className="text-4xl font-bold text-white">
             {mentors.filter((m) => m.average_score).length > 0
               ? (
-                  mentors
-                    .filter((m) => m.average_score)
-                    .reduce((sum, m) => sum + m.average_score, 0) /
-                  mentors.filter((m) => m.average_score).length
-                ).toFixed(1)
+                mentors
+                  .filter((m) => m.average_score)
+                  .reduce((sum, m) => sum + m.average_score, 0) /
+                mentors.filter((m) => m.average_score).length
+              ).toFixed(1)
               : 'N/A'}
           </p>
         </GlassCard>
       </div>
 
       {/* Search and Filter - FIXED OPACITY */}
+      {/* Search and Filter - FIXED SEARCH ICON OPACITY */}
       <div className="flex items-center gap-4">
         <div className="flex-1 relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />

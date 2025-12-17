@@ -138,7 +138,7 @@ const SessionsPage = () => {
 
   const handleDeleteSession = async () => {
     if (!sessionToDelete) return;
-    
+
     try {
       setDeletingSession(sessionToDelete);
       await sessionApi.delete(sessionToDelete);
@@ -212,7 +212,7 @@ const SessionsPage = () => {
         <div className="relative z-10">
           {/* Header */}
           <div className="flex items-start justify-between mb-4">
-            <div 
+            <div
               className="flex-1 cursor-pointer"
               onClick={() => navigate(`/dashboard/sessions/${sessionIdStr}`)}
             >
@@ -239,7 +239,7 @@ const SessionsPage = () => {
           </div>
 
           {/* Metadata */}
-          <div 
+          <div
             className="flex items-center gap-4 text-sm text-gray-400 mb-4 cursor-pointer"
             onClick={() => navigate(`/dashboard/sessions/${sessionIdStr}`)}
           >
@@ -255,7 +255,7 @@ const SessionsPage = () => {
 
           {/* Mentor Info */}
           {allMentors[session.mentor_id] && (
-            <div 
+            <div
               className="pt-3 border-t border-white/10 flex items-center gap-2 cursor-pointer"
               onClick={() => navigate(`/dashboard/sessions/${sessionIdStr}`)}
             >
@@ -332,6 +332,7 @@ const SessionsPage = () => {
       </div>
 
       {/* Search and Filter - FIXED OPACITY */}
+      {/* Search and Filter - FIXED SEARCH ICON OPACITY */}
       <div className="flex items-center gap-4">
         <div className="flex-1 relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
