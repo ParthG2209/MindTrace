@@ -92,12 +92,13 @@
   left: 0;
 }
 
-/* Custom menu item styling - GLASSMORPHISM */
+/* Custom menu item styling - GLASSMORPHISM with ADDED SPACING */
 .menu-item {
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
+  margin-bottom: 8px; /* ADDED: Spacing between menu items */
   border-radius: 12px;
   transition: all 0.2s;
   cursor: pointer;
