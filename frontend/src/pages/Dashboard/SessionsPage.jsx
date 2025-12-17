@@ -1,9 +1,10 @@
-// src/pages/Dashboard/SessionsPage.jsx - GLASSMORPHISM UPDATED
+// frontend/src/pages/Dashboard/SessionsPage.jsx
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Upload, Video, ArrowLeft, Search, Filter,
-  Clock, Calendar, CheckCircle, Loader, XCircle, User
+  Clock, Calendar, CheckCircle, Loader, XCircle, User, Trash2, MoreVertical
 } from 'lucide-react';
 import { sessionApi, mentorApi } from '../../api/client';
 
@@ -21,6 +22,9 @@ const SessionsPage = () => {
   const [uploadError, setUploadError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [deletingSession, setDeletingSession] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [sessionToDelete, setSessionToDelete] = useState(null);
   const [uploadForm, setUploadForm] = useState({
     title: '',
     topic: '',
@@ -132,6 +136,29 @@ const SessionsPage = () => {
     }
   };
 
+  const handleDeleteSession = async () => {
+    if (!sessionToDelete) return;
+    
+    try {
+      setDeletingSession(sessionToDelete);
+      await sessionApi.delete(sessionToDelete);
+      setShowDeleteModal(false);
+      setSessionToDelete(null);
+      await fetchSessions();
+    } catch (error) {
+      console.error('Error deleting session:', error);
+      alert('Failed to delete session: ' + (error.response?.data?.detail || error.message));
+    } finally {
+      setDeletingSession(null);
+    }
+  };
+
+  const openDeleteModal = (sessionId, e) => {
+    e.stopPropagation();
+    setSessionToDelete(sessionId);
+    setShowDeleteModal(true);
+  };
+
   const getStatusConfig = (status) => {
     const configs = {
       uploaded: { icon: Video, text: 'Uploaded', bgColor: 'bg-gray-500/10', textColor: 'text-gray-400', borderColor: 'border-gray-500/20' },
@@ -175,34 +202,47 @@ const SessionsPage = () => {
   const SessionCard = ({ session }) => {
     const statusConfig = getStatusConfig(session.status);
     const StatusIcon = statusConfig.icon;
+    const sessionIdStr = session.id || session._id;
 
     return (
-      <div
-        onClick={() => navigate(`/dashboard/sessions/${session.id || session._id}`)}
-        className="group bg-white/5 border border-white/10 backdrop-blur-sm rounded-2xl p-6 hover:bg-white/10 hover:border-white/20 transition-all cursor-pointer relative overflow-hidden"
-      >
+      <div className="group bg-white/5 border border-white/10 backdrop-blur-sm rounded-2xl p-6 hover:bg-white/10 hover:border-white/20 transition-all relative overflow-hidden">
         {/* Background Glow Effect */}
         <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/10 to-purple-600/10 rounded-full blur-3xl group-hover:opacity-100 opacity-0 transition-opacity"></div>
 
         <div className="relative z-10">
           {/* Header */}
           <div className="flex items-start justify-between mb-4">
-            <div className="flex-1">
+            <div 
+              className="flex-1 cursor-pointer"
+              onClick={() => navigate(`/dashboard/sessions/${sessionIdStr}`)}
+            >
               <h3 className="text-lg font-bold text-white group-hover:text-blue-400 transition-colors mb-1">
                 {session.title}
               </h3>
               <p className="text-sm text-gray-400">{session.topic}</p>
             </div>
-            <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${statusConfig.bgColor} border ${statusConfig.borderColor}`}>
-              <StatusIcon className={`w-4 h-4 ${statusConfig.textColor} ${statusConfig.animate ? 'animate-spin' : ''}`} />
-              <span className={`text-xs font-medium ${statusConfig.textColor}`}>
-                {statusConfig.text}
-              </span>
+            <div className="flex items-center gap-2">
+              <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${statusConfig.bgColor} border ${statusConfig.borderColor}`}>
+                <StatusIcon className={`w-4 h-4 ${statusConfig.textColor} ${statusConfig.animate ? 'animate-spin' : ''}`} />
+                <span className={`text-xs font-medium ${statusConfig.textColor}`}>
+                  {statusConfig.text}
+                </span>
+              </div>
+              <button
+                onClick={(e) => openDeleteModal(sessionIdStr, e)}
+                className="p-2 hover:bg-red-500/10 rounded-lg transition-colors border border-transparent hover:border-red-500/20 opacity-0 group-hover:opacity-100"
+                title="Delete Session"
+              >
+                <Trash2 className="w-4 h-4 text-red-400" />
+              </button>
             </div>
           </div>
 
           {/* Metadata */}
-          <div className="flex items-center gap-4 text-sm text-gray-400 mb-4">
+          <div 
+            className="flex items-center gap-4 text-sm text-gray-400 mb-4 cursor-pointer"
+            onClick={() => navigate(`/dashboard/sessions/${sessionIdStr}`)}
+          >
             <div className="flex items-center gap-1">
               <Clock className="w-4 h-4" />
               <span>{formatDuration(session.duration)}</span>
@@ -215,7 +255,10 @@ const SessionsPage = () => {
 
           {/* Mentor Info */}
           {allMentors[session.mentor_id] && (
-            <div className="pt-3 border-t border-white/10 flex items-center gap-2">
+            <div 
+              className="pt-3 border-t border-white/10 flex items-center gap-2 cursor-pointer"
+              onClick={() => navigate(`/dashboard/sessions/${sessionIdStr}`)}
+            >
               <User className="w-4 h-4 text-gray-500" />
               <span className="text-sm text-gray-300">{allMentors[session.mentor_id]}</span>
             </div>
@@ -288,22 +331,22 @@ const SessionsPage = () => {
         </GlassCard>
       </div>
 
-      {/* Search and Filter */}
+      {/* Search and Filter - FIXED OPACITY */}
       <div className="flex items-center gap-4">
         <div className="flex-1 relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
           <input
             type="text"
             placeholder="Search sessions..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all backdrop-blur-sm"
+            className="w-full pl-12 pr-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all backdrop-blur-sm"
           />
         </div>
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
-          className="px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all backdrop-blur-sm"
+          className="px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all backdrop-blur-sm"
         >
           <option value="all">All Status</option>
           <option value="completed">Completed</option>
@@ -451,6 +494,55 @@ const SessionsPage = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white/5 border border-white/10 backdrop-blur-md rounded-2xl max-w-md w-full p-8 shadow-2xl">
+            <div className="flex items-start gap-4 mb-6">
+              <div className="p-3 bg-red-500/20 rounded-xl">
+                <Trash2 className="w-6 h-6 text-red-400" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-white mb-2">Delete Session</h2>
+                <p className="text-gray-300">
+                  Are you sure you want to delete this session? This action cannot be undone.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setSessionToDelete(null);
+                }}
+                disabled={deletingSession}
+                className="flex-1 px-6 py-3 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-all font-medium disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteSession}
+                disabled={deletingSession}
+                className="flex-1 px-6 py-3 bg-red-600 hover:bg-red-500 text-white rounded-xl transition-all font-medium shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {deletingSession ? (
+                  <>
+                    <Loader className="w-4 h-4 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    Delete
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}
