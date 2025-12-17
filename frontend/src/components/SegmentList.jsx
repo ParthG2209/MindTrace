@@ -81,7 +81,8 @@ const SegmentList = ({ segments }) => {
                         {segment[key].score.toFixed(1)}
                       </span>
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">{segment[key].reason}</p>
+                    {/* FIXED: Changed text color from gray-500 to gray-300 for better visibility */}
+                    <p className="text-xs text-gray-300 mt-1 leading-relaxed">{segment[key].reason}</p>
                   </div>
                 ))}
               </div>
