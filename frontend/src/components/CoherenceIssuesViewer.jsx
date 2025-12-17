@@ -2,10 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { AlertTriangle, GitBranch, Zap, Loader, TrendingDown } from 'lucide-react';
 import apiClient from '../api/client';
 
-const CoherenceIssuesViewer = ({ sessionId, evaluationId }) => {
+const CoherenceIssuesViewer = ({ sessionId, evaluationId, checking, setChecking }) => {
   const [coherence, setCoherence] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [checking, setChecking] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
 
   useEffect(() => {
@@ -13,6 +12,35 @@ const CoherenceIssuesViewer = ({ sessionId, evaluationId }) => {
       fetchCoherence();
     }
   }, [sessionId]);
+
+  // Handle polling when checking state is true (persists across unmounts via parent state)
+  useEffect(() => {
+    let pollInterval;
+    if (checking) {
+      pollInterval = setInterval(async () => {
+        try {
+          const response = await apiClient.get(`/api/coherence/${sessionId}`);
+          if (response.data) {
+            setCoherence(response.data);
+            setChecking(false);
+            clearInterval(pollInterval);
+          }
+        } catch (err) {
+          // Still processing
+        }
+      }, 3000);
+
+      const timeoutId = setTimeout(() => {
+        clearInterval(pollInterval);
+        if (checking) setChecking(false);
+      }, 60000);
+
+      return () => {
+        clearInterval(pollInterval);
+        clearTimeout(timeoutId);
+      };
+    }
+  }, [checking, sessionId, setChecking]);
 
   const fetchCoherence = async () => {
     try {
@@ -34,24 +62,7 @@ const CoherenceIssuesViewer = ({ sessionId, evaluationId }) => {
     try {
       setChecking(true);
       await apiClient.post(`/api/coherence/check/${sessionId}`);
-      
-      const pollInterval = setInterval(async () => {
-        try {
-          const response = await apiClient.get(`/api/coherence/${sessionId}`);
-          if (response.data) {
-            setCoherence(response.data);
-            setChecking(false);
-            clearInterval(pollInterval);
-          }
-        } catch (err) {
-          // Still processing
-        }
-      }, 3000);
-
-      setTimeout(() => {
-        clearInterval(pollInterval);
-        setChecking(false);
-      }, 60000);
+      // Polling is handled by the useEffect above
     } catch (error) {
       console.error('Error checking coherence:', error);
       setChecking(false);
