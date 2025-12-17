@@ -2,10 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { AlertCircle, Lightbulb, ArrowRight, Loader } from 'lucide-react';
 import apiClient from '../api/client';
 
-const EvidencePanel = ({ evaluationId, sessionId }) => {
+const EvidencePanel = ({ evaluationId, sessionId, extracting, setExtracting }) => {
   const [evidence, setEvidence] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [extracting, setExtracting] = useState(false);
   const [selectedMetric, setSelectedMetric] = useState('all');
   const [selectedSegment, setSelectedSegment] = useState(null);
 
@@ -14,6 +13,35 @@ const EvidencePanel = ({ evaluationId, sessionId }) => {
       fetchEvidence();
     }
   }, [evaluationId]);
+
+  // Handle polling when extracting state is true (persists across unmounts via parent state)
+  useEffect(() => {
+    let pollInterval;
+    if (extracting) {
+      pollInterval = setInterval(async () => {
+        try {
+          const response = await apiClient.get(`/api/evidence/${evaluationId}`);
+          if (response.data && response.data.items) {
+            setEvidence(response.data);
+            setExtracting(false);
+            clearInterval(pollInterval);
+          }
+        } catch (err) {
+          // Still processing
+        }
+      }, 2000);
+
+      const timeoutId = setTimeout(() => {
+        clearInterval(pollInterval);
+        if (extracting) setExtracting(false);
+      }, 60000);
+
+      return () => {
+        clearInterval(pollInterval);
+        clearTimeout(timeoutId);
+      };
+    }
+  }, [extracting, evaluationId, setExtracting]);
 
   const fetchEvidence = async () => {
     try {
@@ -35,24 +63,7 @@ const EvidencePanel = ({ evaluationId, sessionId }) => {
     try {
       setExtracting(true);
       await apiClient.post(`/api/evidence/extract/${evaluationId}`);
-      
-      const pollInterval = setInterval(async () => {
-        try {
-          const response = await apiClient.get(`/api/evidence/${evaluationId}`);
-          if (response.data && response.data.items) {
-            setEvidence(response.data);
-            setExtracting(false);
-            clearInterval(pollInterval);
-          }
-        } catch (err) {
-          // Still processing
-        }
-      }, 2000);
-
-      setTimeout(() => {
-        clearInterval(pollInterval);
-        setExtracting(false);
-      }, 60000);
+      // Polling is handled by the useEffect above
     } catch (error) {
       console.error('Error extracting evidence:', error);
       setExtracting(false);
