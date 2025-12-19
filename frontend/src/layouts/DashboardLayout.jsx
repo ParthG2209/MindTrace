@@ -176,7 +176,9 @@ const DashboardLayout = () => {
               onClick={() => setShowUserMenu(!showUserMenu)}
               className="user-profile-button"
             >
-              
+              <div className="user-avatar">
+                <UserIcon />
+              </div>
               <div className="user-info">
                 <p className="user-name">
                   {user.displayName || user.email?.split('@')[0]}
