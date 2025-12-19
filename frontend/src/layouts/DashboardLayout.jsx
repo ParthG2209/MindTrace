@@ -13,7 +13,7 @@ import {
 import { auth } from '../lib/firebase';
 import { signOut } from 'firebase/auth';
 import MindTraceFooter from '../components/ui/mindtrace-footer';
-import { DottedSurface } from '../components/ui/dotted-surface';
+import { GridBackground } from '../components/ui/grid-background'; // CHANGED: Import GridBackground
 import { MenuToggleIcon } from '../components/ui/menu-toggle-icon';
 import '../styles/burger-menu.css';
 
@@ -99,7 +99,7 @@ const DashboardLayout = () => {
 
   return (
     <div className="min-h-screen bg-black relative">
-      <DottedSurface darkMode={true} />
+      <GridBackground darkMode={true} /> {/* CHANGED: Use GridBackground with darkMode */}
 
       <div className="fixed top-6 left-6 z-[1100]">
         <MenuToggleIcon
@@ -116,12 +116,11 @@ const DashboardLayout = () => {
         customBurgerIcon={false}
         customCrossIcon={false}
       >
-        {/* REMOVED LOGO SECTION - Just show MindTrace text */}
+        {/* Menu content remains the same */}
         <div className="px-4 pb-6 mb-6 border-b border-white/10">
           <h2 className="text-2xl font-bold text-white">MindTrace</h2>
         </div>
 
-        {/* Menu Items */}
         <div className="flex flex-col gap-2">
           {menuItems.map((item) => {
             const Icon = item.icon;
@@ -138,7 +137,6 @@ const DashboardLayout = () => {
           })}
         </div>
 
-        {/* User Profile Section */}
         {user && (
           <div className="menu-user-profile">
             {showUserMenu && (
