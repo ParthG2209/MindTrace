@@ -135,16 +135,7 @@ const ProfilePage = () => {
         {/* Profile Content */}
         <div className="relative px-8 pb-8">
           {/* Avatar */}
-          <div className="absolute -top-16 left-8">
-            <div className="relative">
-              <div className="w-32 h-32 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center border-4 border-black shadow-xl">
-                <User className="w-16 h-16 text-white" />
-              </div>
-              <button className="absolute bottom-2 right-2 p-2 bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-lg">
-                <Camera className="w-4 h-4 text-white" />
-              </button>
-            </div>
-          </div>
+          
 
           {/* Edit Button */}
           <div className="flex justify-end pt-4">
