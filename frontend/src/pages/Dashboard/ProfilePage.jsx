@@ -128,10 +128,7 @@ const ProfilePage = () => {
       {/* Profile Card */}
       <div className="bg-white/5 border border-white/10 backdrop-blur-sm rounded-2xl overflow-hidden hover:bg-white/10 hover:border-white/20 transition-all">
         {/* Header Section with Gradient */}
-        <div className="relative h-32 bg-gradient-to-r from-blue-500 to-purple-600">
-          <div className="absolute inset-0 bg-black/20"></div>
-        </div>
-
+        
         {/* Profile Content */}
         <div className="relative px-8 pb-8">
           {/* Avatar */}
