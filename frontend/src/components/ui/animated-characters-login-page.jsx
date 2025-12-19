@@ -3,8 +3,8 @@ import { Button } from "./button";
 import { Input } from "./input";
 import { Label } from "./label";
 import { Checkbox } from "./checkbox";
-import { Eye, EyeOff, Mail, Sparkles } from "lucide-react";
 import { Eye, EyeOff, Mail, Sparkles, ArrowLeft } from "lucide-react";
+
 import { cn } from "../../lib/utils";
 import {
   signInWithEmailAndPassword,
