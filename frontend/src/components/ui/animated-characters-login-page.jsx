@@ -4,20 +4,21 @@ import { Input } from "./input";
 import { Label } from "./label";
 import { Checkbox } from "./checkbox";
 import { Eye, EyeOff, Mail, Sparkles } from "lucide-react";
+import { Eye, EyeOff, Mail, Sparkles, ArrowLeft } from "lucide-react";
 import { cn } from "../../lib/utils";
-import { 
-  signInWithEmailAndPassword, 
+import {
+  signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signInWithPopup,
-  updateProfile 
+  updateProfile
 } from "firebase/auth";
 import { auth, googleProvider } from "../../lib/firebase";
 import { useNavigate } from "react-router-dom";
 
 
 // Pupil component (kept exactly as in original)
-const Pupil = ({ 
-  size = 12, 
+const Pupil = ({
+  size = 12,
   maxDistance = 5,
   pupilColor = "black",
   forceLookX,
@@ -40,7 +41,7 @@ const Pupil = ({
 
   const calculatePupilPosition = () => {
     if (!pupilRef.current) return { x: 0, y: 0 };
-    
+
     if (forceLookX !== undefined && forceLookY !== undefined) {
       return { x: forceLookX, y: forceLookY };
     }
@@ -79,9 +80,9 @@ const Pupil = ({
 };
 
 // EyeBall component (kept exactly as in original)
-const EyeBall = ({ 
-  size = 48, 
-  pupilSize = 16, 
+const EyeBall = ({
+  size = 48,
+  pupilSize = 16,
   maxDistance = 10,
   eyeColor = "white",
   pupilColor = "black",
@@ -106,7 +107,7 @@ const EyeBall = ({
 
   const calculatePupilPosition = () => {
     if (!eyeRef.current) return { x: 0, y: 0 };
-    
+
     if (forceLookX !== undefined && forceLookY !== undefined) {
       return { x: forceLookX, y: forceLookY };
     }
@@ -294,27 +295,27 @@ function LoginPage() {
         if (!name.trim()) {
           throw new Error("Name is required!");
         }
-        
+
         // Create Firebase account
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        
+
         // Update user profile with display name
         await updateProfile(userCredential.user, {
           displayName: name
         });
-        
+
         console.log("✅ Sign up successful!", userCredential.user);
         alert(`Account created successfully! Welcome, ${name}!`);
-        
+
         // Redirect to dashboard
         navigate("/dashboard");
-        
+
       } else {
         // Login Logic with Firebase
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         console.log("✅ Login successful!", userCredential.user);
         alert(`Login successful! Welcome back, ${userCredential.user.email}!`);
-        
+
         // Redirect to dashboard
         navigate("/dashboard");
       }
@@ -333,10 +334,10 @@ function LoginPage() {
     try {
       const result = await signInWithPopup(auth, googleProvider);
       console.log("✅ Google sign-in successful!", result.user);
-      
+
       // Navigate immediately to dashboard
       navigate("/dashboard");
-      
+
     } catch (err) {
       console.error("Google sign-in error:", err);
       setError(err.message || "Google sign-in failed. Please try again.");
@@ -372,7 +373,7 @@ function LoginPage() {
         <div className="relative z-20 flex items-end justify-center h-[500px]">
           <div className="relative" style={{ width: '550px', height: '400px' }}>
             {/* Purple tall rectangle character */}
-            <div 
+            <div
               ref={purpleRef}
               className="absolute bottom-0 transition-all duration-700 ease-in-out"
               style={{
@@ -385,34 +386,34 @@ function LoginPage() {
                 transform: (password.length > 0 && showPassword)
                   ? `skewX(0deg)`
                   : (isTyping || (password.length > 0 && !showPassword))
-                    ? `skewX(${(purplePos.bodySkew || 0) - 12}deg) translateX(40px)` 
+                    ? `skewX(${(purplePos.bodySkew || 0) - 12}deg) translateX(40px)`
                     : `skewX(${purplePos.bodySkew || 0}deg)`,
                 transformOrigin: 'bottom center',
               }}
             >
-              <div 
+              <div
                 className="absolute flex gap-8 transition-all duration-700 ease-in-out"
                 style={{
                   left: (password.length > 0 && showPassword) ? `${20}px` : isLookingAtEachOther ? `${55}px` : `${45 + purplePos.faceX}px`,
                   top: (password.length > 0 && showPassword) ? `${35}px` : isLookingAtEachOther ? `${65}px` : `${40 + purplePos.faceY}px`,
                 }}
               >
-                <EyeBall 
-                  size={18} 
-                  pupilSize={7} 
-                  maxDistance={5} 
-                  eyeColor="white" 
-                  pupilColor="#2D2D2D" 
+                <EyeBall
+                  size={18}
+                  pupilSize={7}
+                  maxDistance={5}
+                  eyeColor="white"
+                  pupilColor="#2D2D2D"
                   isBlinking={isPurpleBlinking}
                   forceLookX={(password.length > 0 && showPassword) ? (isPurplePeeking ? 4 : -4) : isLookingAtEachOther ? 3 : undefined}
                   forceLookY={(password.length > 0 && showPassword) ? (isPurplePeeking ? 5 : -4) : isLookingAtEachOther ? 4 : undefined}
                 />
-                <EyeBall 
-                  size={18} 
-                  pupilSize={7} 
-                  maxDistance={5} 
-                  eyeColor="white" 
-                  pupilColor="#2D2D2D" 
+                <EyeBall
+                  size={18}
+                  pupilSize={7}
+                  maxDistance={5}
+                  eyeColor="white"
+                  pupilColor="#2D2D2D"
                   isBlinking={isPurpleBlinking}
                   forceLookX={(password.length > 0 && showPassword) ? (isPurplePeeking ? 4 : -4) : isLookingAtEachOther ? 3 : undefined}
                   forceLookY={(password.length > 0 && showPassword) ? (isPurplePeeking ? 5 : -4) : isLookingAtEachOther ? 4 : undefined}
@@ -420,7 +421,7 @@ function LoginPage() {
               </div>
             </div>
             {/* Black tall rectangle character */}
-            <div 
+            <div
               ref={blackRef}
               className="absolute bottom-0 transition-all duration-700 ease-in-out"
               style={{
@@ -435,34 +436,34 @@ function LoginPage() {
                   : isLookingAtEachOther
                     ? `skewX(${(blackPos.bodySkew || 0) * 1.5 + 10}deg) translateX(20px)`
                     : (isTyping || (password.length > 0 && !showPassword))
-                      ? `skewX(${(blackPos.bodySkew || 0) * 1.5}deg)` 
+                      ? `skewX(${(blackPos.bodySkew || 0) * 1.5}deg)`
                       : `skewX(${blackPos.bodySkew || 0}deg)`,
                 transformOrigin: 'bottom center',
               }}
             >
-              <div 
+              <div
                 className="absolute flex gap-6 transition-all duration-700 ease-in-out"
                 style={{
                   left: (password.length > 0 && showPassword) ? `${10}px` : isLookingAtEachOther ? `${32}px` : `${26 + blackPos.faceX}px`,
                   top: (password.length > 0 && showPassword) ? `${28}px` : isLookingAtEachOther ? `${12}px` : `${32 + blackPos.faceY}px`,
                 }}
               >
-                <EyeBall 
-                  size={16} 
-                  pupilSize={6} 
-                  maxDistance={4} 
-                  eyeColor="white" 
-                  pupilColor="#2D2D2D" 
+                <EyeBall
+                  size={16}
+                  pupilSize={6}
+                  maxDistance={4}
+                  eyeColor="white"
+                  pupilColor="#2D2D2D"
                   isBlinking={isBlackBlinking}
                   forceLookX={(password.length > 0 && showPassword) ? -4 : isLookingAtEachOther ? 0 : undefined}
                   forceLookY={(password.length > 0 && showPassword) ? -4 : isLookingAtEachOther ? -4 : undefined}
                 />
-                <EyeBall 
-                  size={16} 
-                  pupilSize={6} 
-                  maxDistance={4} 
-                  eyeColor="white" 
-                  pupilColor="#2D2D2D" 
+                <EyeBall
+                  size={16}
+                  pupilSize={6}
+                  maxDistance={4}
+                  eyeColor="white"
+                  pupilColor="#2D2D2D"
                   isBlinking={isBlackBlinking}
                   forceLookX={(password.length > 0 && showPassword) ? -4 : isLookingAtEachOther ? 0 : undefined}
                   forceLookY={(password.length > 0 && showPassword) ? -4 : isLookingAtEachOther ? -4 : undefined}
@@ -470,7 +471,7 @@ function LoginPage() {
               </div>
             </div>
             {/* Orange semi-circle character */}
-            <div 
+            <div
               ref={orangeRef}
               className="absolute bottom-0 transition-all duration-700 ease-in-out"
               style={{
@@ -484,7 +485,7 @@ function LoginPage() {
                 transformOrigin: 'bottom center',
               }}
             >
-              <div 
+              <div
                 className="absolute flex gap-8 transition-all duration-200 ease-out"
                 style={{
                   left: (password.length > 0 && showPassword) ? `${50}px` : `${82 + (orangePos.faceX || 0)}px`,
@@ -496,7 +497,7 @@ function LoginPage() {
               </div>
             </div>
             {/* Yellow tall rectangle character */}
-            <div 
+            <div
               ref={yellowRef}
               className="absolute bottom-0 transition-all duration-700 ease-in-out"
               style={{
@@ -510,7 +511,7 @@ function LoginPage() {
                 transformOrigin: 'bottom center',
               }}
             >
-              <div 
+              <div
                 className="absolute flex gap-6 transition-all duration-200 ease-out"
                 style={{
                   left: (password.length > 0 && showPassword) ? `${20}px` : `${52 + (yellowPos.faceX || 0)}px`,
@@ -520,7 +521,7 @@ function LoginPage() {
                 <Pupil size={12} maxDistance={5} pupilColor="#2D2D2D" forceLookX={(password.length > 0 && showPassword) ? -5 : undefined} forceLookY={(password.length > 0 && showPassword) ? -4 : undefined} />
                 <Pupil size={12} maxDistance={5} pupilColor="#2D2D2D" forceLookX={(password.length > 0 && showPassword) ? -5 : undefined} forceLookY={(password.length > 0 && showPassword) ? -4 : undefined} />
               </div>
-              <div 
+              <div
                 className="absolute w-20 h-[4px] bg-[#2D2D2D] rounded-full transition-all duration-200 ease-out"
                 style={{
                   left: (password.length > 0 && showPassword) ? `${10}px` : `${40 + (yellowPos.faceX || 0)}px`,
@@ -540,7 +541,14 @@ function LoginPage() {
       {/* Right Login Section */}
       <div className="flex items-center justify-center p-8 bg-gray-900">
         <div className="w-full max-w-[420px]">
-          
+          <button
+            onClick={() => navigate('/')}
+            className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-6"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span className="text-sm">Back to Home</span>
+          </button>
+
           <div className="lg:hidden flex items-center justify-center gap-2 text-lg font-semibold mb-12">
             <div className="size-8 rounded-lg flex items-center justify-center bg-primary/20">
               <Sparkles className="size-4 text-primary" />
@@ -660,9 +668,9 @@ function LoginPage() {
           </form>
 
           <div className="mt-6">
-            <Button 
-              variant="outline" 
-              className="w-full h-12 border-border/60 hover:bg-accent bg-gray-800 text-white border-gray-700" 
+            <Button
+              variant="outline"
+              className="w-full h-12 border-border/60 hover:bg-accent bg-gray-800 text-white border-gray-700"
               type="button"
               onClick={handleGoogleSignIn}
               disabled={isLoading}
