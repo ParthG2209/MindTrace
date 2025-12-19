@@ -97,50 +97,7 @@ const SettingsPage = () => {
         </button>
       </div>
 
-      {/* Appearance */}
-      <Section
-        title="Appearance"
-        description="Customize how MindTrace looks"
-        icon={Palette}
-      >
-        <SettingItem
-          label="Theme"
-          description="Choose your preferred color scheme"
-        >
-          <div className="flex gap-2">
-            <button
-              onClick={() => setSettings({ ...settings, theme: 'dark' })}
-              className={`p-3 rounded-xl border transition-all backdrop-blur-sm ${
-                settings.theme === 'dark'
-                  ? 'bg-blue-500/20 border-blue-500/50'
-                  : 'bg-white/5 border-white/10 hover:border-white/20'
-              }`}
-            >
-              <Moon className="w-5 h-5 text-white" />
-            </button>
-            <button
-              onClick={() => setSettings({ ...settings, theme: 'light' })}
-              className={`p-3 rounded-xl border transition-all backdrop-blur-sm ${
-                settings.theme === 'light'
-                  ? 'bg-blue-500/20 border-blue-500/50'
-                  : 'bg-white/5 border-white/10 hover:border-white/20'
-              }`}
-            >
-              <Sun className="w-5 h-5 text-white" />
-            </button>
-          </div>
-        </SettingItem>
-
-        <SettingItem
-          label="Compact Mode"
-          description="Reduce spacing and make UI more dense"
-        >
-          <Toggle
-            checked={settings.compactMode}
-            onChange={(value) => setSettings({ ...settings, compactMode: value })}
-          />
-        </SettingItem>
-      </Section>
+      
 
       {/* Notifications */}
       <Section
