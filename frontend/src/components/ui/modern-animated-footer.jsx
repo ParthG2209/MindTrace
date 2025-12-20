@@ -96,7 +96,7 @@ export const Footer = ({
         </div>
 
         {/* Bottom logo - Reduced size */}
-        <div className="absolute hover:border-white duration-400 drop-shadow-[0_0px_20px_rgba(255,255,255,0.3)] bottom-16 md:bottom-14 backdrop-blur-sm rounded-2xl bg-black/60 left-1/2 border-2 border-white/20 flex items-center justify-center p-2 -translate-x-1/2 z-10 transition-colors duration-300">
+        <div className="absolute hover:border-white duration-400 drop-shadow-[0_0px_20px_rgba(255,255,255,0.3)] bottom-16 md:bottom-14 backdrop-blur-sm rounded-2xl bg-black/60 left-1/2 border-2 border-white/20 flex items-center justify-center p-2 -translate-x-1/2 z-0 transition-colors duration-300">
           <div className="w-10 sm:w-12 md:w-16 h-10 sm:h-12 md:h-16 bg-gradient-to-br from-white to-white/80 rounded-xl flex items-center justify-center shadow-lg transition-colors duration-300">
             {brandIcon || (
               <Award className="w-6 sm:w-8 md:w-10 h-6 sm:h-8 md:h-10 text-black drop-shadow-lg transition-colors duration-300" />
