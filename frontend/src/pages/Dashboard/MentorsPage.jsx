@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, User, TrendingUp, TrendingDown, Minus, Search, Filter } from 'lucide-react';
+import { Plus, User, TrendingUp, TrendingDown, Minus, Search, Filter, Trash2, Loader } from 'lucide-react';
 import { mentorApi } from '../../api/client';
 
 const MentorsPage = () => {
@@ -18,6 +18,11 @@ const MentorsPage = () => {
     expertise: '',
     bio: '',
   });
+
+  // NEW: Delete mentor state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [mentorToDelete, setMentorToDelete] = useState(null);
+  const [deletingMentor, setDeletingMentor] = useState(null);
 
   useEffect(() => {
     fetchMentors();
@@ -72,6 +77,31 @@ const MentorsPage = () => {
     }
   };
 
+  // NEW: Delete mentor handler
+  const handleDeleteMentor = async () => {
+    if (!mentorToDelete) return;
+
+    try {
+      setDeletingMentor(mentorToDelete.id);
+      await mentorApi.delete(mentorToDelete.id);
+      setShowDeleteModal(false);
+      setMentorToDelete(null);
+      await fetchMentors();
+    } catch (error) {
+      console.error('Error deleting mentor:', error);
+      alert('Failed to delete mentor: ' + (error.response?.data?.detail || error.message));
+    } finally {
+      setDeletingMentor(null);
+    }
+  };
+
+  // NEW: Open delete modal
+  const openDeleteModal = (mentor, e) => {
+    e.stopPropagation();
+    setMentorToDelete(mentor);
+    setShowDeleteModal(true);
+  };
+
   const getTrendIcon = (trend) => {
     if (trend === 'improving') return <TrendingUp className="w-5 h-5 text-green-400" />;
     if (trend === 'declining') return <TrendingDown className="w-5 h-5 text-red-400" />;
@@ -96,17 +126,17 @@ const MentorsPage = () => {
   );
 
   const MentorCard = ({ mentor, stats }) => (
-    <div
-      onClick={() => navigate(`/dashboard/sessions?mentor=${mentor.id}`)}
-      className="group bg-white/5 border border-white/10 backdrop-blur-sm rounded-2xl p-6 hover:bg-white/10 transition-all cursor-pointer relative overflow-hidden"
-    >
+    <div className="group bg-white/5 border border-white/10 backdrop-blur-sm rounded-2xl p-6 hover:bg-white/10 transition-all relative overflow-hidden">
       {/* Background Glow Effect */}
       <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/10 to-purple-600/10 rounded-full blur-3xl group-hover:opacity-100 opacity-0 transition-opacity"></div>
 
       <div className="relative z-10">
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center gap-3">
+          <div 
+            className="flex items-center gap-3 flex-1 cursor-pointer"
+            onClick={() => navigate(`/dashboard/sessions?mentor=${mentor.id}`)}
+          >
             <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
               <User className="w-7 h-7 text-white" />
             </div>
@@ -117,19 +147,35 @@ const MentorsPage = () => {
               <p className="text-sm text-gray-400">{mentor.email}</p>
             </div>
           </div>
-          {stats && getTrendIcon(stats.recent_trend)}
+          <div className="flex items-center gap-2">
+            {stats && getTrendIcon(stats.recent_trend)}
+            {/* NEW: Delete Button */}
+            <button
+              onClick={(e) => openDeleteModal(mentor, e)}
+              className="p-2 hover:bg-red-500/10 rounded-lg transition-colors border border-transparent hover:border-red-500/20 opacity-0 group-hover:opacity-100"
+              title="Delete Mentor"
+            >
+              <Trash2 className="w-4 h-4 text-red-400" />
+            </button>
+          </div>
         </div>
 
         {/* Bio */}
         {mentor.bio && (
-          <p className="text-sm text-gray-400 mb-4 line-clamp-2">
+          <p 
+            className="text-sm text-gray-400 mb-4 line-clamp-2 cursor-pointer"
+            onClick={() => navigate(`/dashboard/sessions?mentor=${mentor.id}`)}
+          >
             {mentor.bio}
           </p>
         )}
 
         {/* Expertise Tags */}
         {mentor.expertise && mentor.expertise.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-4">
+          <div 
+            className="flex flex-wrap gap-2 mb-4 cursor-pointer"
+            onClick={() => navigate(`/dashboard/sessions?mentor=${mentor.id}`)}
+          >
             {mentor.expertise.slice(0, 3).map((skill, idx) => (
               <span
                 key={idx}
@@ -147,7 +193,10 @@ const MentorsPage = () => {
         )}
 
         {/* Stats Footer */}
-        <div className="flex items-center justify-between pt-4 border-t border-white/10">
+        <div 
+          className="flex items-center justify-between pt-4 border-t border-white/10 cursor-pointer"
+          onClick={() => navigate(`/dashboard/sessions?mentor=${mentor.id}`)}
+        >
           <div>
             <p className="text-xs text-gray-500 mb-1">Total Sessions</p>
             <p className="text-xl font-bold text-white">
@@ -223,8 +272,7 @@ const MentorsPage = () => {
         </GlassCard>
       </div>
 
-      {/* Search and Filter - FIXED OPACITY */}
-      {/* Search and Filter - FIXED SEARCH ICON OPACITY */}
+      {/* Search and Filter */}
       <div className="flex items-center gap-4">
         <div className="flex-1 relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
@@ -343,6 +391,66 @@ const MentorsPage = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* NEW: Delete Confirmation Modal */}
+      {showDeleteModal && mentorToDelete && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white/5 border border-white/10 backdrop-blur-md rounded-2xl max-w-md w-full p-8 shadow-2xl">
+            <div className="flex items-start gap-4 mb-6">
+              <div className="p-3 bg-red-500/20 rounded-xl">
+                <Trash2 className="w-6 h-6 text-red-400" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-white mb-2">Delete Mentor</h2>
+                <p className="text-gray-300">
+                  Are you sure you want to delete <strong>{mentorToDelete.name}</strong>? This action cannot be undone.
+                </p>
+              </div>
+            </div>
+            
+            <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4 mb-6">
+              <p className="text-sm text-yellow-300">
+                <strong>Warning:</strong> Deleting this mentor will:
+              </p>
+              <ul className="text-sm text-gray-300 mt-2 ml-4 list-disc">
+                <li>Remove all mentor information</li>
+                <li>Keep their sessions (but unlink the mentor)</li>
+                <li>Remove them from analytics</li>
+              </ul>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setMentorToDelete(null);
+                }}
+                disabled={deletingMentor}
+                className="flex-1 px-6 py-3 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-all font-medium disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteMentor}
+                disabled={deletingMentor}
+                className="flex-1 px-6 py-3 bg-red-600 hover:bg-red-500 text-white rounded-xl transition-all font-medium shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {deletingMentor ? (
+                  <>
+                    <Loader className="w-4 h-4 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    Delete Mentor
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}
