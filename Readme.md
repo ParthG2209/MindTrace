@@ -1130,12 +1130,6 @@ If you use MindTrace in your research or academic work, please cite:
 
 ---
 
-## Featured By
-
-- **Product Hunt**: Featured in AI Tools for Education
-- **GitHub Trending**: #1 in Education & #3 in AI (December 2025)
-- **Hacker News**: Top 10 Show HN
-- **Dev.to**: Editor's Pick - AI Applications
 
 ---
 
@@ -1148,7 +1142,7 @@ MindTrace aims to revolutionize teaching evaluation by:
 4. **Continuous Innovation**: Staying at the forefront of educational AI research
 5. **Global Impact**: Supporting educators worldwide in improving teaching effectiveness
 
-Join us in transforming education, one evaluation at a time! 🚀
+Join us in transforming education, one evaluation at a time! 
 
 ---
 
