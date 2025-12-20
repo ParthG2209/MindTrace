@@ -881,13 +881,6 @@ npm run test:coverage
 | Lighthouse Score | 95+ |
 | Bundle Size | < 500KB (gzipped) |
 
-### Scalability Metrics
-| Metric | Current | Target (Phase 4) |
-|--------|---------|-------------------|
-| Concurrent Users | 10,000+ | 100,000+ |
-| Monthly Video Processing | 50,000 | 1,000,000 |
-| Database Size | 100GB | 10TB |
-| API Requests/min | 10,000 | 100,000 |
 
 ---
 
@@ -1127,9 +1120,6 @@ If you use MindTrace in your research or academic work, please cite:
   version = {2.0.0}
 }
 ```
-
----
-
 
 ---
 
