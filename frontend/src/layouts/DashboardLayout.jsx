@@ -1,3 +1,5 @@
+// frontend/src/layouts/DashboardLayout.jsx
+
 import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { slide as Menu } from 'react-burger-menu';
@@ -13,7 +15,7 @@ import {
 import { auth } from '../lib/firebase';
 import { signOut } from 'firebase/auth';
 import MindTraceFooter from '../components/ui/mindtrace-footer';
-import { GridBackground } from '../components/ui/grid-background'; // CHANGED: Import GridBackground
+import { GridBackground } from '../components/ui/grid-background';
 import { MenuToggleIcon } from '../components/ui/menu-toggle-icon';
 import '../styles/burger-menu.css';
 
@@ -98,8 +100,9 @@ const DashboardLayout = () => {
   };
 
   return (
-    <div className="min-h-screen bg-black relative">
-      <GridBackground darkMode={true} /> {/* CHANGED: Use GridBackground with darkMode */}
+    // Changed: Added 'flex flex-col' to ensure children stack correctly and fill height
+    <div className="min-h-screen bg-black relative flex flex-col">
+      <GridBackground darkMode={true} />
 
       <div className="fixed top-6 left-6 z-[1100]">
         <MenuToggleIcon
@@ -116,7 +119,6 @@ const DashboardLayout = () => {
         customBurgerIcon={false}
         customCrossIcon={false}
       >
-        {/* Menu content remains the same */}
         <div className="px-4 pb-6 mb-6 border-b border-white/10">
           <h2 className="text-2xl font-bold text-white">MindTrace</h2>
         </div>
@@ -188,10 +190,12 @@ const DashboardLayout = () => {
         )}
       </Menu>
 
-      <div className="flex flex-1 flex-col w-full">
-        <main className="p-6 flex-1 relative z-10 overflow-auto">
+      <div className="flex flex-1 flex-col w-full relative">
+        {/* Changed: Increased z-index to 30 to stay above footer (z-10) */}
+        <main className="p-6 flex-1 relative z-30 overflow-auto">
           <Outlet />
         </main>
+        {/* Changed: Kept z-index at 10, ensuring it's below main content */}
         <div className="relative z-10">
           <MindTraceFooter />
         </div>
