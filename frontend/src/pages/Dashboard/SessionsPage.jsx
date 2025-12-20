@@ -1,4 +1,4 @@
-// frontend/src/pages/Dashboard/SessionsPage.jsx
+// frontend/src/pages/Dashboard/SessionsPage.jsx - FIXED Z-INDEX
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -331,8 +331,7 @@ const SessionsPage = () => {
         </GlassCard>
       </div>
 
-      {/* Search and Filter - FIXED OPACITY */}
-      {/* Search and Filter - FIXED SEARCH ICON OPACITY */}
+      {/* Search and Filter */}
       <div className="flex items-center gap-4">
         <div className="flex-1 relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
@@ -388,12 +387,12 @@ const SessionsPage = () => {
         </div>
       )}
 
-      {/* Upload Modal - COMPLETE FIX */}
+      {/* Upload Modal - FIXED Z-INDEX */}
       {showUploadModal && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-          {/* Backdrop - separate layer */}
+        <>
+          {/* Backdrop */}
           <div 
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm -z-10"
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[9998]"
             onClick={(e) => {
               e.stopPropagation();
               setShowUploadModal(false);
@@ -402,137 +401,144 @@ const SessionsPage = () => {
             }}
           />
           
-          {/* Modal Content - on top */}
-          <div 
-            className="bg-white/5 border border-white/10 backdrop-blur-md rounded-2xl max-w-md w-full p-8 shadow-2xl relative z-10"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 className="text-2xl font-bold text-white mb-6">Upload Teaching Session</h2>
-            <form onSubmit={handleUploadSession} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Select Mentor *
-                </label>
-                <select
-                  required
-                  value={uploadForm.selectedMentorId}
-                  onChange={(e) => setUploadForm({ ...uploadForm, selectedMentorId: e.target.value })}
-                  className="w-full px-4 py-3 bg-gray-900 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
-                  style={{ colorScheme: 'dark' }}
-                >
-                  <option value="" className="bg-gray-900 text-white">Choose a mentor...</option>
-                  {Object.entries(allMentors).map(([id, name]) => (
-                    <option key={id} value={id} className="bg-gray-900 text-white">{name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Session Title *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={uploadForm.title}
-                  onChange={(e) => setUploadForm({ ...uploadForm, title: e.target.value })}
-                  placeholder="e.g., Python Decorators Explained"
-                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all backdrop-blur-sm"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Topic *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={uploadForm.topic}
-                  onChange={(e) => setUploadForm({ ...uploadForm, topic: e.target.value })}
-                  placeholder="e.g., Python Programming"
-                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all backdrop-blur-sm"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Video File *
-                </label>
-                <input
-                  type="file"
-                  required
-                  accept="video/mp4,video/mpeg,video/quicktime,video/x-msvideo,video/x-matroska"
-                  onChange={(e) => setUploadForm({ ...uploadForm, video: e.target.files[0] })}
-                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-500/20 file:text-blue-400 hover:file:bg-blue-500/30 cursor-pointer transition-all backdrop-blur-sm"
-                />
-                {uploadForm.video && (
-                  <p className="text-sm text-gray-400 mt-2">
-                    Selected: {uploadForm.video.name}
-                    <span className="text-gray-500 ml-2">
-                      ({(uploadForm.video.size / (1024 * 1024)).toFixed(2)} MB)
-                    </span>
-                  </p>
-                )}
-                <p className="text-xs text-gray-500 mt-2">
-                  Supported: MP4, MOV, AVI, MKV (Max 500MB)
-                </p>
-              </div>
-
-              {uploadError && (
-                <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-xl text-sm backdrop-blur-sm">
-                  {uploadError}
+          {/* Modal Content */}
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 pointer-events-none">
+            <div 
+              className="bg-white/5 border border-white/10 backdrop-blur-md rounded-2xl max-w-md w-full p-8 shadow-2xl pointer-events-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="text-2xl font-bold text-white mb-6">Upload Teaching Session</h2>
+              <form onSubmit={handleUploadSession} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Select Mentor *
+                  </label>
+                  <select
+                    required
+                    value={uploadForm.selectedMentorId}
+                    onChange={(e) => setUploadForm({ ...uploadForm, selectedMentorId: e.target.value })}
+                    className="w-full px-4 py-3 bg-gray-900 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
+                    style={{ colorScheme: 'dark' }}
+                  >
+                    <option value="" className="bg-gray-900 text-white">Choose a mentor...</option>
+                    {Object.entries(allMentors).map(([id, name]) => (
+                      <option key={id} value={id} className="bg-gray-900 text-white">{name}</option>
+                    ))}
+                  </select>
                 </div>
-              )}
 
-              <div className="flex gap-3 mt-6">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setShowUploadModal(false);
-                    setUploadForm({ title: '', topic: '', video: null, selectedMentorId: mentorId || '' });
-                    setUploadError('');
-                  }}
-                  disabled={uploading}
-                  className="flex-1 px-6 py-3 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-all font-medium disabled:opacity-50 backdrop-blur-sm"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={uploading || !uploadForm.video}
-                  className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all font-medium shadow-lg disabled:opacity-50"
-                >
-                  {uploading ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <Loader className="w-4 h-4 animate-spin" />
-                      Uploading...
-                    </span>
-                  ) : (
-                    'Upload'
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Session Title *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={uploadForm.title}
+                    onChange={(e) => setUploadForm({ ...uploadForm, title: e.target.value })}
+                    placeholder="e.g., Python Decorators Explained"
+                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all backdrop-blur-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Topic *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={uploadForm.topic}
+                    onChange={(e) => setUploadForm({ ...uploadForm, topic: e.target.value })}
+                    placeholder="e.g., Python Programming"
+                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all backdrop-blur-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Video File *
+                  </label>
+                  <input
+                    type="file"
+                    required
+                    accept="video/mp4,video/mpeg,video/quicktime,video/x-msvideo,video/x-matroska"
+                    onChange={(e) => setUploadForm({ ...uploadForm, video: e.target.files[0] })}
+                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-500/20 file:text-blue-400 hover:file:bg-blue-500/30 cursor-pointer transition-all backdrop-blur-sm"
+                  />
+                  {uploadForm.video && (
+                    <p className="text-sm text-gray-400 mt-2">
+                      Selected: {uploadForm.video.name}
+                      <span className="text-gray-500 ml-2">
+                        ({(uploadForm.video.size / (1024 * 1024)).toFixed(2)} MB)
+                      </span>
+                    </p>
                   )}
-                </button>
-              </div>
-            </form>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Supported: MP4, MOV, AVI, MKV (Max 500MB)
+                  </p>
+                </div>
+
+                {uploadError && (
+                  <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-xl text-sm backdrop-blur-sm">
+                    {uploadError}
+                  </div>
+                )}
+
+                <div className="flex gap-3 mt-6">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setShowUploadModal(false);
+                      setUploadForm({ title: '', topic: '', video: null, selectedMentorId: mentorId || '' });
+                      setUploadError('');
+                    }}
+                    disabled={uploading}
+                    className="flex-1 px-6 py-3 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-all font-medium disabled:opacity-50 backdrop-blur-sm"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={uploading || !uploadForm.video}
+                    className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all font-medium shadow-lg disabled:opacity-50"
+                  >
+                    {uploading ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <Loader className="w-4 h-4 animate-spin" />
+                        Uploading...
+                      </span>
+                    ) : (
+                      'Upload'
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
+        </>
       )}
 
-      {/* Delete Confirmation Modal - FIXED VERSION */}
+      {/* Delete Confirmation Modal - FIXED Z-INDEX */}
       {showDeleteModal && (
-        <div className="fixed inset-0 z-50 p-4">
+        <>
+          {/* Backdrop */}
           <div 
-            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[9998]"
             onClick={() => {
               setShowDeleteModal(false);
               setSessionToDelete(null);
             }}
           />
           
-          <div className="relative z-10 flex items-center justify-center min-h-full">
-            <div className="bg-white/5 border border-white/10 backdrop-blur-md rounded-2xl max-w-md w-full p-8 shadow-2xl">
+          {/* Modal Content */}
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 pointer-events-none">
+            <div 
+              className="bg-white/5 border border-white/10 backdrop-blur-md rounded-2xl max-w-md w-full p-8 shadow-2xl pointer-events-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
               <div className="flex items-start gap-4 mb-6">
                 <div className="p-3 bg-red-500/20 rounded-xl">
                   <Trash2 className="w-6 h-6 text-red-400" />
@@ -552,14 +558,14 @@ const SessionsPage = () => {
                     setSessionToDelete(null);
                   }}
                   disabled={deletingSession}
-                  className="flex-1 px-6 py-3 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-all font-medium disabled:opacity-50 relative z-10"
+                  className="flex-1 px-6 py-3 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-all font-medium disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleDeleteSession}
                   disabled={deletingSession}
-                  className="flex-1 px-6 py-3 bg-red-600 hover:bg-red-500 text-white rounded-xl transition-all font-medium shadow-lg disabled:opacity-50 flex items-center justify-center gap-2 relative z-10"
+                  className="flex-1 px-6 py-3 bg-red-600 hover:bg-red-500 text-white rounded-xl transition-all font-medium shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {deletingSession ? (
                     <>
@@ -576,7 +582,7 @@ const SessionsPage = () => {
               </div>
             </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );
