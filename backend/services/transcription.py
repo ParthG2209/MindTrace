@@ -1,9 +1,11 @@
 import os
+import asyncio
 import google.generativeai as genai
 from typing import List, Tuple
 from models.transcript import TranscriptSegment
 from config import settings
 import re
+import json
 
 class TranscriptionService:
     def __init__(self):
@@ -17,48 +19,46 @@ class TranscriptionService:
             # Upload file to Gemini
             video_file = genai.upload_file(path=video_path)
             
-            # Wait for processing
-            import time
+            # Wait for processing - CRITICAL FIX: Use asyncio.sleep to avoid blocking the server
             while video_file.state.name == "PROCESSING":
-                time.sleep(2)
+                await asyncio.sleep(2)  # Non-blocking sleep
                 video_file = genai.get_file(video_file.name)
 
             if video_file.state.name == "FAILED":
                 raise Exception("Gemini video processing failed")
 
-            # FIXED: Enhanced prompt for consistent, granular segmentation
+            # OPTIMIZED PROMPT: For long videos (45m+), granular segmentation (max 40 words)
+            # creates too many tokens and causes the LLM to crash/truncate.
+            # We now ask for natural logical segments/paragraphs.
             prompt = """
             Transcribe this video with detailed timestamps. 
-            Break the transcription into SMALL, GRANULAR segments (every 10-20 seconds or at natural speech pauses).
+            Break the transcription into logical segments (e.g., by sentence flow or topic shift).
             
             IMPORTANT: 
-            - Create a NEW segment for each sentence or thought
-            - Do NOT merge multiple sentences into one segment
-            - Aim for 20-40 words per segment maximum
-            - Include timestamps for EVERY segment
+            - Create a NEW segment for each logical thought or sentence group.
+            - aim for 50-100 words per segment to keep the JSON structure efficient.
+            - Include timestamps for EVERY segment.
             
             Provide the output as a JSON array where each segment has:
-            - 'text': The spoken text (keep segments SHORT - max 40 words)
+            - 'text': The spoken text
             - 'start': Start time in seconds (float)
             - 'end': End time in seconds (float)
             
             Example format:
             [
-              {"text": "Welcome to today's lecture on Python decorators.", "start": 0.0, "end": 3.5},
-              {"text": "Decorators are a powerful feature in Python.", "start": 3.5, "end": 6.2},
-              {"text": "They allow you to modify function behavior.", "start": 6.2, "end": 9.1}
+              {"text": "Welcome to today's lecture on Python decorators. We will cover the basics.", "start": 0.0, "end": 5.5},
+              {"text": "Decorators are a powerful feature in Python that allow you to modify behavior.", "start": 5.5, "end": 10.2}
             ]
             
             Return ONLY the JSON array, no other text.
             """
             
-            response = self.model.generate_content(
+            response = await self.model.generate_content_async(
                 [video_file, prompt],
                 generation_config={"response_mime_type": "application/json"}
             )
             
             # Parse response
-            import json
             response_text = response.text.strip()
             
             # Remove markdown code blocks if present
@@ -70,7 +70,20 @@ class TranscriptionService:
                 response_text = response_text[:-3]
             response_text = response_text.strip()
             
-            data = json.loads(response_text)
+            try:
+                data = json.loads(response_text)
+            except json.JSONDecodeError:
+                # Fallback for truncated JSON in very long videos
+                print("⚠️ JSON parsing failed (likely truncated). Attempting recovery...")
+                if response_text.rfind("}") > 0:
+                    fixed_text = response_text[:response_text.rfind("}")+1] + "]"
+                    try:
+                        data = json.loads(fixed_text)
+                    except:
+                        raise Exception("Could not parse transcription response")
+                else:
+                    raise Exception("Could not parse transcription response")
+
             
             # CRITICAL FIX: If Gemini returns too few segments, split them further
             if len(data) < 10:
