@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
 from typing import List
 from datetime import datetime
 from bson import ObjectId
+import asyncio
 
 from models.evaluation import EvaluationInDB, EvaluationSummary, SegmentEvaluation
 from models.transcript import TranscriptInDB, TranscriptCreate
@@ -14,6 +15,37 @@ from services.scoring import scoring_service
 from config import settings
 
 router = APIRouter(prefix="/api/evaluations", tags=["evaluations"])
+
+async def evaluate_single_segment(seg, topic, title, semaphore, index, total):
+    """Helper to evaluate a single segment with semaphore for rate limiting"""
+    async with semaphore:
+        print(f"Evaluating segment {index+1}/{total}")
+        try:
+            eval_scores = await llm_evaluator.evaluate_segment(
+                seg.text,
+                topic,
+                title
+            )
+            
+            seg_eval = SegmentEvaluation(
+                segment_id=seg.segment_id,
+                text=seg.text,
+                clarity=eval_scores['clarity'],
+                structure=eval_scores['structure'],
+                correctness=eval_scores['correctness'],
+                pacing=eval_scores['pacing'],
+                communication=eval_scores['communication'],
+                overall_segment_score=0.0
+            )
+            
+            seg_eval.overall_segment_score = scoring_service.compute_segment_score(seg_eval)
+            print(f"✅ Segment {index+1} finished: score = {seg_eval.overall_segment_score}")
+            return seg_eval
+        except Exception as e:
+            print(f"❌ Error evaluating segment {index+1}: {e}")
+            # Return a basic failed structure or re-raise depending on strictness
+            # Here we let the main loop handle exceptions or return None
+            return None
 
 async def process_evaluation(session_id: str, db):
     """Background task to process evaluation"""
@@ -73,42 +105,30 @@ async def process_evaluation(session_id: str, db):
         print(f"Starting LLM evaluation for {len(logical_segments)} segments")
         print(f"⚠️ IMPORTANT: Validating content against topic '{session['topic']}'")
         
-        segment_evaluations = []
         topic = session.get('topic', 'Unknown Topic')
         title = session.get('title', '')
         
+        # PARALLEL EXECUTION with Semaphore
+        # Limit to 5 concurrent LLM calls to prevent RateLimitError
+        semaphore = asyncio.Semaphore(5)
+        tasks = []
         for i, seg in enumerate(logical_segments):
-            print(f"Evaluating segment {i+1}/{len(logical_segments)}")
-            try:
-                # PASS BOTH TOPIC AND TITLE TO EVALUATION
-                eval_scores = await llm_evaluator.evaluate_segment(
-                    seg.text,
-                    topic,
-                    title  # Now includes session title for better context
-                )
-                
-                seg_eval = SegmentEvaluation(
-                    segment_id=seg.segment_id,
-                    text=seg.text,
-                    clarity=eval_scores['clarity'],
-                    structure=eval_scores['structure'],
-                    correctness=eval_scores['correctness'],
-                    pacing=eval_scores['pacing'],
-                    communication=eval_scores['communication'],
-                    overall_segment_score=0.0
-                )
-                
-                seg_eval.overall_segment_score = scoring_service.compute_segment_score(seg_eval)
-                segment_evaluations.append(seg_eval)
-                print(f"Segment {i+1} evaluated: score = {seg_eval.overall_segment_score}")
-                
-                # Log if segment was marked as off-topic
-                if seg_eval.correctness.score < 3.0 and "OFF-TOPIC" in seg_eval.correctness.reason:
-                    print(f"⚠️ ALERT: Segment {i+1} flagged as OFF-TOPIC")
-                
-            except Exception as e:
-                print(f"Error evaluating segment {i+1}: {e}")
-                raise
+            task = evaluate_single_segment(seg, topic, title, semaphore, i, len(logical_segments))
+            tasks.append(task)
+            
+        # Wait for all segments to be processed
+        results = await asyncio.gather(*tasks)
+        
+        # Filter out failed evaluations (None)
+        segment_evaluations = [res for res in results if res is not None]
+        
+        if len(segment_evaluations) != len(logical_segments):
+            print(f"⚠️ Warning: {len(logical_segments) - len(segment_evaluations)} segments failed evaluation")
+
+        # Check for off-topic content logging
+        for i, seg_eval in enumerate(segment_evaluations):
+            if seg_eval.correctness.score < 3.0 and "OFF-TOPIC" in seg_eval.correctness.reason:
+                print(f"⚠️ ALERT: Segment {i+1} flagged as OFF-TOPIC")
         
         # Compute overall metrics
         print("Computing overall metrics")
