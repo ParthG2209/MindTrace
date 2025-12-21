@@ -1,6 +1,6 @@
 import React from 'react';
 import { Footer } from './modern-animated-footer';
-import { Linkedin, Github, Mail } from 'lucide-react'; // Removed 'Award' from imports
+import { Linkedin, Github, Mail } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 
 const MindTraceFooter = () => {
@@ -34,7 +34,7 @@ const MindTraceFooter = () => {
         <img 
           src="/logo.png" 
           alt="MindTrace Logo" 
-          className="w-8 sm:w-10 md:w-14 h-8 sm:h-10 md:h-14 object-contain drop-shadow-lg" 
+          className="w-full h-full object-cover rounded-xl drop-shadow-lg" 
         />
       }
     />
