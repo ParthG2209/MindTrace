@@ -1138,7 +1138,7 @@ Join us in transforming education, one evaluation at a time!
 
 <div align="center">
 
-[Website](https://mind-trace-beta.vercel.app/) • [Documentation](https://github.com/ParthG2209/MindTrace/wiki) • [API](https://huggingface.co/spaces/ParthG2209/MindTrace) • [Support](mailto:guptaparth2209@gmail.com)
+[Website](https://mind-trace-beta.vercel.app/) • [API](https://huggingface.co/spaces/ParthG2209/MindTrace) • [Support](mailto:guptaparth2209@gmail.com)
 
 Copyright © 2025 MindTrace. All rights reserved.
 
