@@ -1,12 +1,12 @@
 // src/pages/Dashboard/AnalyticsPage.jsx - GLASSMORPHISM UPDATED
-import React, { useState, useEffect } from 'react';
-import { 
+import React, { useState, useEffect, useCallback } from 'react';
+import {
   TrendingUp, Users, Video, Award, Activity, Target
 } from 'lucide-react';
-import { 
-  LineChart, Line, BarChart, Bar, AreaChart, Area,
-  PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, 
-  Tooltip, Legend, ResponsiveContainer
+import {
+  BarChart, Bar, AreaChart, Area,
+  PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid,
+  Tooltip, ResponsiveContainer
 } from 'recharts';
 import { mentorApi, sessionApi, evaluationApi } from '../../api/client';
 
@@ -24,11 +24,22 @@ const AnalyticsPage = () => {
     sessionsByStatus: []
   });
 
-  useEffect(() => {
-    fetchAnalyticsData();
-  }, [timeRange]);
+  const generateTrendData = (days) => {
+    const data = [];
+    const today = new Date();
+    for (let i = days - 1; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      data.push({
+        date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        sessions: Math.floor(Math.random() * 10) + 5,
+        score: (Math.random() * 2 + 7).toFixed(1)
+      });
+    }
+    return data;
+  };
 
-  const fetchAnalyticsData = async () => {
+  const fetchAnalyticsData = useCallback(async () => {
     try {
       setLoading(true);
       const [mentorsRes, sessionsRes, evaluationsRes] = await Promise.all([
@@ -45,7 +56,8 @@ const AnalyticsPage = () => {
       const avgScore = evaluations.reduce((sum, e) => sum + e.overall_score, 0) / (evaluations.length || 1);
       const completionRate = (completedSessions.length / sessions.length) * 100 || 0;
 
-      const trendData = generateTrendData(30);
+      const days = timeRange === '7d' ? 7 : timeRange === '90d' ? 90 : timeRange === '1y' ? 365 : 30;
+      const trendData = generateTrendData(days);
 
       const mentorPerformance = mentors.map(m => ({
         name: m.name.split(' ')[0],
@@ -83,22 +95,11 @@ const AnalyticsPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [timeRange]);
 
-  const generateTrendData = (days) => {
-    const data = [];
-    const today = new Date();
-    for (let i = days - 1; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
-      data.push({
-        date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        sessions: Math.floor(Math.random() * 10) + 5,
-        score: (Math.random() * 2 + 7).toFixed(1)
-      });
-    }
-    return data;
-  };
+  useEffect(() => {
+    fetchAnalyticsData();
+  }, [fetchAnalyticsData]);
 
   const GlassCard = ({ children, className = "" }) => (
     <div className={`bg-white/5 border border-white/10 backdrop-blur-sm rounded-2xl p-6 ${className}`}>
@@ -117,7 +118,7 @@ const AnalyticsPage = () => {
     return (
       <GlassCard className="relative overflow-hidden group hover:bg-white/10 hover:border-white/20 transition-all">
         <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${colorClasses[color]} opacity-10 rounded-full blur-3xl group-hover:opacity-20 transition-opacity`}></div>
-        
+
         <div className="relative z-10">
           <div className="flex items-start justify-between mb-4">
             <div>
@@ -131,7 +132,7 @@ const AnalyticsPage = () => {
               <Icon className="w-6 h-6 text-white" />
             </div>
           </div>
-          
+
           {trend && (
             <div className="flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-green-400" />
@@ -150,6 +151,16 @@ const AnalyticsPage = () => {
       </div>
     );
   }
+
+  const tooltipStyle = {
+    contentStyle: {
+      backgroundColor: 'rgba(0,0,0,0.9)',
+      border: '1px solid rgba(255,255,255,0.1)',
+      borderRadius: '8px',
+      color: '#fff',
+      backdropFilter: 'blur(10px)'
+    }
+  };
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-10">
@@ -229,15 +240,7 @@ const AnalyticsPage = () => {
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
               <XAxis dataKey="date" stroke="rgba(255,255,255,0.3)" />
               <YAxis stroke="rgba(255,255,255,0.3)" />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'rgba(0,0,0,0.9)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: '8px',
-                  color: '#fff',
-                  backdropFilter: 'blur(10px)'
-                }}
-              />
+              <Tooltip {...tooltipStyle} />
               <Area
                 type="monotone"
                 dataKey="sessions"
@@ -274,15 +277,7 @@ const AnalyticsPage = () => {
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
               </Pie>
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'rgba(0,0,0,0.9)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: '8px',
-                  color: '#fff',
-                  backdropFilter: 'blur(10px)'
-                }}
-              />
+              <Tooltip {...tooltipStyle} />
             </PieChart>
           </ResponsiveContainer>
         </GlassCard>
@@ -304,15 +299,7 @@ const AnalyticsPage = () => {
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
               <XAxis type="number" stroke="rgba(255,255,255,0.3)" />
               <YAxis dataKey="name" type="category" stroke="rgba(255,255,255,0.3)" />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'rgba(0,0,0,0.9)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: '8px',
-                  color: '#fff',
-                  backdropFilter: 'blur(10px)'
-                }}
-              />
+              <Tooltip {...tooltipStyle} />
               <Bar dataKey="score" fill="#10b981" radius={[0, 8, 8, 0]} />
             </BarChart>
           </ResponsiveContainer>
@@ -332,15 +319,7 @@ const AnalyticsPage = () => {
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
               <XAxis dataKey="range" stroke="rgba(255,255,255,0.3)" />
               <YAxis stroke="rgba(255,255,255,0.3)" />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'rgba(0,0,0,0.9)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: '8px',
-                  color: '#fff',
-                  backdropFilter: 'blur(10px)'
-                }}
-              />
+              <Tooltip {...tooltipStyle} />
               <Bar dataKey="count" fill="#f97316" radius={[8, 8, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>

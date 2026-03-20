@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { RefreshCw, CheckCircle, ArrowRight, Loader, TrendingUp } from 'lucide-react';
 import apiClient from '../api/client';
 
@@ -7,11 +7,27 @@ const RewriteComparison = ({ sessionId, evaluationId, generating, setGenerating 
   const [loading, setLoading] = useState(false);
   const [selectedSegment, setSelectedSegment] = useState(null);
 
+  const fetchRewrites = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await apiClient.get(`/api/rewrites/${sessionId}`);
+      setRewrites(response.data);
+    } catch (error) {
+      if (error.response?.status === 404) {
+        setRewrites({ rewrites: [], total: 0 });
+      } else {
+        console.error('Error fetching rewrites:', error);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [sessionId]);
+
   useEffect(() => {
     if (sessionId) {
       fetchRewrites();
     }
-  }, [sessionId]);
+  }, [sessionId, fetchRewrites]);
 
   // Handle polling when generating state is true (persists across unmounts via parent state)
   useEffect(() => {
@@ -29,7 +45,7 @@ const RewriteComparison = ({ sessionId, evaluationId, generating, setGenerating 
           // Still processing
         }
       }, 3000);
-      
+
       // Auto-stop after 60 seconds to prevent infinite polling
       const timeoutId = setTimeout(() => {
         clearInterval(pollInterval);
@@ -42,22 +58,6 @@ const RewriteComparison = ({ sessionId, evaluationId, generating, setGenerating 
       };
     }
   }, [generating, sessionId, setGenerating]);
-
-  const fetchRewrites = async () => {
-    try {
-      setLoading(true);
-      const response = await apiClient.get(`/api/rewrites/${sessionId}`);
-      setRewrites(response.data);
-    } catch (error) {
-      if (error.response?.status === 404) {
-        setRewrites({ rewrites: [], total: 0 });
-      } else {
-        console.error('Error fetching rewrites:', error);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleGenerateRewrites = async () => {
     try {

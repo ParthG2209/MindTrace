@@ -5,7 +5,6 @@ import { Label } from "./label";
 import { Checkbox } from "./checkbox";
 import { Eye, EyeOff, Mail, Sparkles, ArrowLeft } from "lucide-react";
 
-import { cn } from "../../lib/utils";
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -16,7 +15,7 @@ import { auth, googleProvider } from "../../lib/firebase";
 import { useNavigate } from "react-router-dom";
 
 
-// Pupil component (kept exactly as in original)
+// Pupil component
 const Pupil = ({
   size = 12,
   maxDistance = 5,
@@ -79,7 +78,7 @@ const Pupil = ({
   );
 };
 
-// EyeBall component (kept exactly as in original)
+// EyeBall component
 const EyeBall = ({
   size = 48,
   pupilSize = 16,
@@ -173,7 +172,6 @@ function LoginPage() {
   const [mouseY, setMouseY] = useState(0);
   const [isPurpleBlinking, setIsPurpleBlinking] = useState(false);
   const [isBlackBlinking, setIsBlackBlinking] = useState(false);
-  const [isTyping, setIsTyping] = useState(false);
   const [isLookingAtEachOther, setIsLookingAtEachOther] = useState(false);
   const [isPurplePeeking, setIsPurplePeeking] = useState(false);
 
@@ -225,9 +223,9 @@ function LoginPage() {
     return () => clearTimeout(timeout);
   }, []);
 
-  // Looking at each other animation when typing starts
+  // Looking at each other animation when password is being typed
   useEffect(() => {
-    if (isTyping) {
+    if (password.length > 0) {
       setIsLookingAtEachOther(true);
       const timer = setTimeout(() => {
         setIsLookingAtEachOther(false);
@@ -236,7 +234,7 @@ function LoginPage() {
     } else {
       setIsLookingAtEachOther(false);
     }
-  }, [isTyping]);
+  }, [password]);
 
   // Purple sneaky peeking animation
   useEffect(() => {
@@ -285,7 +283,6 @@ function LoginPage() {
 
     try {
       if (isSignUp) {
-        // Sign Up Logic with Firebase
         if (password !== confirmPassword) {
           throw new Error("Passwords do not match!");
         }
@@ -296,27 +293,13 @@ function LoginPage() {
           throw new Error("Name is required!");
         }
 
-        // Create Firebase account
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-
-        // Update user profile with display name
-        await updateProfile(userCredential.user, {
-          displayName: name
-        });
-
-        console.log("✅ Sign up successful!", userCredential.user);
+        await updateProfile(userCredential.user, { displayName: name });
         alert(`Account created successfully! Welcome, ${name}!`);
-
-        // Redirect to dashboard
         navigate("/dashboard");
-
       } else {
-        // Login Logic with Firebase
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        console.log("✅ Login successful!", userCredential.user);
         alert(`Login successful! Welcome back, ${userCredential.user.email}!`);
-
-        // Redirect to dashboard
         navigate("/dashboard");
       }
     } catch (err) {
@@ -332,12 +315,8 @@ function LoginPage() {
     setIsLoading(true);
 
     try {
-      const result = await signInWithPopup(auth, googleProvider);
-      console.log("✅ Google sign-in successful!", result.user);
-
-      // Navigate immediately to dashboard
+      await signInWithPopup(auth, googleProvider);
       navigate("/dashboard");
-
     } catch (err) {
       console.error("Google sign-in error:", err);
       setError(err.message || "Google sign-in failed. Please try again.");
@@ -357,7 +336,7 @@ function LoginPage() {
 
   return (
     <div className="min-h-screen grid lg:grid-cols-2 dark">
-      {/* Left Content Section - Keep as is */}
+      {/* Left Content Section */}
       <div className="relative hidden lg:flex flex-col justify-between bg-gradient-to-br from-primary/90 via-primary to-primary/80 p-12 text-primary-foreground">
         {/* Logo */}
         <div className="relative z-20">
@@ -379,13 +358,13 @@ function LoginPage() {
               style={{
                 left: '70px',
                 width: '180px',
-                height: (isTyping || (password.length > 0 && !showPassword)) ? '440px' : '400px',
+                height: (password.length > 0 && !showPassword) ? '440px' : '400px',
                 backgroundColor: '#6C3FF5',
                 borderRadius: '10px 10px 0 0',
                 zIndex: 1,
                 transform: (password.length > 0 && showPassword)
                   ? `skewX(0deg)`
-                  : (isTyping || (password.length > 0 && !showPassword))
+                  : (password.length > 0 && !showPassword)
                     ? `skewX(${(purplePos.bodySkew || 0) - 12}deg) translateX(40px)`
                     : `skewX(${purplePos.bodySkew || 0}deg)`,
                 transformOrigin: 'bottom center',
@@ -435,7 +414,7 @@ function LoginPage() {
                   ? `skewX(0deg)`
                   : isLookingAtEachOther
                     ? `skewX(${(blackPos.bodySkew || 0) * 1.5 + 10}deg) translateX(20px)`
-                    : (isTyping || (password.length > 0 && !showPassword))
+                    : (password.length > 0 && !showPassword)
                       ? `skewX(${(blackPos.bodySkew || 0) * 1.5}deg)`
                       : `skewX(${blackPos.bodySkew || 0}deg)`,
                 transformOrigin: 'bottom center',

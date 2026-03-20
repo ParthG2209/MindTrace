@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  ArrowLeft, Video, Clock, Calendar, User, 
+import {
+  ArrowLeft, Video, Clock, Calendar, User,
   TrendingUp, Play, Loader, CheckCircle, RefreshCw, Trash2, AlertCircle
 } from 'lucide-react';
 import { sessionApi, evaluationApi, mentorApi } from '../../api/client';
@@ -28,25 +28,14 @@ const SessionDetailPage = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
 
-  // NEW: Global processing state to block UI interactions
+  // Global processing state to block UI interactions
   const [isGlobalProcessing, setIsGlobalProcessing] = useState(false);
-  const [processingMessage, setProcessingMessage] = useState('');
+  const [processingMessage] = useState('');
 
-  // NEW: Component-specific loading states (lifted up for persistence)
+  // Component-specific loading states (lifted up for persistence)
   const [rewritesGenerating, setRewritesGenerating] = useState(false);
   const [coherenceChecking, setCoherenceChecking] = useState(false);
   const [evidenceExtracting, setEvidenceExtracting] = useState(false);
-
-  // NEW: Handlers passed down to child components
-  const _handleProcessingStart = (message) => {
-    setIsGlobalProcessing(true);
-    setProcessingMessage(message);
-  };
-
-  const _handleProcessingEnd = () => {
-    setIsGlobalProcessing(false);
-    setProcessingMessage('');
-  };
 
   const sessionStatusRef = useRef(session?.status);
   useEffect(() => {
@@ -55,7 +44,7 @@ const SessionDetailPage = () => {
 
   const fetchSessionDataCb = useCallback(async () => {
     await fetchSessionData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId]);
 
   useEffect(() => {
@@ -82,7 +71,7 @@ const SessionDetailPage = () => {
         try {
           const evalRes = await evaluationApi.getBySessionId(sessionId);
           setEvaluation(evalRes.data);
-          
+
           try {
             const cohRes = await apiClient.get(`/api/coherence/${sessionId}`);
             setCoherence(cohRes.data);
@@ -118,7 +107,7 @@ const SessionDetailPage = () => {
     if (!window.confirm('Are you sure you want to retry the evaluation? This will re-process the entire session.')) {
       return;
     }
-    
+
     try {
       setEvaluating(true);
       await sessionApi.update(sessionId, { status: 'uploaded' });
@@ -216,8 +205,8 @@ const SessionDetailPage = () => {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-10">
-      
-      {/* NEW: Global Blocking Overlay */}
+
+      {/* Global Blocking Overlay */}
       {isGlobalProcessing && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center">
           <div className="bg-gray-900 border border-white/10 p-8 rounded-2xl flex flex-col items-center max-w-md text-center shadow-2xl">
@@ -237,9 +226,8 @@ const SessionDetailPage = () => {
           <button
             onClick={() => !isGlobalProcessing && navigate(`/dashboard/sessions?mentor=${session.mentor_id}`)}
             disabled={isGlobalProcessing}
-            className={`p-2 rounded-lg transition-colors mt-1 backdrop-blur-sm ${
-              isGlobalProcessing ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white/5'
-            }`}
+            className={`p-2 rounded-lg transition-colors mt-1 backdrop-blur-sm ${isGlobalProcessing ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white/5'
+              }`}
           >
             <ArrowLeft className="w-5 h-5 text-gray-400 hover:text-white" />
           </button>
@@ -277,15 +265,14 @@ const SessionDetailPage = () => {
             )}
             {session.status.charAt(0).toUpperCase() + session.status.slice(1)}
           </div>
-          
+
           <button
             onClick={() => setShowDeleteModal(true)}
             disabled={isGlobalProcessing}
-            className={`p-2 rounded-lg transition-colors border border-red-500/20 ${
-              isGlobalProcessing 
-                ? 'opacity-50 cursor-not-allowed' 
+            className={`p-2 rounded-lg transition-colors border border-red-500/20 ${isGlobalProcessing
+                ? 'opacity-50 cursor-not-allowed'
                 : 'hover:bg-red-500/10 hover:border-red-500/40'
-            }`}
+              }`}
             title="Delete Session"
           >
             <Trash2 className="w-5 h-5 text-red-400" />
@@ -403,36 +390,35 @@ const SessionDetailPage = () => {
 
           {/* Tabs */}
           <div className="bg-white/5 border border-white/10 backdrop-blur-sm rounded-2xl overflow-hidden hover:bg-white/[0.07] hover:border-white/20 transition-all">
-            {/* Tab Headers - Disabled during processing */}
+            {/* Tab Headers */}
             <div className="flex border-b border-white/10 overflow-x-auto">
               {tabs.filter(tab => tab.show).map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => !isGlobalProcessing && setActiveTab(tab.id)}
                   disabled={isGlobalProcessing}
-                  className={`px-6 py-4 font-medium text-sm whitespace-nowrap transition-all ${
-                    activeTab === tab.id
+                  className={`px-6 py-4 font-medium text-sm whitespace-nowrap transition-all ${activeTab === tab.id
                       ? 'text-white border-b-2 border-blue-500 bg-blue-500/10'
-                      : isGlobalProcessing 
+                      : isGlobalProcessing
                         ? 'text-gray-600 cursor-not-allowed'
                         : 'text-gray-400 hover:text-white hover:bg-white/5'
-                  }`}
+                    }`}
                 >
                   {tab.label}
                 </button>
               ))}
             </div>
 
-            {/* Tab Content - Pass Handlers to Children */}
+            {/* Tab Content */}
             <div className="p-6">
               {activeTab === 'overview' && (
                 <div className="space-y-6">
-                  <ExplanationGraph 
-                    segments={evaluation.segments} 
+                  <ExplanationGraph
+                    segments={evaluation.segments}
                     sessionId={sessionId}
-                    coherenceData={coherence} 
+                    coherenceData={coherence}
                   />
-                  
+
                   {/* Strengths & Weaknesses */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="bg-green-500/10 border border-green-500/20 backdrop-blur-sm rounded-xl p-6 hover:bg-green-500/[0.15] hover:border-green-500/30 transition-all">
@@ -517,7 +503,7 @@ const SessionDetailPage = () => {
                 </p>
               </div>
             </div>
-            
+
             <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4 mb-6">
               <p className="text-sm text-yellow-300">
                 <strong>Warning:</strong> This will permanently delete:

@@ -1,12 +1,8 @@
 import React from 'react';
 import { Footer } from './modern-animated-footer';
-import { Linkedin, Github, Mail } from 'lucide-react';
-import { useLocation } from 'react-router-dom';
+import { Github, Mail } from 'lucide-react';
 
 const MindTraceFooter = () => {
-  const location = useLocation();
-  const isDashboard = location.pathname.startsWith('/dashboard');
-
   const socialLinks = [
     {
       icon: <Github className="w-6 h-6" />,
@@ -31,10 +27,10 @@ const MindTraceFooter = () => {
       creatorName="Team MindTrace"
       creatorUrl="https://www.linkedin.com/in/parth-gupta-4598b8324/"
       brandIcon={
-        <img 
-          src="/logo.png" 
-          alt="MindTrace Logo" 
-          className="w-full h-full object-cover rounded-xl drop-shadow-lg" 
+        <img
+          src="/logo.png"
+          alt="MindTrace Logo"
+          className="w-full h-full object-cover rounded-xl drop-shadow-lg"
         />
       }
     />
