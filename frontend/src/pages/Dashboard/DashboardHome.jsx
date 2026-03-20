@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Users, Video, Award, CheckCircle, Activity, 
+  Users, Video, Award, CheckCircle, 
   ArrowUpRight, Clock, Calendar, MoreVertical
 } from 'lucide-react';
 import { 

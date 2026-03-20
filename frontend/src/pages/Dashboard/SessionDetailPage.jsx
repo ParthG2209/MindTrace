@@ -1,6 +1,6 @@
 // frontend/src/pages/Dashboard/SessionDetailPage.jsx - FIXED VERSION
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Video, Clock, Calendar, User, 
@@ -38,25 +38,35 @@ const SessionDetailPage = () => {
   const [evidenceExtracting, setEvidenceExtracting] = useState(false);
 
   // NEW: Handlers passed down to child components
-  const handleProcessingStart = (message) => {
+  const _handleProcessingStart = (message) => {
     setIsGlobalProcessing(true);
     setProcessingMessage(message);
   };
 
-  const handleProcessingEnd = () => {
+  const _handleProcessingEnd = () => {
     setIsGlobalProcessing(false);
     setProcessingMessage('');
   };
 
+  const sessionStatusRef = useRef(session?.status);
   useEffect(() => {
-    fetchSessionData();
+    sessionStatusRef.current = session?.status;
+  }, [session?.status]);
+
+  const fetchSessionDataCb = useCallback(async () => {
+    await fetchSessionData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId]);
+
+  useEffect(() => {
+    fetchSessionDataCb();
     const interval = setInterval(() => {
-      if (session?.status !== 'completed') {
-        fetchSessionData();
+      if (sessionStatusRef.current !== 'completed') {
+        fetchSessionDataCb();
       }
     }, 3000);
     return () => clearInterval(interval);
-  }, [sessionId]);
+  }, [fetchSessionDataCb]);
 
   const fetchSessionData = async () => {
     try {

@@ -1,7 +1,7 @@
 // src/pages/Dashboard/SettingsPage.jsx - GLASSMORPHISM UPDATED
 import React, { useState } from 'react';
 import { 
-  Bell, Shield, Palette, Globe, Save, Moon, Sun
+  Bell, Shield, Globe, Save
 } from 'lucide-react';
 
 const SettingsPage = () => {

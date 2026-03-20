@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   User, Mail, Calendar, Award, Video, TrendingUp,
-  Edit2, Save, X, Camera
+  Edit2, Save, X
 } from 'lucide-react';
 import { auth } from '../../lib/firebase';
 import { updateProfile, updateEmail } from 'firebase/auth';

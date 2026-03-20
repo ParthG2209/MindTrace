@@ -1,10 +1,10 @@
 // frontend/src/pages/Dashboard/SessionsPage.jsx - FIXED Z-INDEX
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
-  Upload, Video, ArrowLeft, Search, Filter,
-  Clock, Calendar, CheckCircle, Loader, XCircle, User, Trash2, MoreVertical
+  Upload, Video, ArrowLeft, Search,
+  Clock, Calendar, CheckCircle, Loader, XCircle, User, Trash2
 } from 'lucide-react';
 import { sessionApi, mentorApi } from '../../api/client';
 
@@ -32,11 +32,21 @@ const SessionsPage = () => {
     selectedMentorId: mentorId || '',
   });
 
-  useEffect(() => {
-    fetchData();
-    const interval = setInterval(fetchSessions, 5000);
-    return () => clearInterval(interval);
+  const fetchSessionsCb = useCallback(async () => {
+    await fetchSessions();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mentorId]);
+
+  const fetchDataCb = useCallback(async () => {
+    await fetchData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mentorId]);
+
+  useEffect(() => {
+    fetchDataCb();
+    const interval = setInterval(fetchSessionsCb, 5000);
+    return () => clearInterval(interval);
+  }, [fetchDataCb, fetchSessionsCb]);
 
   const fetchData = async () => {
     await Promise.all([fetchSessions(), fetchAllMentors(), mentorId && fetchMentor()]);
