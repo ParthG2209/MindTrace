@@ -1,5 +1,5 @@
-# backend/main.py
-from fastapi import FastAPI, Request
+# main.py
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
@@ -20,20 +20,16 @@ app = FastAPI(
     description="Explainable Mentor Evaluation System",
     version="1.0.0",
     lifespan=lifespan,
-    # REMOVED: redirect_slashes=False
 )
 
 # CORS middleware
+# IMPORTANT: allow_credentials must be False when using allow_origins=["*"]
+# Using "*" with allow_credentials=True is invalid per the CORS spec —
+# the browser will block ALL requests including file uploads.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "https://mind-trace-beta.vercel.app",
-        "https://*.vercel.app",
-        "https://parthg2209-mindtrace.hf.space",
-        "*"
-    ],
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
